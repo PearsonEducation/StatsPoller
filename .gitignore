@@ -1,0 +1,10 @@
+/*~*
+/target/
+/conf/application_dev.properties
+/conf/*~*
+/conf/optional/*
+!/conf/optional/ignore.me
+/logs/*
+!/logs/ignore.me
+/output/*
+!/output/ignore.me
