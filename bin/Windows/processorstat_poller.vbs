@@ -15,14 +15,14 @@
 '               eg:  1383148462
 '  
 '  Suggested Directory Structure
-'      .../StatsPoller/output   -> Default location of output
-'	   .../StatsPoller/bin      -> Default location of vbscripts
+'      .../StatsPoller/output           -> Default location of output
+'	   .../StatsPoller/bin/Windows      -> Default location of vbscripts
 '  
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
 '        Output file (Argument 2).  File name only.
-'             eg.  cscript command_poller.vbs ..\output\ command_poller_output.out
+'             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
 '  
@@ -43,10 +43,10 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 args = WScript.Arguments.Count
 
 outputlocation = ".\output\"
-outputfile = "processorstat_poller_output.out"
+outputfile = "windows_processorstat.out"
 If args = 1 Then
 outputlocation = WScript.Arguments.Item(1)
-outputfile = "processorstat_poller_output.out"
+outputfile = "windows_processorstat.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
@@ -96,13 +96,13 @@ Function GetProcessor(StrSrv)
 	  Time = CStr(TimeStamp())
 	  
      For Each Proc In Item	 
-		 objFile.WriteLine "CPU." & Proc.Name & ".UserTime-% " & Proc.PercentUserTime & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".IdleTime-% " & Proc.PercentIdleTime & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".ProcessorTime-% " & Proc.PercentProcessorTime & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".PrivilegedTime-% " & Proc.PercentPrivilegedTime & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".InterruptTime-% " & Proc.PercentInterruptTime & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".Interrupts/Second " & Proc.InterruptsPerSec & " " & Time
-		 objFile.WriteLine "CPU." & Proc.Name & ".DPCRate " & Proc.DPCRate & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".UserTime-% " & Proc.PercentUserTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".IdleTime-% " & Proc.PercentIdleTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".ProcessorTime-% " & Proc.PercentProcessorTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".PrivilegedTime-% " & Proc.PercentPrivilegedTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".InterruptTime-% " & Proc.PercentInterruptTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".Interrupts/Second " & Proc.InterruptsPerSec & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".DPCRate " & Proc.DPCRate & " " & Time
     Next
 End Function
 '**************End Query Section***************

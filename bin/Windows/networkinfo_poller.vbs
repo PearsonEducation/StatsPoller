@@ -15,14 +15,14 @@
 '               eg:  1383148462
 '  
 '  Suggested Directory Structure
-'      .../StatsPoller/output   -> Default location of output
-'	   .../StatsPoller/bin      -> Default location of vbscripts
+'      .../StatsPoller/output           -> Default location of output
+'      .../StatsPoller/bin/Windows      -> Default location of vbscripts
 '  
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
 '        Output file (Argument 2).  File name only.
-'             eg.  cscript command_poller.vbs ..\output\ command_poller_output.out
+'             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
 '  
@@ -43,10 +43,10 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 args = WScript.Arguments.Count
 
 outputlocation = ".\output\"
-outputfile = "networkinfo_poller_output.out"
+outputfile = "windows_networkinfo.out"
 If args = 1 Then
 outputlocation = WScript.Arguments.Item(1)
-outputfile = "networkinfo_poller_output.out"
+outputfile = "windows_networkinfo.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)

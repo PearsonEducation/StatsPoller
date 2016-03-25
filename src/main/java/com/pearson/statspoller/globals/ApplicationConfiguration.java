@@ -809,7 +809,7 @@ public class ApplicationConfiguration {
             String mysqlJdbcValue = applicationConfiguration_.safeGetString(mysqlJdbcKey, "");
             
             String mysqlCollectionIntervalKey = "mysql_collection_interval" + collectorSuffix;
-            double mysqlCollectionIntervalValue = applicationConfiguration_.safeGetDouble(mysqlCollectionIntervalKey, 30);
+            double mysqlCollectionIntervalValue = applicationConfiguration_.safeGetDouble(mysqlCollectionIntervalKey, 60);
             long mysqlCollectionIntervalValue_Long = legacyMode ? (long) mysqlCollectionIntervalValue : (long) (mysqlCollectionIntervalValue * 1000);    
 
             String mysqlMetricPrefixKey = "mysql_metric_prefix" + collectorSuffix;

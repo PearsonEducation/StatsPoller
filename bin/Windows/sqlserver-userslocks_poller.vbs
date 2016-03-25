@@ -15,14 +15,14 @@
 '               eg:  1383148462
 '  
 '  Suggested Directory Structure
-'      .../StatsPoller/output   -> Default location of output
-'	   .../StatsPoller/bin      -> Default location of vbscripts
+'      .../StatsPoller/output           -> Default location of output
+'      .../StatsPoller/bin/Windows      -> Default location of vbscripts
 '  
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
 '        Output file (Argument 2).  File name only.
-'             eg.  cscript command_poller.vbs ..\output\ command_poller_output.out
+'             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
 '  
@@ -43,10 +43,10 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 args = WScript.Arguments.Count
 
 outputlocation = ".\output\"
-outputfile = "sqlserver-userslocks_poller_output.out"
+outputfile = "sqlserver_locks.out"
 If args = 1 Then
 outputlocation = WScript.Arguments.Item(1)
-outputfile = "sqlserver-userslocks_poller_output.out"
+outputfile = "sqlserver_locks.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
@@ -147,12 +147,12 @@ Function GetLock(StrSrv)
      For Each Proc In Item
 		 Comp = Proc.Name
 		 Comp = Replace(Comp, " ", "_")
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "LockWaitTimems " & Proc.LockWaitTimems & " " & Time
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "LockWaitsPersec/Second " & Proc.LockWaitsPersec & " " & Time
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "AverageWaitTimems " & Proc.AverageWaitTimems & " " & Time
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "LockRequestsPersec/Second " & Proc.LockRequestsPersec & " " & Time
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "LockTimeoutsPersec/Second " & Proc.LockTimeoutsPersec & " " & Time
-		 objFile.WriteLine "Lock_Info." & Comp & "." & "NumberofDeadlocksPersec/Second " & Proc.NumberofDeadlocksPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "LockWaitTimems " & Proc.LockWaitTimems & " " & Time
+		 objFile.WriteLine Comp & "." & "LockWaitsPersec/Second " & Proc.LockWaitsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "AverageWaitTimems " & Proc.AverageWaitTimems & " " & Time
+		 objFile.WriteLine Comp & "." & "LockRequestsPersec/Second " & Proc.LockRequestsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "LockTimeoutsPersec/Second " & Proc.LockTimeoutsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "NumberofDeadlocksPersec/Second " & Proc.NumberofDeadlocksPersec & " " & Time
     Next
 End Function
 

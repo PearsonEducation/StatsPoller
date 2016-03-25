@@ -237,7 +237,7 @@ public class Driver {
     private static void launchMysqlCollectors() {
               
         for (MysqlMetricCollector mysqlMetricCollector : ApplicationConfiguration.getMysqlMetricCollectors()) {
-            //threadExecutor_.execute(mysqlMetricCollector);
+            threadExecutor_.execute(mysqlMetricCollector);
         }
         
     }

@@ -28,7 +28,6 @@ public class DiskIoStat_Delta {
     
     private static final Logger logger = LoggerFactory.getLogger(DiskIoStat_Delta.class.getName());
 
-    private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
     private static final BigDecimal ONE_THOUSAND = new BigDecimal("1000");
     private static final BigDecimal FIVE_HUNDRED_TWELVE = new BigDecimal("512");
     private static final BigDecimal BYTES_TO_MEGABYTES_DIVISOR = new BigDecimal("1048576");

@@ -119,6 +119,7 @@ public class Df_Fields {
         
         String blocksUsedPercent_Numeric = StringUtils.remove(blocksUsedPercent_, "%");
         if (blocksUsedPercent_Numeric == null) return null;
+        if (!StringUtils.isNumeric(blocksUsedPercent_Numeric)) return null;
         
         diskSpaceUsedPercent_ = MathUtilities.safeGetBigDecimal(blocksUsedPercent_Numeric);
         return diskSpaceUsedPercent_;
@@ -142,6 +143,7 @@ public class Df_Fields {
         
         String inodesUsedPercent_Numeric = StringUtils.remove(inodesUsedPercent_, "%");
         if (inodesUsedPercent_Numeric == null) return null;
+        if (!StringUtils.isNumeric(inodesUsedPercent_Numeric)) return null;
         
         diskInodesUsedPercent_ = MathUtilities.safeGetBigDecimal(inodesUsedPercent_Numeric);
         return diskInodesUsedPercent_;

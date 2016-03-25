@@ -117,6 +117,20 @@ public class DatabaseUtils {
         return connection;
     }
     
+    public static Connection connect(String url, String username, String password) {
+        
+        Connection connection = null;
+        
+        try {
+            connection = DriverManager.getConnection(url, username, password);
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+        
+        return connection;
+    }
+    
     public static boolean disconnect(Connection connection) {
         
        try {

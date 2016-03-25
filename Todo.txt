@@ -2,3 +2,5 @@
 * always_check_output_files -- auto mode
 * ProcessCounter for Windows
 * Finish MySQL poller
+* SS Linux poller
+* Windows prefix on Windows metric collectors
