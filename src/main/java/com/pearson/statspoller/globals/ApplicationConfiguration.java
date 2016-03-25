@@ -757,7 +757,7 @@ public class ApplicationConfiguration {
             String mongoPasswordValue = applicationConfiguration_.safeGetString(mongoPasswordKey, "");
             
             String mongoCollectionIntervalKey = "mongo_collection_interval" + collectorSuffix;
-            double mongoCollectionIntervalValue = applicationConfiguration_.safeGetDouble(mongoCollectionIntervalKey, 30);
+            double mongoCollectionIntervalValue = applicationConfiguration_.safeGetDouble(mongoCollectionIntervalKey, 60);
             long mongoCollectionIntervalValue_Long = legacyMode ? (long) mongoCollectionIntervalValue : (long) (mongoCollectionIntervalValue * 1000);    
 
             String mongoMetricPrefixKey = "mongo_metric_prefix" + collectorSuffix;
