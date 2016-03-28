@@ -199,7 +199,7 @@ public class Threads {
 
     }
     
-    public static void shutdownThreadExecutor(ExecutorService threadExecutor, Integer timeoutTime, TimeUnit timeoutTimeunit, 
+    public static void shutdownThreadExecutor(ExecutorService threadExecutor, Long timeoutTime, TimeUnit timeoutTimeunit, 
             boolean forceShutdownIfTimeoutReached, boolean waitForeverForForceShutdownToFinish) {
 
         if (threadExecutor == null) {

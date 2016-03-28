@@ -68,7 +68,7 @@ public class Driver {
         launchExternalMetricCollectors();
         
         // start the 'output metrics' invoker thread
-        Thread outputMetricsInvokerThread = new Thread(new OutputMetricsInvokerThread(555));
+        Thread outputMetricsInvokerThread = new Thread(new OutputMetricsInvokerThread(ApplicationConfiguration.getOutputInterval()));
         outputMetricsInvokerThread.start();
        
         while(true) {

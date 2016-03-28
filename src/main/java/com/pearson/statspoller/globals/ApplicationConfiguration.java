@@ -8,7 +8,6 @@ import java.util.List;
 import com.pearson.statspoller.internal_metric_collectors.apache_http.ApacheHttpMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
-import com.pearson.statspoller.internal_metric_collectors.linux.ProcessCounter.ProcessCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteOutputModule;

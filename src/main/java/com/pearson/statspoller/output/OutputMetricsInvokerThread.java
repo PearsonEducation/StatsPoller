@@ -12,10 +12,10 @@ public class OutputMetricsInvokerThread extends InvokerThread implements Runnabl
     
     private static final Logger logger = LoggerFactory.getLogger(OutputMetricsInvokerThread.class.getName());
     
-    private final int invocationIntervalInMilliseconds_;
-    private final int threadExecutorShutdownWaitTime_;
+    private final long invocationIntervalInMilliseconds_;
+    private final long threadExecutorShutdownWaitTime_;
     
-    public OutputMetricsInvokerThread(int invocationIntervalInMilliseconds) {
+    public OutputMetricsInvokerThread(long invocationIntervalInMilliseconds) {
         this.invocationIntervalInMilliseconds_ = invocationIntervalInMilliseconds;
         this.threadExecutorShutdownWaitTime_ = 5000;
     }
@@ -43,12 +43,12 @@ public class OutputMetricsInvokerThread extends InvokerThread implements Runnabl
         isShutdown_ = true;
     }
     
-    public int getInvocationIntervalInMilliseconds() {
+    public long getInvocationIntervalInMilliseconds() {
         return invocationIntervalInMilliseconds_;
     }
     
     @Override
-    public int getThreadExecutorShutdownWaitTime() {
+    public long getThreadExecutorShutdownWaitTime() {
         return threadExecutorShutdownWaitTime_;
     }
 

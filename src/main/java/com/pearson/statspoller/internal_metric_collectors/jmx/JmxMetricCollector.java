@@ -459,7 +459,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         if (blacklistObjectNameRegexs_ != null) {
             for (String regex : blacklistObjectNameRegexs_) {
                 Pattern pattern = regexPatterns_.get(regex);
-                Boolean matcherResult = pattern.matcher(objectName).matches();
+                Boolean matcherResult = pattern.matcher(objectName).find();
                 
                 if (matcherResult) {
                     isMetricAllowed = false;
@@ -854,7 +854,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
             try {
                 Pattern pattern = regexPatterns_.get(regex);
-                isMatch = pattern.matcher(metricPath).matches();
+                isMatch = pattern.matcher(metricPath).find();
             }
             catch (Exception e) {
                 logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));

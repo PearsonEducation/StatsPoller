@@ -19,7 +19,8 @@ import org.boon.Pair;
 import org.bson.Document;
 
 /**
- * @author Jeffrey Schmidt
+ * @author Jeffrey Schmidt 
+ * @author Judah Walker
  */
 public class MongoMetricCollector extends InternalCollectorFramework implements Runnable {
     
@@ -91,7 +92,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
             MongoDatabase db = mongoClient.getDatabase("admin");
 
-            //ServerStatus
             Document serverStatus;
             try {
                 serverStatus = db.runCommand(new Document().append("serverStatus", 1));
@@ -108,7 +108,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus"));
             }
 
-            //ReplStatus
             Document replSetStatus = new Document();
             Document isMaster = new Document();
             try {
@@ -131,7 +130,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 }
             }
 
-            //For each db
             Document databasesList = new Document();
             try {
                 databasesList = db.runCommand(new Document().append("listDatabases", 1));
@@ -180,12 +178,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
     }
     
     private List<GraphiteMetric> processDocumentAndAddToMetrics(Document document, String origin) {
-        //Replace all spaces in docs with _ before writing to graphite array
-        //can be Document?
-        //can be int?
-        //can be Long.parseLong(value)?
-        //continue
-        //Ignore any key named "commands"
         
         if ((document == null) || (origin == null)) {
             return new ArrayList<>();
@@ -226,8 +218,8 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 String key = entry.getKey().toString();
 
                 if (entry.getValue() instanceof Document) {
-                    //Ignore commands field.
-                    if (key.equalsIgnoreCase("commands")) {
+                    
+                    if (key.equalsIgnoreCase("commands")) { //Ignore commands field.
                         documentCopy.remove(key);
                         continue;
                     }

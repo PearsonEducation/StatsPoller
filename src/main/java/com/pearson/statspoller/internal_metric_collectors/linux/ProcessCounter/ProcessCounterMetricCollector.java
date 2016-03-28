@@ -140,7 +140,7 @@ public class ProcessCounterMetricCollector extends InternalCollectorFramework im
                         Pattern pattern = regexPatterns_.get(processCounterPrefixAndRegex[1]);
                         if (pattern == null) continue;
                         
-                        boolean isMatch = pattern.matcher(pidCmdLine_SpaceDelimiters).matches();
+                        boolean isMatch = pattern.matcher(pidCmdLine_SpaceDelimiters).find();
                         if (isMatch) {
                             AtomicLong processCount = processCountsByProcessIdentifer.get(processCounterPrefixAndRegex[0]);
                             if (processCount != null) processCount.getAndIncrement();
