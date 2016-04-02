@@ -2,7 +2,9 @@
 
 ## Overview
 
-StatsPoller is an agent-based metric collection & reporting platform. It currently outputs Graphite-formatted metrics & OpenTSDB-formatted metrics. It functions in a similar way to other metric collection agents, such as TCollector, sCollector, collectd, etc. StatsPoller is ideally paired with StatsAgg for alerting, and Graphite or OpenTSDB for metric storage, and Grafana for alerting.
+StatsPoller is an agent-based metric collection & reporting platform. It currently outputs Graphite-formatted metrics & OpenTSDB-formatted metrics. It functions in a similar way to other metric collection agents, such as  [TCollector](https://github.com/OpenTSDB/tcollector), [scollector](http://bosun.org/scollector/), [collectd](https://collectd.org/), etc. StatsPoller is ideally paired with [StatsAgg](https://github.com/PearsonEducation/StatsAgg) for alerting, and [Graphite](https://github.com/graphite-project/) or [OpenTSDB](http://opentsdb.net/) for metric storage, and [Grafana](http://grafana.org/) for dashboarding.
+
+<br>
 
 ## What are StatsPoller's core features?
 
@@ -35,11 +37,54 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 
 ## Why release another metrics poller when there are several good ones already out there?
 
-StatsPoller was originally written at a time when there were few peers on the market. Other tools have emerged then, and many of them are very good at what they do. StatsPoller has served Pearson well & is particularly well suited to monitor Java-based applications, so we figured that we'd just give the market another choice. 
+StatsPoller was originally written at a time when there were few peers on the open-source market. Other tools have emerged then, and many of them are very good at what they do. StatsPoller has served Pearson well & is particularly well suited to monitor Java-based applications, so we figured that we'd just give the market another choice. 
+
+<br>
+
+## Installation
+
+StatsPoller currently supports installation via rpm or via manual installation.
+
+### Installation prerequisites
+
+* Java 1.7 (or newer). Oracle Java is preferred. OpenJDK will also work, but some functionality may be disabled.
+* The expected version of 'java' must be configured as an environment variable for the user that is running StatsPoller.
+* (Linux) Kernel 2.6 or newer
+* (Linux) Several metric collectors depend on the 'proc' filesystem being mounted somewhere (StatsPoller assumes /proc by default)
+
+### RPM installation on Linux (for RedHat, CentOS, etc)
+
+* Instructions coming shortly...
+
+### Manual installation on Linux (may vary on your distro)
+
+* sudo unzip statspoller.zip -d /opt
+* sudo cp /opt/StatsPoller/init.d/statspoller /etc/init.d/statspoller
+* sudo chmod -R 544 /opt/StatsPoller/bin/*
+* sudo chmod 544 /opt/StatsPoller/StatsPoller.jar
+* sudo chmod 755 /etc/init.d/statspoller
+* sudo chkconfig --add statspoller
+
+### Manual installation on Windows
+
+* Instructions coming shortly...
 
 <br>
 
 ## Configuration
+
+After installing StatsPoller, one typically only needs to edit a single configuration file. This file is [application.properties](./conf/application.properties). If you're just looking to use the basic metric collectors (ex- Linux OS), then you may only need to configure one of the 'output modules' (Graphite or OpenTSDB). A full listing of StatsPoller's available configuration options, documentation, and examples can be found at [example_application.properties](./conf/example_application.properties).
+<br>
+JMX configuration can be particularly complicated. Here are some default JMX configurations that may help make setting up JMX metric collectors easier.
+
+<br>
+
+## Thanks to...
+* Grafana : http://grafana.org/
+* Graphite : Orbitz @ https://github.com/graphite-project/
+* OpenTSDB : http://opentsdb.net/
+* Pearson Assessments, a division of Pearson Education: http://www.pearsonassessments.com/
+
 
 
 

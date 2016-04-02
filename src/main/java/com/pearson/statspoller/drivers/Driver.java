@@ -16,6 +16,7 @@ import com.pearson.statspoller.internal_metric_collectors.apache_http.ApacheHttp
 import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxJvmShutdownHook;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.linux.Connections.ConnectionsCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.Cpu.CpuCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.DiskIo.DiskIoCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.FileSystem.FileSystemCollector;
@@ -28,7 +29,6 @@ import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricColle
 import com.pearson.statspoller.utilities.FileIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -165,6 +165,11 @@ public class Driver {
     private static void launchLinuxCollectors() {
         
         // start StatsPoller's built-in linux metric collectors
+        
+        Thread linuxConnectionsCollectorThread = new Thread(new ConnectionsCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
+                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Connections", "./output/linux_connections.out", 
+                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+        threadExecutor_.execute(linuxConnectionsCollectorThread);
         
         Thread linuxCpuCollectorThread = new Thread(new CpuCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
                 ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Cpu", "./output/linux_cpu.out", 

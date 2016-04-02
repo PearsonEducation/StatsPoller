@@ -1,61 +1,40 @@
 #!/bin/bash
 # chkconfig: 35 20 80
-# description: simple daemon wrapper to manage start/stopping of StatsPoller
+# description: simple daemon wrapper to manage start/stopping of statspoller
 
-source /opt/StatsPoller/conf/statspoller.profile
+export process_name="StatsPoller"
+source /opt/$process_name/conf/statspoller.profile
 
 NAME=`basename $0`
+PID=`pgrep -f StatsPoller.jar`
+
 case "$1" in
     start)
-          printf "%-50s" "Starting $NAME..."
-          cd $STATSPOLLER_HOME
-          PID=`pgrep -f StatsPoller`
+          cd /opt/StatsPoller
           if [ -z "$PID" ]; then
-              ( nohup /usr/bin/java $JAVA_OPTS > /dev/null 2>&1 & )
+              (java $JAVA_OPTS > /dev/null 2>&1 &)
           else
-              echo "Already running on PID $PID!"
+              printf "Already running on PID $PID!\n"
               exit 1
           fi
-
           sleep 1
-          PID=`pgrep -f StatsPoller`
-          echo "PID is $PID"
-
-          if [ -z "$PID" ]; then
-              ( nohup /usr/local/bin/java $JAVA_OPTS > /dev/null 2>&1 & )
-          fi
-
-          sleep 1
-          PID=`pgrep -f StatsPoller`
-          echo "PID is $PID"
-
-          if [ -z "$PID" ]; then
-              printf "%s\n" "Failed to start on either Java path."
-          else
-              printf "%s\n" "Ok"
-          fi
           ;;
           status)
-              printf "%-50s" "Checking $NAME..."
-              pgrep -f StatsPoller && echo "Running" || echo "Service not running"
+              ps -fp $PID || echo "Service not running\n"
               ;;
           stop)
-              printf "%-50s" "Stopping $NAME"
-              PID=`pgrep -f StatsPoller`
-              if [ -z "$PID" ]; then
-                  echo "Service not running"
+              if [ -n "$PID" ]; then
+                  kill $PID
               else
-                  pkill -f StatsPoller
-                  sleep 1
-                  echo "Stopped."
+                  printf "Service isn't running\n"
               fi
               ;;
-
           restart)
               $0 stop
+              sleep 5
               $0 start
               ;;
           *)
-              echo "usage: $0 {status|start|stop|restart}"
+              printf "usage: $0 {status|start|stop|restart}\n"
               exit 1
           esac

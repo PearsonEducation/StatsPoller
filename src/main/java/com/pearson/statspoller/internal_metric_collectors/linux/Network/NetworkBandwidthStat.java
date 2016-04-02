@@ -14,13 +14,13 @@ public class NetworkBandwidthStat {
     private static final Logger logger = LoggerFactory.getLogger(NetworkBandwidthStat.class.getName());
 
     private final String interfaceName_;
-    private final long timestamp_;
+    private final long timestampMs_;
     private final BigDecimal rxBytes_;
     private final BigDecimal txBytes_;
     
-    public NetworkBandwidthStat(String interfaceName, long timestamp, String rxBytes, String txBytes) {
+    public NetworkBandwidthStat(String interfaceName, long timestampMs, String rxBytes, String txBytes) {
         this.interfaceName_ = interfaceName;
-        this.timestamp_ = timestamp;
+        this.timestampMs_ = timestampMs;
         this.rxBytes_ = MathUtilities.safeGetBigDecimal(rxBytes);
         this.txBytes_ = MathUtilities.safeGetBigDecimal(txBytes);
     }
@@ -34,8 +34,8 @@ public class NetworkBandwidthStat {
         return interfaceName_;
     }
 
-    public long getTimestamp() {
-        return timestamp_;
+    public long getTimestampMs() {
+        return timestampMs_;
     }
     
     public BigDecimal getRxBytes() {

@@ -56,6 +56,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     // jmx connection variables
     private JMXConnector jmxConnection_ = null;
     private MBeanServerConnection mBeanServerConnection_ = null;
+    private boolean didConnectOnThisInterval_ = false;
     
     // timestamp of the iteration
     private int currentTimestamp_ = -1;
@@ -170,6 +171,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             long routineStartTime = System.currentTimeMillis();
             
             long makeConnectionStartTime = System.currentTimeMillis();
+            didConnectOnThisInterval_ = false;
             boolean isConnected = connect();
             long makeConnectionTimeElapsed = System.currentTimeMillis() - makeConnectionStartTime;
 
@@ -220,8 +222,9 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                 super.outputMetrics(allJmxGraphiteMetricsForOutput, true);
                 
                 long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
+                long adjustedRoutineTimeElasped = (didConnectOnThisInterval_) ? (routineTimeElapsed - sleepAfterConnectTime_) : routineTimeElapsed;
                 
-                if (routineTimeElapsed >= 10000) {
+                if (adjustedRoutineTimeElasped >= 10000) {
                     logger.warn(("JMX routine excessive runtime. " + 
                             "ConnectionTime=" + makeConnectionTimeElapsed +
                             ", QueryMBeansTime=" + queryMBeansTimeElapsed +
@@ -258,7 +261,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         for (int i = 0; i < numConnectionAttemptRetries_; i++) {
             try {
                 if (jmxConnection_ == null) {
-                    jmxConnection_ = makeJmxConnection(host_, port_, jmxServiceUrl_, username_, password_);
+                    jmxConnection_ = makeJmxConnection();
                     
                     if ((jmxConnection_ != null) && sleepAfterConnectTime_ > 0) {
                         logger.info("JMX connection established. Sleeping for " + sleepAfterConnectTime_ + "ms");
@@ -291,15 +294,15 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         return false;
     }
     
-    private JMXConnector makeJmxConnection(String host, int port, String jmxServiceUrl, String username, String password) {
+    private JMXConnector makeJmxConnection() {
 
-        if ((jmxServiceUrl == null) || jmxServiceUrl.isEmpty()) {
-            if ((host == null) || host.isEmpty()) {
+        if ((jmxServiceUrl_ == null) || jmxServiceUrl_.isEmpty()) {
+            if ((host_ == null) || host_.isEmpty()) {
                 logger.error("JMX host cannot be null or empty");
                 return null;
             }
 
-            if ((port > 65535) || (port < 0)) {
+            if ((port_ > 65535) || (port_ < 0)) {
                 logger.error("JMX port is invalid");
                 return null;
             }
@@ -307,8 +310,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
         HashMap credentialsMap = new HashMap();
         String[] credentials = new String[2];
-        credentials[0] = username;
-        credentials[1] = password;
+        credentials[0] = username_;
+        credentials[1] = password_;
         credentialsMap.put("jmx.remote.credentials", credentials);
 
         JMXConnector jmxConnection = null;
@@ -316,22 +319,19 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         try {
             JMXServiceURL connectionJmxServiceUrl;
             
-            if ((jmxServiceUrl == null) || jmxServiceUrl.isEmpty()) connectionJmxServiceUrl = new JMXServiceURL("rmi", "", 0, "/jndi/rmi://" + host + ":" + port + "/jmxrmi");
-            else connectionJmxServiceUrl = new JMXServiceURL(jmxServiceUrl);
+            if ((jmxServiceUrl_ == null) || jmxServiceUrl_.isEmpty()) connectionJmxServiceUrl = new JMXServiceURL("rmi", "", 0, "/jndi/rmi://" + host_ + ":" + port_ + "/jmxrmi");
+            else connectionJmxServiceUrl = new JMXServiceURL(jmxServiceUrl_);
             
             jmxConnection = JMXConnectorFactory.newJMXConnector(connectionJmxServiceUrl, credentialsMap);
             jmxConnection.connect(); 
+            didConnectOnThisInterval_ = true;
         }
         catch (Exception e) {
-             if ((jmxServiceUrl == null) || jmxServiceUrl.isEmpty()) {
-                 logger.error("Error establishing JMX connection to JVM. Host=" + host + ", Port=" + port + ", Username=" + username);
-             }
-             else {
-                 logger.error("Error establishing JMX connection to JVM. Username=" + username + ", ServiceUrl=" + jmxServiceUrl);
-             }
+            if ((jmxServiceUrl_ == null) || jmxServiceUrl_.isEmpty()) logger.error("Error establishing JMX connection to JVM. Host=" + host_ + ", Port=" + port_ + ", Username=" + username_);
+            else logger.error("Error establishing JMX connection to JVM. Username=" + username_ + ", ServiceUrl=" + jmxServiceUrl_);
             
             try {
-                jmxConnection_.close();
+                close();
             }
             catch (Exception e2) {}
             
@@ -350,7 +350,9 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         if (jmxConnection_ != null) {
             try {
                 jmxConnection_.close();
-                logger.info("Closed JMX connection");
+                
+                if ((jmxServiceUrl_ == null) || jmxServiceUrl_.isEmpty()) logger.error("Closed JMX connection. Host=" + host_ + ", Port=" + port_ + ", Username=" + username_);
+                else logger.error("Closed JMX connection. Username=" + username_ + ", ServiceUrl=" + jmxServiceUrl_);
             }
             catch (Exception e) {
                 logger.error("Error closing JMX connection. " + e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));

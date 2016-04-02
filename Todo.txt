@@ -1,6 +1,5 @@
 * Fix-- Setting this value to 0 will cause the JMX metric collector to query for the full list exactly once (on the first iteration).
 * always_check_output_files -- auto mode
 * ProcessCounter for Windows
-* Finish MySQL poller
-* SS Linux poller
 * Windows prefix on Windows metric collectors
+* MySQL -- disk stats? processlist stats?

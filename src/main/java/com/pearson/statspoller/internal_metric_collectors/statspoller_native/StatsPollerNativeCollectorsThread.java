@@ -299,27 +299,27 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
                 try {
                     long freeBytes_Long = fileStore.getUnallocatedSpace();
                     if (freeBytes_Long > 0) {
-                        GraphiteMetric freeBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Free-Bytes", new BigDecimal(freeBytes_Long), timestamp);
+                        GraphiteMetric freeBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Free-Bytes", new BigDecimal(freeBytes_Long), timestamp);
                         BigDecimal freeGigabytes_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal((double) freeBytes_Long / (double) 1073741824), SCALE, ROUNDING_MODE);
-                        GraphiteMetric freeGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Free-GB", freeGigabytes_BigDecimal, timestamp);
+                        GraphiteMetric freeGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Free-GB", freeGigabytes_BigDecimal, timestamp);
                         graphiteMetrics.add(freeBytes_Graphite);
                         graphiteMetrics.add(freeGigabytes_Graphite);
                     }
 
                     long totalBytes_Long = fileStore.getTotalSpace();
                     if (totalBytes_Long > 0) {
-                        GraphiteMetric totalBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Total-Bytes", new BigDecimal(totalBytes_Long), timestamp);
+                        GraphiteMetric totalBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Total-Bytes", new BigDecimal(totalBytes_Long), timestamp);
                         BigDecimal totalGigabytes_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal((double) totalBytes_Long / (double) 1073741824), SCALE, ROUNDING_MODE);
-                        GraphiteMetric totalGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Total-GB", totalGigabytes_BigDecimal, timestamp);
+                        GraphiteMetric totalGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Total-GB", totalGigabytes_BigDecimal, timestamp);
                         graphiteMetrics.add(totalBytes_Graphite);
                         graphiteMetrics.add(totalGigabytes_Graphite);
                     }
 
                     long usedBytes_Long = totalBytes_Long - freeBytes_Long;
                     if (usedBytes_Long > 0) {
-                        GraphiteMetric usedBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Used-Bytes", new BigDecimal(usedBytes_Long), timestamp);
+                        GraphiteMetric usedBytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Used-Bytes", new BigDecimal(usedBytes_Long), timestamp);
                         BigDecimal usedGigabytes_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal((double) usedBytes_Long / (double) 1073741824), SCALE, ROUNDING_MODE);
-                        GraphiteMetric usedGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Used-GB", usedGigabytes_BigDecimal, timestamp);
+                        GraphiteMetric usedGigabytes_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Used-GB", usedGigabytes_BigDecimal, timestamp);
                         graphiteMetrics.add(usedBytes_Graphite);
                         graphiteMetrics.add(usedGigabytes_Graphite);
                     }
@@ -327,7 +327,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
                     if ((totalBytes_Long > 0) && (usedBytes_Long > 0)) {
                         double usedPct_Double = ((double) ((double) usedBytes_Long / (double) totalBytes_Long) * 100);
                         BigDecimal usedPct_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal(usedPct_Double), SCALE, ROUNDING_MODE);
-                        GraphiteMetric usedPct_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.name() + "." + "Used-Pct", usedPct_BigDecimal, timestamp);
+                        GraphiteMetric usedPct_Graphite = new GraphiteMetric("DiskSpace" + "." + fileStore.toString() + "." + "Used-Pct", usedPct_BigDecimal, timestamp);
                         graphiteMetrics.add(usedPct_Graphite);   
                     }
                 }

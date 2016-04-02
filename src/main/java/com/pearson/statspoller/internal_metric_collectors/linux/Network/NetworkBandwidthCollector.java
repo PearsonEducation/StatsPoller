@@ -128,7 +128,7 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
         Map<String,NetworkBandwidthStat> networkStats = new HashMap<>();
 
         try {
-            long currentTimestampInSeconds = System.currentTimeMillis();
+            long currentTimestampInMilliseconds = System.currentTimeMillis();
             String procNetDev= FileIo.readFileToString(procFileSystemLocation + "/net/dev");
             if (procNetDev == null) return networkStats;
 
@@ -157,7 +157,7 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
                     String rxBytes = splitFields[1].trim();
                     String txBytes = splitFields[9].trim();
                     if (!interfaceName.isEmpty() && !rxBytes.isEmpty() && !txBytes.isEmpty() && !interfaceName.equals("lo")) {
-                        NetworkBandwidthStat networkBandwidthStat = new NetworkBandwidthStat(interfaceName, currentTimestampInSeconds, rxBytes, txBytes);
+                        NetworkBandwidthStat networkBandwidthStat = new NetworkBandwidthStat(interfaceName, currentTimestampInMilliseconds, rxBytes, txBytes);
                         networkStats.put(interfaceName, networkBandwidthStat);
                     }
                     
@@ -195,8 +195,8 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
         List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
          
         try {
-            int currentTimestampInSeconds = (int) (networkStat_Current.getTimestamp() / 1000);
-            long timeElapsedBetweenSamplesInSeconds = ((networkStat_Current.getTimestamp() - networkStat_Previous.getTimestamp()) / 1000);
+            int currentTimestampInSeconds = (int) (networkStat_Current.getTimestampMs() / 1000);
+            long timeElapsedBetweenSamplesInSeconds = ((networkStat_Current.getTimestampMs() - networkStat_Previous.getTimestampMs()) / 1000);
             BigDecimal timeElapsedBetweenSamplesInSeconds_BigDecimal = new BigDecimal(timeElapsedBetweenSamplesInSeconds);
 
             if (timeElapsedBetweenSamplesInSeconds_BigDecimal.compareTo(BigDecimal.ZERO) <= 0) return graphiteMetrics;

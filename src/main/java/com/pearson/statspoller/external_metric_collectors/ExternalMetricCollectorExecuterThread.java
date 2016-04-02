@@ -1,5 +1,6 @@
 package com.pearson.statspoller.external_metric_collectors;
 
+import com.pearson.statspoller.globals.ApplicationConfiguration;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
 import org.slf4j.Logger;
@@ -32,7 +33,8 @@ public class ExternalMetricCollectorExecuterThread implements Runnable {
                 }
             }
             catch (Exception e) {
-                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                if (ApplicationConfiguration.isLegacyMode()) logger.debug(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                else logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
             }
             
             long elaspedTime = System.currentTimeMillis() - startTime;

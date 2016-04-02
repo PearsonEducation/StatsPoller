@@ -5,6 +5,7 @@ import com.pearson.statspoller.globals.GlobalVariables;
 import java.util.List;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.utilities.FileIo;
+import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -44,11 +45,18 @@ public abstract class InternalCollectorFramework {
         
         if (outputToServer) {
             for (GraphiteMetric graphiteMetric : graphiteMetrics) {
-                String graphiteMetricPathWithPrefix = fullInternalCollectorMetricPrefix_ + graphiteMetric.getMetricPath();
-                GraphiteMetric outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathWithPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
-                
-                outputGraphiteMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
-                GlobalVariables.graphiteMetrics.put(outputGraphiteMetric.getHashKey(), outputGraphiteMetric);
+                try {
+                    if (graphiteMetric == null) continue;
+
+                    String graphiteMetricPathWithPrefix = fullInternalCollectorMetricPrefix_ + graphiteMetric.getMetricPath();
+                    GraphiteMetric outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathWithPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
+
+                    outputGraphiteMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
+                    GlobalVariables.graphiteMetrics.put(outputGraphiteMetric.getHashKey(), outputGraphiteMetric);
+                } 
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
         }
         
@@ -67,17 +75,17 @@ public abstract class InternalCollectorFramework {
         
         boolean isSuccessfulWrite;
         
-        for (int i = 0; i <= NUM_FILE_WRITE_RETRIES; i++) {
-            isSuccessfulWrite = FileIo.saveStringToFile(outputFilePathAndFilename_, output);
-            
-            if (isSuccessfulWrite) {
-                break;
-            }
-            else {
-                Threads.sleepMilliseconds(DELAY_BETWEEN_WRITE_RETRIES_IN_MS);
+        try {
+            for (int i = 0; i <= NUM_FILE_WRITE_RETRIES; i++) {
+                isSuccessfulWrite = FileIo.saveStringToFile(outputFilePathAndFilename_, output);
+
+                if (isSuccessfulWrite) break;
+                else Threads.sleepMilliseconds(DELAY_BETWEEN_WRITE_RETRIES_IN_MS);
             }
         }
-        
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
     }
     
     private String buildGraphiteMetricsFile(List<GraphiteMetric> graphiteMetrics, boolean stripPrefix, String metricPrefix) {
@@ -89,14 +97,21 @@ public abstract class InternalCollectorFramework {
         StringBuilder stringBuilder = new StringBuilder();
         
         for (GraphiteMetric graphiteMetric : graphiteMetrics) {
-            GraphiteMetric outputGraphiteMetric = graphiteMetric;
-            
-            if (stripPrefix && (metricPrefix != null)) {
-                String graphiteMetricPathNoPrefix = StringUtils.removeStart(graphiteMetric.getMetricPath(), metricPrefix);
-                outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathNoPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
+            try {
+                if (graphiteMetric == null) continue;
+
+                GraphiteMetric outputGraphiteMetric = graphiteMetric;
+
+                if (stripPrefix && (metricPrefix != null)) {
+                    String graphiteMetricPathNoPrefix = StringUtils.removeStart(graphiteMetric.getMetricPath(), metricPrefix);
+                    outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathNoPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
+                }
+
+                stringBuilder.append(outputGraphiteMetric.getGraphiteFormatString(true, true)).append("\n");
             }
-            
-            stringBuilder.append(outputGraphiteMetric.getGraphiteFormatString(true, true)).append("\n");
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
         }
         
         return stringBuilder.toString();

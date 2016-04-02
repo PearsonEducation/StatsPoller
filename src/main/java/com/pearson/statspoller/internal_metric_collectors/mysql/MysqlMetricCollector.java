@@ -379,13 +379,14 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         }
         
         Statement statement = null;
-        
+        ResultSet resultSet = null;
+         
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
             String query = "select * from information_schema.GLOBAL_STATUS";
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
+            resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
             
             Map<String,String> globalStatus = new HashMap<>();
@@ -407,7 +408,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             return null;
         }
         finally {
-            DatabaseUtils.cleanup(statement);
+            DatabaseUtils.cleanup(statement, resultSet);
         } 
         
     }
@@ -419,13 +420,14 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         }
         
         Statement statement = null;
-        
+        ResultSet resultSet = null;
+
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
             String query = "select * from information_schema.GLOBAL_VARIABLES";
             statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
+            resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
             
             Map<String,String> globalStatuses = new HashMap<>();
@@ -447,7 +449,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             return null;
         }
         finally {
-            DatabaseUtils.cleanup(statement);
+            DatabaseUtils.cleanup(statement, resultSet);
         } 
         
     }

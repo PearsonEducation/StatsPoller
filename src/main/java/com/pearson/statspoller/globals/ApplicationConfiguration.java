@@ -875,6 +875,10 @@ public class ApplicationConfiguration {
         return outputInternalMetricsToDisk_;
     }
 
+    public static boolean isLegacyMode() {
+        return legacyMode_;
+    }
+
     public static List<GraphiteOutputModule> getGraphiteOutputModules() {
         if (graphiteOutputModules_ == null) return null;
         else return new ArrayList<>(graphiteOutputModules_);
