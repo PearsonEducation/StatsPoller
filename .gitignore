@@ -8,4 +8,3 @@
 !/logs/ignore.me
 /output/*
 !/output/ignore.me
-/mysql_tx_Iso/target/
