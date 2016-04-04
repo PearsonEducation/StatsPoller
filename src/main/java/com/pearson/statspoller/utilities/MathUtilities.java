@@ -6,6 +6,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,6 +140,31 @@ public class MathUtilities {
         }
         else {
             return number.setScale(scale, roundingMode);
+        }
+    }
+    
+    public static BigDecimal computePopulationStandardDeviationOfBigDecimals(List<BigDecimal> numbers) {
+        
+        if ((numbers == null) || numbers.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            double[] doublesArray = new double[numbers.size()];
+
+            for (int i = 0; i < doublesArray.length; i++) {
+                doublesArray[i] = numbers.get(i).doubleValue();
+            }
+
+            StandardDeviation standardDeviation = new StandardDeviation();
+            standardDeviation.setBiasCorrected(false);
+            BigDecimal standardDeviationResult = new BigDecimal(standardDeviation.evaluate(doublesArray));
+
+            return standardDeviationResult;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            return null;
         }
     }
     

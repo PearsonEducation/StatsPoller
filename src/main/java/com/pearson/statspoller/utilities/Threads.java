@@ -124,7 +124,7 @@ public class Threads {
         }
     }
     
-    public static void threadExecutorFixedPool(List threads, int nThreadPoolSize, int timeoutTime, TimeUnit timeoutTimeunit) {
+    public static void threadExecutorFixedPool(List threads, int nThreadPoolSize, long timeoutTime, TimeUnit timeoutTimeunit) {
         
         if ((threads == null) || threads.isEmpty() ||(nThreadPoolSize <= 0) || (timeoutTime <= 0) || (timeoutTimeunit == null)) {
             return;
@@ -161,7 +161,7 @@ public class Threads {
 
     }
     
-    public static void threadExecutorCachedPool(List threads, int timeoutTime, TimeUnit timeoutTimeunit) {
+    public static void threadExecutorCachedPool(List threads, long timeoutTime, TimeUnit timeoutTimeunit) {
         
         if ((threads == null) || threads.isEmpty() || (timeoutTime <= 0) || (timeoutTimeunit == null)) {
             return;
