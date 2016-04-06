@@ -59,7 +59,7 @@ public class ApacheHttpMetricCollector extends InternalCollectorFramework implem
                 graphiteMetrics.addAll(parseApacheServerStatusMachine(serverStatusRaw, serverStatusDownloadTime));
             }
             
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
                     
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

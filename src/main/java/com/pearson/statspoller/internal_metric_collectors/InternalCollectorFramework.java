@@ -4,9 +4,11 @@ import com.pearson.statspoller.globals.ApplicationConfiguration;
 import com.pearson.statspoller.globals.GlobalVariables;
 import java.util.List;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
+import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.utilities.FileIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
+import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,27 +43,93 @@ public abstract class InternalCollectorFramework {
         this.fullInternalCollectorMetricPrefix_ = createFullInternalCollectorMetricPrefix();
     }
     
-    public void outputMetrics(List<GraphiteMetric> graphiteMetrics, boolean outputToServer) {
+    public void outputGraphiteMetrics(List<GraphiteMetric> graphiteMetrics) {
         
-        if (outputToServer) {
-            for (GraphiteMetric graphiteMetric : graphiteMetrics) {
-                try {
-                    if (graphiteMetric == null) continue;
+        if (graphiteMetrics == null) return;
+        
+        for (GraphiteMetric graphiteMetric : graphiteMetrics) {
+            try {
+                if (graphiteMetric == null) continue;
 
-                    String graphiteMetricPathWithPrefix = fullInternalCollectorMetricPrefix_ + graphiteMetric.getMetricPath();
-                    GraphiteMetric outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathWithPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
+                String graphiteMetricPathWithPrefix = fullInternalCollectorMetricPrefix_ + graphiteMetric.getMetricPath();
+                GraphiteMetric outputGraphiteMetric = new GraphiteMetric(graphiteMetricPathWithPrefix, graphiteMetric.getMetricValue(), graphiteMetric.getMetricTimestampInSeconds());
 
-                    outputGraphiteMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
-                    GlobalVariables.graphiteMetrics.put(outputGraphiteMetric.getHashKey(), outputGraphiteMetric);
-                } 
-                catch (Exception e) {
-                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-                }
+                outputGraphiteMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
+                GlobalVariables.graphiteMetrics.put(outputGraphiteMetric.getHashKey(), outputGraphiteMetric);
+            } 
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
             }
         }
         
         if (writeOutputFiles_) {
             String outputString = buildGraphiteMetricsFile(graphiteMetrics, true, fullInternalCollectorMetricPrefix_);
+            writeGraphiteMetricsToFile(outputString);
+        }
+        
+    }
+    
+    public void outputOpentsdbMetricsAsGraphiteMetrics(List<OpenTsdbMetric> openTsdbMetrics) {
+
+        if (openTsdbMetrics == null) return;
+        
+        for (OpenTsdbMetric openTsdbMetric : openTsdbMetrics) {
+            try {
+                if (openTsdbMetric == null) continue;
+
+                String metricNameWithPrefix = fullInternalCollectorMetricPrefix_ + openTsdbMetric.getMetric();
+                GraphiteMetric outputGraphiteMetric = new GraphiteMetric(metricNameWithPrefix, openTsdbMetric.getMetricValue(), openTsdbMetric.getMetricTimestampInSeconds());
+
+                outputGraphiteMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
+                GlobalVariables.graphiteMetrics.put(outputGraphiteMetric.getHashKey(), outputGraphiteMetric);
+            } 
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
+        }
+        
+        if (writeOutputFiles_) {
+            List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
+            
+            for (OpenTsdbMetric openTsdbMetric : openTsdbMetrics) {
+                try {
+                    if (openTsdbMetric == null) continue;
+                    GraphiteMetric graphiteMetric = new GraphiteMetric(openTsdbMetric.getMetric(), openTsdbMetric.getMetricValue(), openTsdbMetric.getMetricTimestampInSeconds());
+                    graphiteMetrics.add(graphiteMetric);
+                } 
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
+            }
+            
+            String outputString = buildGraphiteMetricsFile(graphiteMetrics, true, fullInternalCollectorMetricPrefix_);
+            writeGraphiteMetricsToFile(outputString);
+        }
+        
+    }
+    
+    public void outputOpenTsdbMetrics(List<OpenTsdbMetric> openTsdbMetrics) {
+        
+        if (openTsdbMetrics == null) return;
+        
+        for (OpenTsdbMetric openTsdbMetric : openTsdbMetrics) {
+            try {
+                if (openTsdbMetric == null) continue;
+
+                String metricNameWithPrefix = fullInternalCollectorMetricPrefix_ + openTsdbMetric.getMetric();
+                OpenTsdbMetric outputOpenTsdbMetric = new OpenTsdbMetric(metricNameWithPrefix, openTsdbMetric.getMetricTimestampInMilliseconds(), 
+                        openTsdbMetric.getMetricValue(), openTsdbMetric.getTags());
+
+                outputOpenTsdbMetric.setHashKey(GlobalVariables.metricHashKeyGenerator.incrementAndGet());
+                GlobalVariables.openTsdbMetrics.put(outputOpenTsdbMetric.getHashKey(), outputOpenTsdbMetric);
+            } 
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
+        }
+        
+        if (writeOutputFiles_) {
+            String outputString = buildOpenTsdbMetricsFile(openTsdbMetrics, true, fullInternalCollectorMetricPrefix_);
             writeGraphiteMetricsToFile(outputString);
         }
         
@@ -117,6 +185,36 @@ public abstract class InternalCollectorFramework {
         return stringBuilder.toString();
     }
     
+    private String buildOpenTsdbMetricsFile(List<OpenTsdbMetric> openTsdbMetrics, boolean stripPrefix, String metricPrefix) {
+        
+        if ((openTsdbMetrics == null) || openTsdbMetrics.isEmpty()) {
+            return null;
+        }
+        
+        StringBuilder stringBuilder = new StringBuilder();
+        
+        for (OpenTsdbMetric openTsdbMetric : openTsdbMetrics) {
+            try {
+                if (openTsdbMetric == null) continue;
+
+                OpenTsdbMetric outputOpenTsdbMetric = openTsdbMetric;
+
+                if (stripPrefix && (metricPrefix != null)) {
+                    String openTsdbMetricNameNoPrefix = StringUtils.removeStart(openTsdbMetric.getMetric(), metricPrefix);
+                    outputOpenTsdbMetric = new OpenTsdbMetric(openTsdbMetricNameNoPrefix, openTsdbMetric.getMetricTimestampInMilliseconds(), 
+                            openTsdbMetric.getMetricValue(), openTsdbMetric.getTags());
+                }
+
+                stringBuilder.append(outputOpenTsdbMetric.getOpenTsdbTelnetFormatString(true)).append("\n");
+            }
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
+        }
+        
+        return stringBuilder.toString();
+    }
+    
     /*
     returns GlobalMetricPrefix.CollectorMetricPrefix.
     */
@@ -157,5 +255,5 @@ public abstract class InternalCollectorFramework {
     protected String getLinuxSysFileSystemLocation() {
         return linuxSysFileSystemLocation_;
     }
-
+    
 }

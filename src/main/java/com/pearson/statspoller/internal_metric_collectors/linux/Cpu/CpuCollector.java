@@ -41,7 +41,7 @@ public class CpuCollector extends InternalCollectorFramework implements Runnable
             List<GraphiteMetric> graphiteMetrics = getCpuMetrics();
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

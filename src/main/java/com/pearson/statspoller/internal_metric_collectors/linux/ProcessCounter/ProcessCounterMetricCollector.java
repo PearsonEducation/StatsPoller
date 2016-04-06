@@ -55,7 +55,7 @@ public class ProcessCounterMetricCollector extends InternalCollectorFramework im
             List<GraphiteMetric> graphiteMetrics = createGraphiteMetrics(processCountsByProcessIdentifer, currentTimestampInSeconds);
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

@@ -182,7 +182,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                 GraphiteMetric isAvailable = createGraphiteMetric("Availability.Available", BigDecimal.ZERO, currentTimestamp_);
                 allJmxGraphiteMetricsForOutput.add(isAvailable);
                 
-                super.outputMetrics(allJmxGraphiteMetricsForOutput, true);
+                super.outputGraphiteMetrics(allJmxGraphiteMetricsForOutput);
                 
                 long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
                 
@@ -219,7 +219,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                 long fetchDerivedMetricAttributesTimeElapsed = System.currentTimeMillis() - fetchDerivedMetricAttributesStartTime;
                 logger.debug("JMX - End Fetch Derived Attributes. TimeElapsed=" + fetchDerivedMetricAttributesTimeElapsed);
 
-                super.outputMetrics(allJmxGraphiteMetricsForOutput, true);
+                super.outputGraphiteMetrics(allJmxGraphiteMetricsForOutput);
                 
                 long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
                 long adjustedRoutineTimeElasped = (didConnectOnThisInterval_) ? (routineTimeElapsed - sleepAfterConnectTime_) : routineTimeElapsed;

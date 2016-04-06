@@ -46,7 +46,7 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
             List<GraphiteMetric> graphiteMetrics = getFileCountMetrics();
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

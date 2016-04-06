@@ -49,7 +49,7 @@ public class FileSystemCollector extends InternalCollectorFramework implements R
             graphiteMetrics.addAll(getDiskInodeMetrics());
             
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

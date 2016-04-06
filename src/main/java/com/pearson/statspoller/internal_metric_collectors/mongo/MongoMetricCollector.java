@@ -49,7 +49,7 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
             
             List<GraphiteMetric> graphiteMetrics = getMongoMetrics();
             
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

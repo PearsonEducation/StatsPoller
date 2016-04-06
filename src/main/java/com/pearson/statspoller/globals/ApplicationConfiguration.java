@@ -10,8 +10,10 @@ import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCount
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
+import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteOutputModule;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbHttpOutputModule;
+import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTelnetOutputModule;
 import com.pearson.statspoller.utilities.HierarchicalIniConfigurationWrapper;
 import com.pearson.statspoller.utilities.StackTrace;
@@ -816,10 +818,17 @@ public class ApplicationConfiguration {
 
             String mysqlOutputFileValue = "./output/" + "mysql_" + mysqlMetricPrefixValue + ".out";
             
+            List<OpenTsdbTag> openTsdbTags = new ArrayList<>();
+            String graphiteFriendlyHost = GraphiteMetric.getGraphiteSanitizedString(mysqlHostValue, true, true);
+            String graphiteFriendlyPort = GraphiteMetric.getGraphiteSanitizedString(Integer.toString(mysqlPortValue), true, true);
+            openTsdbTags.add(new OpenTsdbTag("Host=" + graphiteFriendlyHost));
+            openTsdbTags.add(new OpenTsdbTag("Port=" + graphiteFriendlyPort));
+            
             if (mysqlEnabledValue && (mysqlHostValue != null) && (mysqlPortValue != -1)) {
                 MysqlMetricCollector mysqlMetricCollector = new MysqlMetricCollector(mysqlEnabledValue, 
                         mysqlCollectionIntervalValue_Long, mysqlMetricPrefixValue, mysqlOutputFileValue, outputInternalMetricsToDisk_,
-                        mysqlHostValue, mysqlPortValue, mysqlUsernameValue, mysqlPasswordValue, mysqlJdbcValue);
+                        mysqlHostValue, mysqlPortValue, mysqlUsernameValue, mysqlPasswordValue, mysqlJdbcValue, 
+                        openTsdbTags);
                
                 return mysqlMetricCollector;
             }

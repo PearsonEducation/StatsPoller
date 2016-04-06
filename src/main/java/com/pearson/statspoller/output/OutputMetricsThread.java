@@ -92,7 +92,7 @@ public class OutputMetricsThread implements Runnable {
                 if (!openTsdbTelnetOutputModule.isOutputEnabled()) continue;
                 
                 SendMetricsToOpenTsdbThread sendMetricsToOpenTsdbThread = new SendMetricsToOpenTsdbThread(openTsdbMetrics, 
-                        openTsdbTelnetOutputModule.isSanitizeMetrics(), "Hostname", ApplicationConfiguration.getHostname(),
+                        openTsdbTelnetOutputModule.isSanitizeMetrics(), "SP_Host", ApplicationConfiguration.getHostname(),
                         openTsdbTelnetOutputModule.getHost(), openTsdbTelnetOutputModule.getPort(), 
                         5000, openTsdbTelnetOutputModule.getNumSendRetryAttempts(), threadId);
 
@@ -122,7 +122,7 @@ public class OutputMetricsThread implements Runnable {
                 if (!openTsdbHttpOutputModule.isOutputEnabled()) continue;
                       
                 SendMetricsToOpenTsdbThread sendMetricsToOpenTsdbThread = new SendMetricsToOpenTsdbThread(openTsdbMetrics, 
-                        openTsdbHttpOutputModule.isSanitizeMetrics(), "Hostname", ApplicationConfiguration.getHostname(),
+                        openTsdbHttpOutputModule.isSanitizeMetrics(), "SP_Host", ApplicationConfiguration.getHostname(),
                         openTsdbHttpOutputModule.getUrl(), 5000, 5000, openTsdbHttpOutputModule.getNumSendRetryAttempts(), openTsdbHttpOutputModule.getMaxMetricsPerMessage(), 
                         threadId);
 

@@ -35,6 +35,28 @@ public class OpenTsdbMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
     private String metricKey_ = null;
     private final int metricLength_;  // 'metric' refers to the OpenTSDB 'metric name' 
 
+    public OpenTsdbMetric(String metric, long metricTimestampInMilliseconds, BigDecimal metricValue, List<OpenTsdbTag> tags) {
+        this.metricTimestamp_ = metricTimestampInMilliseconds;
+        this.metricValue_ = metricValue;
+        this.isTimestampInMilliseconds_ = true;
+        this.metricReceivedTimestampInMilliseconds_ = metricTimestampInMilliseconds;
+        this.metricKey_ = createAndGetMetricKey(metric, tags);
+        
+        if (metric != null) this.metricLength_ = metric.length();
+        else this.metricLength_ = -1;
+    }
+    
+    public OpenTsdbMetric(String metric, int metricTimestampInSeconds, BigDecimal metricValue, List<OpenTsdbTag> tags) {
+        this.metricTimestamp_ = metricTimestampInSeconds;
+        this.metricValue_ = metricValue;
+        this.isTimestampInMilliseconds_ = false;
+        this.metricReceivedTimestampInMilliseconds_ = metricTimestampInSeconds * 1000;
+        this.metricKey_ = createAndGetMetricKey(metric, tags);
+        
+        if (metric != null) this.metricLength_ = metric.length();
+        else this.metricLength_ = -1;
+    }
+    
     public OpenTsdbMetric(String metric, long metricTimestamp, BigDecimal metricValue, List<OpenTsdbTag> tags, 
             boolean isTimestampInMilliseconds, long metricReceivedTimestampInMilliseconds) {
         this.metricTimestamp_ = metricTimestamp;
@@ -146,15 +168,24 @@ public class OpenTsdbMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
         stringBuilder.append(metric).append(" ").append(metricTimestamp_).append(" ").append(getMetricValueString()).append(" ");
 
         List<OpenTsdbTag> openTsdbTags = getMetricTagsFromMetricKey();
-        if ((openTsdbTags != null) && (defaultOpenTsdbTagKey != null)) openTsdbTags.add(new OpenTsdbTag(defaultOpenTsdbTagKey + "=" + defaultOpenTsdbTagValue));
+        List<OpenTsdbTag> openTsdbTagsPlusDefaultTag = null;
+        if (openTsdbTags != null) openTsdbTagsPlusDefaultTag = new ArrayList<>(openTsdbTags);
         
-        if (openTsdbTags != null) {
-            for (int i = 0; i < openTsdbTags.size(); i++) {
-                String tagKey = sanitizeMetric ? getOpenTsdbSanitizedString(openTsdbTags.get(i).getTagKey()) : openTsdbTags.get(i).getTagKey();
-                String tagValue = sanitizeMetric ? getOpenTsdbSanitizedString(openTsdbTags.get(i).getTagValue()) : openTsdbTags.get(i).getTagValue();
+        if ((openTsdbTags != null) && (defaultOpenTsdbTagKey != null) && (defaultOpenTsdbTagValue != null) && (openTsdbTagsPlusDefaultTag != null)) {
+            for (OpenTsdbTag openTsdbTag : openTsdbTags) {
+                if ((openTsdbTag != null) && !openTsdbTag.getTagKey().equals(defaultOpenTsdbTagKey)) {
+                    openTsdbTagsPlusDefaultTag.add(new OpenTsdbTag(defaultOpenTsdbTagKey + "=" + defaultOpenTsdbTagValue));
+                }
+            }
+        }
+        
+        if (openTsdbTagsPlusDefaultTag != null) {
+            for (int i = 0; i < openTsdbTagsPlusDefaultTag.size(); i++) {
+                String tagKey = sanitizeMetric ? getOpenTsdbSanitizedString(openTsdbTagsPlusDefaultTag.get(i).getTagKey()) : openTsdbTagsPlusDefaultTag.get(i).getTagKey();
+                String tagValue = sanitizeMetric ? getOpenTsdbSanitizedString(openTsdbTagsPlusDefaultTag.get(i).getTagValue()) : openTsdbTagsPlusDefaultTag.get(i).getTagValue();
 
                 stringBuilder.append(tagKey).append('=').append(tagValue);
-                if ((i + 1) != openTsdbTags.size()) stringBuilder.append(" ");
+                if ((i + 1) != openTsdbTagsPlusDefaultTag.size()) stringBuilder.append(" ");
             }
         }
         
@@ -170,9 +201,19 @@ public class OpenTsdbMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
     public String getOpenTsdbJsonFormatString(boolean sanitizeMetric, String defaultOpenTsdbTagKey, String defaultOpenTsdbTagValue) {
                 
         String metric = sanitizeMetric ? getOpenTsdbSanitizedString(getMetric()) : getMetric();
-        List<OpenTsdbTag> openTsdbTags = getMetricTagsFromMetricKey();
-        if ((openTsdbTags != null) && (defaultOpenTsdbTagKey != null)) openTsdbTags.add(new OpenTsdbTag(defaultOpenTsdbTagKey + "=" + defaultOpenTsdbTagValue));
 
+        List<OpenTsdbTag> openTsdbTags = getMetricTagsFromMetricKey();
+        List<OpenTsdbTag> openTsdbTagsPlusDefaultTag = null;
+        if (openTsdbTags != null) openTsdbTagsPlusDefaultTag = new ArrayList<>(openTsdbTags);
+        
+        if ((openTsdbTags != null) && (defaultOpenTsdbTagKey != null) && (defaultOpenTsdbTagValue != null) && (openTsdbTagsPlusDefaultTag != null)) {
+            for (OpenTsdbTag openTsdbTag : openTsdbTags) {
+                if ((openTsdbTag != null) && !openTsdbTag.getTagKey().equals(defaultOpenTsdbTagKey)) {
+                    openTsdbTagsPlusDefaultTag.add(new OpenTsdbTag(defaultOpenTsdbTagKey + "=" + defaultOpenTsdbTagValue));
+                }
+            }
+        }
+        
         if ((metric == null) || metric.isEmpty()) return null;
         if (metricTimestamp_ < 0) return null;
         if ((getMetricValue() == null)) return null;
@@ -187,9 +228,9 @@ public class OpenTsdbMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
 
         openTsdbJson.append("\"tags\":{");
 
-        if (openTsdbTags != null) {
-            for (int j = 0; j < openTsdbTags.size(); j++) {
-                OpenTsdbTag tag = openTsdbTags.get(j);
+        if (openTsdbTagsPlusDefaultTag != null) {
+            for (int j = 0; j < openTsdbTagsPlusDefaultTag.size(); j++) {
+                OpenTsdbTag tag = openTsdbTagsPlusDefaultTag.get(j);
                 
                 if (sanitizeMetric) {
                     openTsdbJson.append("\"").append(StringEscapeUtils.escapeJson(getOpenTsdbSanitizedString(tag.getTagKey())));
@@ -200,7 +241,7 @@ public class OpenTsdbMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
                     openTsdbJson.append("\":\"").append(StringEscapeUtils.escapeJson(tag.getTagValue())).append("\"");
                 }
                 
-                if ((j + 1) != openTsdbTags.size()) openTsdbJson.append(",");
+                if ((j + 1) != openTsdbTagsPlusDefaultTag.size()) openTsdbJson.append(",");
             }
         }
         

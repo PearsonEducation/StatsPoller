@@ -40,7 +40,7 @@ public class ConnectionsCollector extends InternalCollectorFramework implements 
             graphiteMetrics.addAll(getSockstat6Metrics(super.getLinuxProcFileSystemLocation()));
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

@@ -31,7 +31,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 	* SQL Server 
 * Advanced/flexible configuration capabilities
 	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from an infinite number of external services. 
-	* StatsPoller can be configured to monitor dozens of JVMs (via JMX), or hundreds of MySQL servers
+	* A single deployment of StatsPoller can be configured to monitor many of JVMs (via JMX), MySQL servers, etc
 
 <br>
 
@@ -47,8 +47,8 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 ### Installation prerequisites
 
-* Java 1.7 (or newer). Oracle Java is preferred. OpenJDK will also work, but some functionality may be disabled.
-* The expected version of 'java' must be configured as an environment variable for the user that is running StatsPoller.
+* Java 1.7 (or newer). Oracle Java is preferred. OpenJDK may also work, but some functionality may be disabled.
+* A valid version of Java must be configured as an environment variable for the user that is running StatsPoller.
 * (Linux) Kernel 2.6 or newer
 * (Linux) Several metric collectors depend on the 'proc' filesystem being mounted somewhere (StatsPoller assumes /proc by default)
 
@@ -74,8 +74,15 @@ StatsPoller currently supports installation via rpm or via manual installation.
 ## Configuration
 
 After installing StatsPoller, one typically only needs to edit a single configuration file. This file is [application.properties](./conf/application.properties). If you're just looking to use the basic metric collectors (ex- Linux OS), then you may only need to configure one of the 'output modules' (Graphite or OpenTSDB). A full listing of StatsPoller's available configuration options, documentation, and examples can be found at [example_application.properties](./conf/example_application.properties).
+
 <br>
+
+If you feel constrained by putting a large number of configurations into application.properties, then you can put some of them into configuration files of your own creation @ /conf/optional. Put any file with an extension of .properties into /conf/optional & StatsPoller will read its configuration fields. Please note that several fields can only be set in the main application.properties file. Configurations that can be read from /conf/optional/*.properties include: JMX, ApacheHTTP, FileCounter, ProcessCounter, MySQL, MongoDB, external metric-collectors.
+
+<br>
+
 JMX configuration can be particularly complicated. Here are some default JMX configurations that may help make setting up JMX metric collectors easier.
+...
 
 <br>
 

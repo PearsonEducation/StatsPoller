@@ -42,7 +42,7 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             List<GraphiteMetric> graphiteMetrics = getDiskMetrics();
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

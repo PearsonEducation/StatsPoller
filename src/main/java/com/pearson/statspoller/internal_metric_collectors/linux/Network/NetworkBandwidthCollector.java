@@ -47,7 +47,7 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
             List<GraphiteMetric> graphiteMetrics = getNetworkMetrics();
             
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

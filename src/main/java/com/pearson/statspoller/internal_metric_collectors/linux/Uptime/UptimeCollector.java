@@ -32,7 +32,7 @@ public class UptimeCollector extends InternalCollectorFramework implements Runna
             List<GraphiteMetric> graphiteMetrics = getUptimeMetrics();
 
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             

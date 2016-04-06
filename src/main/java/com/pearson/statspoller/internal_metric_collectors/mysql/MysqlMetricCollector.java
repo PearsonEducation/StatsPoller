@@ -2,7 +2,8 @@ package com.pearson.statspoller.internal_metric_collectors.mysql;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
-import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
+import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
+import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
 import java.math.BigDecimal;
@@ -35,24 +36,25 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     private final int port_;
     private final String username_;
     private final String password_;
-    
     private final String jdbcString_;
     private final boolean isUserSpecifiedJdbcString_;
+    private final List<OpenTsdbTag> opentsdbTags_;
     
-    private static Map<String,String> previousGlobalStatus_ = new HashMap<>();
-    private static Long previousTimestampInMilliseconds_Status_ = null;
+    private Map<String,String> previousGlobalStatus_ = new HashMap<>();
+    private Long previousTimestampInMilliseconds_ = null;
     
     public MysqlMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String username, String password, String jdbcString) {
+            String host, int port, String username, String password, String jdbcString, 
+            List<OpenTsdbTag> tags) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.host_ = host;
         this.port_ = port;
         this.username_ = username;
         this.password_ = password;
-  
-        jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ : jdbcString;
-        isUserSpecifiedJdbcString_ = ((jdbcString != null) && !jdbcString.isEmpty());
+        this.jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ : jdbcString;
+        this.isUserSpecifiedJdbcString_ = ((jdbcString != null) && !jdbcString.isEmpty());
+        this.opentsdbTags_ = tags;
     }
 
     @Override
@@ -64,20 +66,19 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             // connect to the db
             Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
             
-            // put graphite metrics in here
-            List<GraphiteMetric> graphiteMetrics = getMysqlMetrics(connection);
+            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection);
             
             // disconnect from the db
             DatabaseUtils.disconnect(connection);
             
-            // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
-
+            // output opentsdb metrics
+            super.outputOpenTsdbMetrics(openTsdbMetrics);
+            
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             
             // lay on anything worth logging here
             logger.info("Finished MySQL metric collection routine. MyqlServer=" + host_ + ":" + port_ + 
-                    ", MetricsCollected=" + graphiteMetrics.size() +
+                    ", MetricsCollected=" + openTsdbMetrics.size() +
                     ", MetricCollectionTime=" + routineTimeElapsed);
             
             long sleepTimeInMs = getCollectionInterval() - routineTimeElapsed;
@@ -97,185 +98,187 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             
             getMysqlMetrics(connection); // first iteration, don't store metrics because we dont have rate data
             
-            long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
-            long sleepTimeInMs = getCollectionInterval() - routineTimeElapsed;
-            if (sleepTimeInMs >= 0) Threads.sleepMilliseconds(sleepTimeInMs);
+            long sleepTimeInMs = getCollectionInterval();
+            Threads.sleepMilliseconds(sleepTimeInMs);
             
-            List<GraphiteMetric> graphiteMetrics = getMysqlMetrics(connection); // second iteration, get graphite metrics
+            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection); // second iteration, get graphite metrics
             
             // disconnect from the db
             DatabaseUtils.disconnect(connection);
             
-            // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            // output opentsdb metrics
+            super.outputOpenTsdbMetrics(openTsdbMetrics);
             
-            logger.info("Finished MySQL metric collection routine. MyqlServer=" + host_ + ":" + port_ + 
-                    ", MetricsCollected=" + graphiteMetrics.size());
+            long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
+            
+            logger.info("Finished MySQL metric collection routine." + " MyqlServer=" + host_ + ":" + port_ + 
+                    ", MetricsCollected=" + openTsdbMetrics.size() +
+                    ", MetricCollectionTime=" + routineTimeElapsed +
+                    ", MetricCollectionTimeExcludingSleep=" + (routineTimeElapsed - sleepTimeInMs));
         }
 
     }
     
-    
-    private List<GraphiteMetric> getMysqlMetrics(Connection connection) {
+    private List<OpenTsdbMetric> getMysqlMetrics(Connection connection) {
         
         if (connection == null) {
             return new ArrayList<>();
         }
         
-        List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
-        GraphiteMetric graphiteMetric;
+        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
+        OpenTsdbMetric openTsdbMetric;
         BigDecimal metric;
         
         try {
-            if (connection.isClosed()) return graphiteMetrics;
+            if (connection.isClosed()) return openTsdbMetrics;
             
             long currentTimestampMilliseconds_Status = System.currentTimeMillis();
+            
+            Map<String,String> currentGlobalStatus = getGlobalStatus(connection);
             Map<String,String> globalVariables = getGlobalVariables(connection);
             
-            if (previousTimestampInMilliseconds_Status_ == null) {
-                previousTimestampInMilliseconds_Status_ = currentTimestampMilliseconds_Status;
-                return graphiteMetrics;
+            if (previousTimestampInMilliseconds_ == null) {
+                previousGlobalStatus_ = currentGlobalStatus;
+                previousTimestampInMilliseconds_ = currentTimestampMilliseconds_Status;
+                return openTsdbMetrics;
             }
             
-            int currentTimestampInSeconds_Status = (int) (currentTimestampMilliseconds_Status / 1000);
-            long previousTimestampMilliseconds_Status = previousTimestampInMilliseconds_Status_;
-            Map<String,String> currentGlobalStatus = getGlobalStatus(connection);
-            Map<String,String> previousGlobalStatus = previousGlobalStatus_;
-           
             if ((currentGlobalStatus != null) && !currentGlobalStatus.isEmpty()) {
-                previousGlobalStatus_ = currentGlobalStatus;
-                previousTimestampInMilliseconds_Status_ = currentTimestampMilliseconds_Status;
+                Map<String,String> previousGlobalStatus = previousGlobalStatus_;
+                long previousTimestampMilliseconds = previousTimestampInMilliseconds_;
+                previousGlobalStatus_ = currentGlobalStatus; // sets up previousGlobalStatus_ for the next iteration
+                previousTimestampInMilliseconds_ = currentTimestampMilliseconds_Status; // sets up previousTimestampInMilliseconds_ for the next iteration
                 
-                long millisecondsBetweenSamples = currentTimestampMilliseconds_Status - previousTimestampMilliseconds_Status;
+                long millisecondsBetweenSamples = currentTimestampMilliseconds_Status - previousTimestampMilliseconds;
                 BigDecimal millisecondsBetweenSamples_BigDecimal = new BigDecimal(millisecondsBetweenSamples);
                 Map<String,BigDecimal> globalStatusDelta_ByVariable = getGlobalStatusDelta(currentGlobalStatus, previousGlobalStatus, GLOBAL_STATUS_VARIABLES_TO_DELTA);
                 
-                graphiteMetric = new GraphiteMetric("Available", BigDecimal.ONE, currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = new OpenTsdbMetric("Available", currentTimestampMilliseconds_Status, BigDecimal.ONE, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_DEADLOCKS", "InnodbDeadlocksSinceReset-Count", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_DEADLOCKS", "InnodbDeadlocksSinceReset-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_CURRENT_ROW_LOCKS", "InnodbCurrentRowLocks-Count", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_CURRENT_ROW_LOCKS", "InnodbCurrentRowLocks-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "OPEN_FILES", "OpenFiles-Count", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "OPEN_FILES", "OpenFiles-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "SLAVE_RUNNING", "SlaveRunning", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "SLAVE_RUNNING", "SlaveRunning", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_RUNNING", "ConnectionsBusy-Count", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_RUNNING", "ConnectionsBusy-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_CONNECTED", "ConnectionsOpen-Count", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_CONNECTED", "ConnectionsOpen-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                graphiteMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "UPTIME", "Uptime-Secs", currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "UPTIME", "Uptime-Secs", currentTimestampMilliseconds_Status, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("BYTES_RECEIVED"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("BytesReceived-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesReceived-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("BYTES_SENT"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("BytesSent-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesSent-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_COMMIT"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("TX-Commits-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Commits-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_DELETE"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("DML-Deletes-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Deletes-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_INSERT"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("DML-Inserts-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Inserts-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_ROLLBACK"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("TX-Rollbacks-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Rollbacks-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_SELECT"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("DML-Selects-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Selects-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_UPDATE"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("DML-Updates-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Updates-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("CREATED_TMP_DISK_TABLES");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("CreatedTmpTablesOnDisk-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesOnDisk-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("CREATED_TMP_TABLES");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("CreatedTmpTables-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTables-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getDifference(globalStatusDelta_ByVariable.get("CREATED_TMP_TABLES"), globalStatusDelta_ByVariable.get("CREATED_TMP_DISK_TABLES"));
-                graphiteMetric = (metric != null) ? new GraphiteMetric("CreatedTmpTablesInMem-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesInMem-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_DATA_READ"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbDataRead-BytesPerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataRead-BytesPerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_DATA_WRITTEN"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbDataWritten-BytesPerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataWritten-BytesPerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROW_LOCK_TIME");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowLockTime-MsPerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowLockTime-MsPerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_DELETED"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsDeleted-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_DELETED");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsDeleted-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_INSERTED"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsInserted-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_INSERTED");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsInserted-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_READ"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsRead-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_READ");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsRead-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_UPDATED"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsUpdated-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_UPDATED");
-                graphiteMetric = (metric != null) ? new GraphiteMetric("InnodbRowsUpdated-PerInterval", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("QUERIES"), millisecondsBetweenSamples_BigDecimal);
-                graphiteMetric = (metric != null) ? new GraphiteMetric("Queries-PerSec", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("Queries-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getUsagePercent(currentGlobalStatus.get("THREADS_CONNECTED"), globalVariables.get("MAX_CONNECTIONS"));
-                graphiteMetric = (metric != null) ? new GraphiteMetric("ConnectionUsed-Pct", metric, currentTimestampInSeconds_Status) : null;
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("ConnectionUsed-Pct", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
             }
             else {
                 previousGlobalStatus_ = new HashMap<>();
-                previousTimestampInMilliseconds_Status_ = null;
+                previousTimestampInMilliseconds_ = null;
                 
-                graphiteMetric = new GraphiteMetric("Available", BigDecimal.ZERO, currentTimestampInSeconds_Status);
-                if (graphiteMetric != null) graphiteMetrics.add(graphiteMetric);
+                openTsdbMetric = new OpenTsdbMetric("Available",  currentTimestampMilliseconds_Status, BigDecimal.ZERO, opentsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
             }
             
             // innodb mem usage
@@ -284,16 +287,16 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
         }
         
-        return graphiteMetrics;
+        return openTsdbMetrics;
     }
     
-    private GraphiteMetric getSimpleGlobalStatusMetric(Map<String,String> globalStatus, String statusKey, String metricName, int timestampInSeconds) {
+    private OpenTsdbMetric getSimpleGlobalStatusMetric(Map<String,String> globalStatus, String statusKey, String metricName, long timestampInMilliseconds, List<OpenTsdbTag> opentsdbTags) {
         try {
             String statusValue = globalStatus.get(statusKey);
             if (statusValue == null) return null;
-            else if (statusValue.equalsIgnoreCase("ON")) return new GraphiteMetric(metricName, new BigDecimal(1), timestampInSeconds);
-            else if (statusValue.equalsIgnoreCase("OFF")) return new GraphiteMetric(metricName, new BigDecimal(0), timestampInSeconds);
-            return new GraphiteMetric(metricName, new BigDecimal(statusValue), timestampInSeconds);
+            else if (statusValue.equalsIgnoreCase("ON")) return new OpenTsdbMetric(metricName, timestampInMilliseconds, new BigDecimal(1), opentsdbTags);
+            else if (statusValue.equalsIgnoreCase("OFF")) return new OpenTsdbMetric(metricName, timestampInMilliseconds, new BigDecimal(0), opentsdbTags);
+            return new OpenTsdbMetric(metricName, timestampInMilliseconds, new BigDecimal(statusValue), opentsdbTags);
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
@@ -332,7 +335,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     }
     
     private BigDecimal getRatePerSecond(BigDecimal sumValue, BigDecimal millisecondsBetweenSamples) {
-        if ((sumValue == null) || (millisecondsBetweenSamples == null)) return null;
+        if ((sumValue == null) || (millisecondsBetweenSamples == null) || (BigDecimal.ZERO.compareTo(millisecondsBetweenSamples) == 0)) return null;
         
         try {
             BigDecimal rateValue = sumValue.divide(millisecondsBetweenSamples, SCALE, ROUNDING_MODE).multiply(ONE_THOUSAND);
@@ -363,6 +366,9 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         try {
             BigDecimal currentConnectionsCount_BigDecimal = new BigDecimal(numerator);
             BigDecimal maxConnectionsCount_BigDecimal = new BigDecimal(denominator);
+            
+            if (BigDecimal.ZERO.compareTo(maxConnectionsCount_BigDecimal) == 0) return null;
+            
             BigDecimal value = currentConnectionsCount_BigDecimal.divide(maxConnectionsCount_BigDecimal, SCALE, ROUNDING_MODE).multiply(ONE_HUNDRED);
             return value;
         }

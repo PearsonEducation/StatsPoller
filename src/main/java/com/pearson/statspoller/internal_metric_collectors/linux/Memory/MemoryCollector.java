@@ -46,7 +46,7 @@ public class MemoryCollector extends InternalCollectorFramework implements Runna
             List<GraphiteMetric> graphiteMetrics = getMemoryMetrics();
             
             // output graphite metrics
-            super.outputMetrics(graphiteMetrics, true);
+            super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             
