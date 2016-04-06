@@ -52,7 +52,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         this.port_ = port;
         this.username_ = username;
         this.password_ = password;
-        this.jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ : jdbcString;
+        this.jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ + "?connectTimeout=7500&socketTimeout=7500&autoReconnect=false" : jdbcString;
         this.isUserSpecifiedJdbcString_ = ((jdbcString != null) && !jdbcString.isEmpty());
         this.opentsdbTags_ = tags;
     }
