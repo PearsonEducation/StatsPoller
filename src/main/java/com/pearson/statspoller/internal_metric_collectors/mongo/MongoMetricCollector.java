@@ -225,7 +225,7 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                     }
 
                     Document passdown = (Document) entry.getValue();
-                    documentCopy.replace(key, filterDocument(passdown));
+                    documentCopy.put(key, filterDocument(passdown));
 
                     if (((Document) documentCopy.get(key)).isEmpty()) {
                         documentCopy.remove(key);

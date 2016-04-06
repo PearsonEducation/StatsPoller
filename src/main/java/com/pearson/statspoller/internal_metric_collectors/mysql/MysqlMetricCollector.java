@@ -97,12 +97,12 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
             
             getMysqlMetrics(connection); // first iteration, don't store metrics because we dont have rate data
-            
+
             long sleepTimeInMs = getCollectionInterval();
             Threads.sleepMilliseconds(sleepTimeInMs);
-            
+
             List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection); // second iteration, get graphite metrics
-            
+
             // disconnect from the db
             DatabaseUtils.disconnect(connection);
             
@@ -120,24 +120,27 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     }
     
     private List<OpenTsdbMetric> getMysqlMetrics(Connection connection) {
-        
-        if (connection == null) {
-            return new ArrayList<>();
-        }
-        
+
         List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
         OpenTsdbMetric openTsdbMetric;
         BigDecimal metric;
         
         try {
-            if (connection.isClosed()) return openTsdbMetrics;
+            boolean isConnectionValid = DatabaseUtils.isConnectionValid(connection, 5);
+
+            if (!isConnectionValid || connection.isClosed()) {
+                openTsdbMetric = new OpenTsdbMetric("Available",  System.currentTimeMillis(), BigDecimal.ZERO, opentsdbTags_);
+                openTsdbMetrics.add(openTsdbMetric);
+                logger.warn("MyqlServer=" + host_ + ":" + port_ + " is unavailable");
+                return openTsdbMetrics;
+            }
             
             long currentTimestampMilliseconds_Status = System.currentTimeMillis();
             
             Map<String,String> currentGlobalStatus = getGlobalStatus(connection);
             Map<String,String> globalVariables = getGlobalVariables(connection);
             
-            if (previousTimestampInMilliseconds_ == null) {
+            if ((previousGlobalStatus_ == null) || (previousTimestampInMilliseconds_ == null)) {
                 previousGlobalStatus_ = currentGlobalStatus;
                 previousTimestampInMilliseconds_ = currentTimestampMilliseconds_Status;
                 return openTsdbMetrics;
