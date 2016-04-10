@@ -60,8 +60,8 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 * sudo unzip statspoller.zip -d /opt
 * sudo cp /opt/StatsPoller/init.d/statspoller /etc/init.d/statspoller
-* sudo chmod -R 544 /opt/StatsPoller/bin/*
-* sudo chmod 544 /opt/StatsPoller/StatsPoller.jar
+* sudo chmod -R 744 /opt/StatsPoller/bin/*
+* sudo chmod 744 /opt/StatsPoller/StatsPoller.jar
 * sudo chmod 755 /etc/init.d/statspoller
 * sudo chkconfig --add statspoller
 

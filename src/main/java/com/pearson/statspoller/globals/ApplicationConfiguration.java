@@ -844,15 +844,20 @@ public class ApplicationConfiguration {
     }
     
     private static void loadMySQLDrivers() {
+        
+        if ((mysqlMetricCollectors_ == null) || mysqlMetricCollectors_.isEmpty()) {
+            return;
+        }
+        
         try {
-            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            Class.forName("org.mariadb.jdbc.Driver").newInstance();
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
         }
         
         try {
-            Class.forName("org.mariadb.jdbc.Driver").newInstance();
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
