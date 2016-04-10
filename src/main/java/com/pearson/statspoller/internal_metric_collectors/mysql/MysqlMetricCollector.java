@@ -2,6 +2,7 @@ package com.pearson.statspoller.internal_metric_collectors.mysql;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
+import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
@@ -38,7 +39,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     private final String password_;
     private final String jdbcString_;
     private final boolean isUserSpecifiedJdbcString_;
-    private final List<OpenTsdbTag> opentsdbTags_;
+    private final List<OpenTsdbTag> openTsdbTags_;
     
     private Map<String,String> previousGlobalStatus_ = new HashMap<>();
     private Long previousTimestampInMilliseconds_ = null;
@@ -46,7 +47,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     public MysqlMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles,
             String host, int port, String username, String password, String jdbcString, 
-            List<OpenTsdbTag> tags) {
+            List<OpenTsdbTag> openTsdbTags) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.host_ = host;
         this.port_ = port;
@@ -54,7 +55,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         this.password_ = password;
         this.jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ + "?connectTimeout=7500&socketTimeout=7500&autoReconnect=false" : jdbcString;
         this.isUserSpecifiedJdbcString_ = ((jdbcString != null) && !jdbcString.isEmpty());
-        this.opentsdbTags_ = tags;
+        this.openTsdbTags_ = openTsdbTags;
     }
 
     @Override
@@ -129,7 +130,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             boolean isConnectionValid = DatabaseUtils.isConnectionValid(connection, 5);
 
             if (!isConnectionValid || connection.isClosed()) {
-                openTsdbMetric = new OpenTsdbMetric("Available",  System.currentTimeMillis(), BigDecimal.ZERO, opentsdbTags_);
+                openTsdbMetric = new OpenTsdbMetric("Available",  System.currentTimeMillis(), BigDecimal.ZERO, openTsdbTags_);
                 openTsdbMetrics.add(openTsdbMetric);
                 logger.warn("MyqlServer=" + host_ + ":" + port_ + " is unavailable");
                 return openTsdbMetrics;
@@ -139,6 +140,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             
             Map<String,String> currentGlobalStatus = getGlobalStatus(connection);
             Map<String,String> globalVariables = getGlobalVariables(connection);
+            Map<Integer,MysqlMetricCollector_SlaveStatus> slaveStatus_ByMasterServerId = getSlaveStatus_ByMasterServerId(connection);
             
             if ((previousGlobalStatus_ == null) || (previousTimestampInMilliseconds_ == null)) {
                 previousGlobalStatus_ = currentGlobalStatus;
@@ -156,131 +158,141 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                 BigDecimal millisecondsBetweenSamples_BigDecimal = new BigDecimal(millisecondsBetweenSamples);
                 Map<String,BigDecimal> globalStatusDelta_ByVariable = getGlobalStatusDelta(currentGlobalStatus, previousGlobalStatus, GLOBAL_STATUS_VARIABLES_TO_DELTA);
                 
-                openTsdbMetric = new OpenTsdbMetric("Available", currentTimestampMilliseconds_Status, BigDecimal.ONE, opentsdbTags_);
+                openTsdbMetric = new OpenTsdbMetric("Available", currentTimestampMilliseconds_Status, BigDecimal.ONE, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_DEADLOCKS", "InnodbDeadlocksSinceReset-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_DEADLOCKS", "InnodbDeadlocksSinceReset-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_CURRENT_ROW_LOCKS", "InnodbCurrentRowLocks-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "INNODB_CURRENT_ROW_LOCKS", "InnodbCurrentRowLocks-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "OPEN_FILES", "OpenFiles-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "OPEN_FILES", "OpenFiles-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "SLAVE_RUNNING", "SlaveRunning", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "SLAVE_RUNNING", "SlaveRunning", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_RUNNING", "ConnectionsBusy-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_RUNNING", "ConnectionsBusy-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_CONNECTED", "ConnectionsOpen-Count", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "THREADS_CONNECTED", "ConnectionsOpen-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "UPTIME", "Uptime-Secs", currentTimestampMilliseconds_Status, opentsdbTags_);
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "UPTIME", "Uptime-Secs", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("BYTES_RECEIVED"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesReceived-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesReceived-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("BYTES_SENT"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesSent-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("BytesSent-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_COMMIT"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Commits-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Commits-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_DELETE"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Deletes-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Deletes-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_INSERT"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Inserts-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Inserts-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_ROLLBACK"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Rollbacks-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("TX-Rollbacks-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_SELECT"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Selects-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Selects-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("COM_UPDATE"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Updates-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DML-Updates-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("CREATED_TMP_DISK_TABLES");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesOnDisk-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesOnDisk-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("CREATED_TMP_TABLES");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTables-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTables-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getDifference(globalStatusDelta_ByVariable.get("CREATED_TMP_TABLES"), globalStatusDelta_ByVariable.get("CREATED_TMP_DISK_TABLES"));
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesInMem-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("CreatedTmpTablesInMem-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_DATA_READ"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataRead-BytesPerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataRead-BytesPerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_DATA_WRITTEN"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataWritten-BytesPerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbDataWritten-BytesPerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROW_LOCK_TIME");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowLockTime-MsPerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowLockTime-MsPerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_DELETED"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_DELETED");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsDeleted-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_INSERTED"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_INSERTED");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsInserted-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_READ"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_READ");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsRead-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("INNODB_ROWS_UPDATED"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = globalStatusDelta_ByVariable.get("INNODB_ROWS_UPDATED");
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerInterval", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("InnodbRowsUpdated-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getRatePerSecond(globalStatusDelta_ByVariable.get("QUERIES"), millisecondsBetweenSamples_BigDecimal);
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("Queries-PerSec", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("Queries-PerSec", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getUsagePercent(currentGlobalStatus.get("THREADS_CONNECTED"), globalVariables.get("MAX_CONNECTIONS"));
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("ConnectionUsed-Pct", currentTimestampMilliseconds_Status, metric, opentsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("ConnectionUsed-Pct", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                
+                if (slaveStatus_ByMasterServerId != null) {
+                    for (Integer masterServerId : slaveStatus_ByMasterServerId.keySet()) {
+                        MysqlMetricCollector_SlaveStatus mysqlMetricCollector_SlaveStatus = slaveStatus_ByMasterServerId.get(masterServerId);
+                        if (mysqlMetricCollector_SlaveStatus != null) {
+                            List<OpenTsdbMetric> slaveOpenTsdbMetrics = getSlaveStatusMetrics(mysqlMetricCollector_SlaveStatus, currentTimestampMilliseconds_Status, openTsdbTags_);
+                            if (slaveOpenTsdbMetrics != null) openTsdbMetrics.addAll(slaveOpenTsdbMetrics);
+                        }
+                    }
+                }
             }
             else {
                 previousGlobalStatus_ = new HashMap<>();
                 previousTimestampInMilliseconds_ = null;
                 
-                openTsdbMetric = new OpenTsdbMetric("Available",  currentTimestampMilliseconds_Status, BigDecimal.ZERO, opentsdbTags_);
+                openTsdbMetric = new OpenTsdbMetric("Available",  currentTimestampMilliseconds_Status, BigDecimal.ZERO, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
             }
             
@@ -463,6 +475,73 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         
     }
     
+    private Map<Integer,MysqlMetricCollector_SlaveStatus> getSlaveStatus_ByMasterServerId(Connection connection) {
+        
+        if (connection == null) {
+            return null;
+        }
+        
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            if (!DatabaseUtils.isConnectionValid(connection)) return null;
+
+            String query = "show slave status";
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+            if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
+            
+            Map<Integer,MysqlMetricCollector_SlaveStatus> slaveStatuses_ByMasterServerId = new HashMap<>();
+            
+            while (resultSet.next()) {
+                MysqlMetricCollector_SlaveStatus mysqlMetricCollector_SlaveStatus = new MysqlMetricCollector_SlaveStatus();
+                
+                String masterHost = resultSet.getString("Master_Host");
+                if (resultSet.wasNull()) masterHost = null;
+                if ((masterHost != null)) mysqlMetricCollector_SlaveStatus.setMasterHost(masterHost);
+                
+                Integer masterPort = resultSet.getInt("Master_Port");
+                if (resultSet.wasNull()) masterPort = null;
+                if (masterPort != null) mysqlMetricCollector_SlaveStatus.setMasterPort(masterPort);
+                
+                String slaveIoRunning = resultSet.getString("Slave_IO_Running");
+                if (resultSet.wasNull()) slaveIoRunning = null;
+                if (slaveIoRunning != null) {
+                    if (slaveIoRunning.equalsIgnoreCase("Yes")) mysqlMetricCollector_SlaveStatus.setSlaveIoRunning(true);
+                    else mysqlMetricCollector_SlaveStatus.setSlaveIoRunning(false);
+                }
+                
+                String slaveSqlRunning = resultSet.getString("Slave_SQL_Running");
+                if (resultSet.wasNull()) slaveSqlRunning = null;
+                if (slaveSqlRunning != null) {
+                    if (slaveSqlRunning.equalsIgnoreCase("Yes")) mysqlMetricCollector_SlaveStatus.setSlaveSqlRunning(true);
+                    else mysqlMetricCollector_SlaveStatus.setSlaveSqlRunning(false);
+                }
+                
+                Long secondsBehindMaster = resultSet.getLong("Seconds_Behind_Master");
+                if (resultSet.wasNull()) secondsBehindMaster = null;
+                if (secondsBehindMaster != null) mysqlMetricCollector_SlaveStatus.setSecondsBehindMaster(secondsBehindMaster);
+
+                Integer masterServerId = resultSet.getInt("Master_Server_Id");
+                if (resultSet.wasNull()) masterServerId = null;
+                if (masterServerId != null) mysqlMetricCollector_SlaveStatus.setMasterServerId(masterServerId);
+                
+                if (masterServerId != null) slaveStatuses_ByMasterServerId.put(masterServerId, mysqlMetricCollector_SlaveStatus);
+            }
+
+            return slaveStatuses_ByMasterServerId;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            return null;
+        }
+        finally {
+            DatabaseUtils.cleanup(statement, resultSet);
+        } 
+        
+    }
+    
     private static List<String> getGlobalStatusVariablesToDelta() {
      
         List<String> globalStatusVariablesToDelta = new ArrayList<>();
@@ -487,6 +566,52 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         globalStatusVariablesToDelta.add("QUERIES");
         
         return globalStatusVariablesToDelta;
+    }
+    
+    private List<OpenTsdbMetric> getSlaveStatusMetrics(MysqlMetricCollector_SlaveStatus mysqlMetricCollector_SlaveStatus, long timestamp, List<OpenTsdbTag> openTsdbTags) {
+        
+        if ((mysqlMetricCollector_SlaveStatus == null) || (openTsdbTags == null)) {
+            return new ArrayList<>();
+        }
+        
+        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
+        
+        try {
+            if ((mysqlMetricCollector_SlaveStatus.getMasterHost() == null) || (mysqlMetricCollector_SlaveStatus.getMasterPort() == null) ||
+                    (mysqlMetricCollector_SlaveStatus.getMasterServerId() == null)) {
+                return openTsdbMetrics;
+            }
+
+            String graphiteFriendlyMasterHost = GraphiteMetric.getGraphiteSanitizedString(mysqlMetricCollector_SlaveStatus.getMasterHost(), true, true);
+            
+            List<OpenTsdbTag> openTsdbTags_WithSlaveFields = new ArrayList<>(openTsdbTags);
+            openTsdbTags_WithSlaveFields.add(new OpenTsdbTag("MasterHost=" + graphiteFriendlyMasterHost));
+            openTsdbTags_WithSlaveFields.add(new OpenTsdbTag("MasterPort=" + mysqlMetricCollector_SlaveStatus.getMasterPort()));
+            openTsdbTags_WithSlaveFields.add(new OpenTsdbTag("MasterServerId=" + mysqlMetricCollector_SlaveStatus.getMasterServerId()));
+            
+            if ((mysqlMetricCollector_SlaveStatus.getSecondsBehindMaster() != null) && mysqlMetricCollector_SlaveStatus.getSecondsBehindMaster() >= 0) {
+                OpenTsdbMetric openTsdbMetric = new OpenTsdbMetric("SlaveBehindMaster-Secs", timestamp, new BigDecimal(mysqlMetricCollector_SlaveStatus.getSecondsBehindMaster()), openTsdbTags_WithSlaveFields);
+                openTsdbMetrics.add(openTsdbMetric);
+            }
+            
+            if (mysqlMetricCollector_SlaveStatus.getSlaveSqlRunning() != null) {
+                int isSlaveSqlRunning = (mysqlMetricCollector_SlaveStatus.getSlaveSqlRunning()) ? 1 : 0;
+                OpenTsdbMetric openTsdbMetric = new OpenTsdbMetric("SlaveSqlRunning", timestamp, new BigDecimal(isSlaveSqlRunning), openTsdbTags_WithSlaveFields);
+                openTsdbMetrics.add(openTsdbMetric);
+            }
+            
+            if (mysqlMetricCollector_SlaveStatus.getSlaveIoRunning() != null) {
+                int isSlaveIoRunning = (mysqlMetricCollector_SlaveStatus.getSlaveIoRunning()) ? 1 : 0;
+                OpenTsdbMetric openTsdbMetric = new OpenTsdbMetric("SlaveIoRunning", timestamp, new BigDecimal(isSlaveIoRunning), openTsdbTags_WithSlaveFields);
+                openTsdbMetrics.add(openTsdbMetric);
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            return null;
+        }
+        
+        return openTsdbMetrics;
     }
     
 }

@@ -667,11 +667,12 @@ public class ApplicationConfiguration {
 
             String jmxMetricPrefixKey = "jmx_metric_prefix" + collectorSuffix;
             String jmxMetricPrefixValue = applicationConfiguration_.safeGetString(jmxMetricPrefixKey, "JMX");
+            String graphiteSanitizedJmxMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(jmxMetricPrefixValue, true, true);
 
             String jmxOutputFileValue = "./output/" + "jmx_" + jmxMetricPrefixValue + ".out";
 
             JmxMetricCollector jmxMetricCollector = new JmxMetricCollector(jmxEnabledValue, 
-                    jmxCollectionIntervalValue_Long, jmxMetricPrefixValue, jmxOutputFileValue, outputInternalMetricsToDisk_,
+                    jmxCollectionIntervalValue_Long, graphiteSanitizedJmxMetricPrefix, jmxOutputFileValue, outputInternalMetricsToDisk_,
                     jmxHostValue, jmxPortValue, jmxServiceUrlValue, jmxNumConnectionAttemptRetriesValue, 
                     jmxSleepAfterConnectTimeValue_Long, jmxQueryMetricTreeValue_Long, 
                     jmxCollectStringAttributesValue, jmxDerivedMetricsEnabledValue,
@@ -714,12 +715,13 @@ public class ApplicationConfiguration {
 
             String apacheMetricPrefixKey = "apachehttp_metric_prefix" + collectorSuffix;
             String apacheHttpMetricPrefixValue = applicationConfiguration_.safeGetString(apacheMetricPrefixKey, "ApacheHttp");
+            String graphiteSanitizedApacheHttpMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(apacheHttpMetricPrefixValue, true, true);
 
-            String apacheOutputFileValue = "./output/" + "apachehttp_" + apacheHttpMetricPrefixValue + ".out";
+            String apacheOutputFileValue = "./output/" + "apachehttp_" + graphiteSanitizedApacheHttpMetricPrefix + ".out";
             
             if (apacheEnabledValue && (apacheHostValue != null) && (apachePortValue != -1)) {
                 ApacheHttpMetricCollector apacheHttpMetricCollector = new ApacheHttpMetricCollector(apacheEnabledValue,
-                        apacheHttpCollectionIntervalValue_Long, apacheHttpMetricPrefixValue, apacheOutputFileValue, outputInternalMetricsToDisk_,
+                        apacheHttpCollectionIntervalValue_Long, graphiteSanitizedApacheHttpMetricPrefix, apacheOutputFileValue, outputInternalMetricsToDisk_,
                         apacheProtocolValue, apacheHostValue, apachePortValue);
                
                 return apacheHttpMetricCollector;
@@ -763,12 +765,13 @@ public class ApplicationConfiguration {
 
             String mongoMetricPrefixKey = "mongo_metric_prefix" + collectorSuffix;
             String mongoMetricPrefixValue = applicationConfiguration_.safeGetString(mongoMetricPrefixKey, "Mongo");
-
-            String mongoOutputFileValue = "./output/" + "mongo_" + mongoMetricPrefixValue + ".out";
+            String graphiteSanitizedMongoMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(mongoMetricPrefixValue, true, true);
+            
+            String mongoOutputFileValue = "./output/" + "mongo_" + graphiteSanitizedMongoMetricPrefix + ".out";
             
             if (mongoEnabledValue && (mongoHostValue != null) && (mongoPortValue != -1)) {
                 MongoMetricCollector mongoMetricCollector = new MongoMetricCollector(mongoEnabledValue, 
-                        mongoCollectionIntervalValue_Long, mongoMetricPrefixValue, mongoOutputFileValue, outputInternalMetricsToDisk_,
+                        mongoCollectionIntervalValue_Long, graphiteSanitizedMongoMetricPrefix, mongoOutputFileValue, outputInternalMetricsToDisk_,
                         mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue);
                
                 return mongoMetricCollector;
@@ -788,7 +791,8 @@ public class ApplicationConfiguration {
         }
         
         if (collectorSuffix == null) collectorSuffix = "";
-
+        List<OpenTsdbTag> openTsdbTags = new ArrayList<>();
+        
         try {
             String mysqlEnabledKey = "mysql_enabled" + collectorSuffix;
             boolean mysqlEnabledValue = applicationConfiguration_.safeGetBoolean(mysqlEnabledKey, false);
@@ -796,10 +800,14 @@ public class ApplicationConfiguration {
             
             String mysqlHostKey = "mysql_host" + collectorSuffix;
             String mysqlHostValue = applicationConfiguration_.safeGetString(mysqlHostKey, "127.0.0.1");
+            String graphiteFriendlyHost = GraphiteMetric.getGraphiteSanitizedString(mysqlHostValue, true, true);
+            openTsdbTags.add(new OpenTsdbTag("Host=" + graphiteFriendlyHost));
 
             String mysqlPortKey = "mysql_port" + collectorSuffix;
             int mysqlPortValue = applicationConfiguration_.safeGetInteger(mysqlPortKey, 3306);
-            
+            String graphiteFriendlyPort = GraphiteMetric.getGraphiteSanitizedString(Integer.toString(mysqlPortValue), true, true);
+            openTsdbTags.add(new OpenTsdbTag("Port=" + graphiteFriendlyPort));
+
             String mysqlUsernameKey = "mysql_username" + collectorSuffix;
             String mysqlUsernameValue = applicationConfiguration_.safeGetString(mysqlUsernameKey, "");
             
@@ -815,18 +823,13 @@ public class ApplicationConfiguration {
 
             String mysqlMetricPrefixKey = "mysql_metric_prefix" + collectorSuffix;
             String mysqlMetricPrefixValue = applicationConfiguration_.safeGetString(mysqlMetricPrefixKey, "MySQL");
+            String graphiteSanitizedMysqlMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(mysqlMetricPrefixValue, true, true);
+            
+            String mysqlOutputFileValue = "./output/" + "mysql_" + graphiteSanitizedMysqlMetricPrefix + ".out";
 
-            String mysqlOutputFileValue = "./output/" + "mysql_" + mysqlMetricPrefixValue + ".out";
-            
-            List<OpenTsdbTag> openTsdbTags = new ArrayList<>();
-            String graphiteFriendlyHost = GraphiteMetric.getGraphiteSanitizedString(mysqlHostValue, true, true);
-            String graphiteFriendlyPort = GraphiteMetric.getGraphiteSanitizedString(Integer.toString(mysqlPortValue), true, true);
-            openTsdbTags.add(new OpenTsdbTag("Host=" + graphiteFriendlyHost));
-            openTsdbTags.add(new OpenTsdbTag("Port=" + graphiteFriendlyPort));
-            
             if (mysqlEnabledValue && (mysqlHostValue != null) && (mysqlPortValue != -1)) {
                 MysqlMetricCollector mysqlMetricCollector = new MysqlMetricCollector(mysqlEnabledValue, 
-                        mysqlCollectionIntervalValue_Long, mysqlMetricPrefixValue, mysqlOutputFileValue, outputInternalMetricsToDisk_,
+                        mysqlCollectionIntervalValue_Long, graphiteSanitizedMysqlMetricPrefix, mysqlOutputFileValue, outputInternalMetricsToDisk_,
                         mysqlHostValue, mysqlPortValue, mysqlUsernameValue, mysqlPasswordValue, mysqlJdbcValue, 
                         openTsdbTags);
                
