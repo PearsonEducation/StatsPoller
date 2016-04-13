@@ -251,13 +251,13 @@
                     
                     <postinstallScriptlet>
                         <script>
-                            chkconfig --add statspoller
-                            service statspoller restart
+                            /sbin/chkconfig --add statspoller
+                            /sbin/service statspoller restart
                         </script>
                     </postinstallScriptlet>
 
                     <preremoveScriptlet>
-                        <script>service statspoller stop</script>
+                        <script>/sbin/service statspoller stop</script>
                     </preremoveScriptlet>  
 
                     <postremoveScriptlet>
