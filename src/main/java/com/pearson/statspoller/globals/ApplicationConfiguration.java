@@ -10,6 +10,7 @@ import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCount
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.mysql_querier.MysqlQuerier;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteOutputModule;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbHttpOutputModule;
@@ -66,6 +67,7 @@ public class ApplicationConfiguration {
     private static final List<ApacheHttpMetricCollector> apacheHttpMetricCollectors_ = new ArrayList<>();
     private static final List<MongoMetricCollector> mongoMetricCollectors_ = new ArrayList<>();
     private static final List<MysqlMetricCollector> mysqlMetricCollectors_ = new ArrayList<>();
+    private static final List<MysqlQuerier> mysqlQuerier_ = new ArrayList<>();
     
     private static long applicationStartTimeInMs_ = VALUE_NOT_SET_CODE;
     private static String hostname_ = null;
@@ -976,6 +978,11 @@ public class ApplicationConfiguration {
     public static List<MysqlMetricCollector> getMysqlMetricCollectors() {
         if (mysqlMetricCollectors_ == null) return null;
         return new ArrayList<>(mysqlMetricCollectors_);
+    }
+    
+    public static List<MysqlQuerier> getMysqlQueriers() {
+        if (mysqlQuerier_ == null) return null;
+        return new ArrayList<>(mysqlQuerier_);
     }
 
     public static long getApplicationStartTimeInMs() {
