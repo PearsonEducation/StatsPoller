@@ -57,6 +57,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private JMXConnector jmxConnection_ = null;
     private MBeanServerConnection mBeanServerConnection_ = null;
     private boolean didConnectOnThisInterval_ = false;
+    private boolean didQueryMetricTree_ = false;
     
     // timestamp of the iteration
     private int currentTimestamp_ = -1;
@@ -379,6 +380,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         alwaysDownloadTheseMetricAttributes_ = new HashMap<>();
         
         previousGetObjectInstancesTime_ = 0;
+        didQueryMetricTree_ = false;
         objectInstances_.clear();
         objectInstances_ = new HashSet<>();
         mBeanInfoByObjectInstance_.clear();
@@ -412,6 +414,9 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             else if ((queryMetricTreeInterval_ >= 1) && (currentTime - previousGetObjectInstancesTime_) >= queryMetricTreeInterval_) {
                 doQuery = true; 
             }
+            else if ((queryMetricTreeInterval_ == 0) && !didQueryMetricTree_) {
+                doQuery = true; 
+            }
             
             if (doQuery) {
                 objectInstances_.clear();
@@ -431,6 +436,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                         mBeanInfoByObjectInstance_.put(objectInstance, mBeanInfo);
                     }
                 }
+                
+                didQueryMetricTree_ = true;
             }
             
             return doQuery;

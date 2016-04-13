@@ -135,6 +135,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                 logger.warn("MyqlServer=" + host_ + ":" + port_ + " is unavailable");
                 return openTsdbMetrics;
             }
+            else connection.setReadOnly(true);
             
             long currentTimestampMilliseconds_Status = System.currentTimeMillis();
             
