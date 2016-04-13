@@ -20,13 +20,19 @@ case "$1" in
           sleep 1
           ;;
           status)
-              ps -fp $PID || echo "Service not running\n"
+              if [ -n "$PID" ]; then
+                  ps -fp $PID
+              else
+                  printf "Serivice isn't running\n"
+                  exit 1
+              fi
               ;;
           stop)
               if [ -n "$PID" ]; then
                   kill $PID
               else
                   printf "Service isn't running\n"
+                  exit 1
               fi
               ;;
           restart)
