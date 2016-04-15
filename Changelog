@@ -9,6 +9,7 @@ Release 2.0
  * Improved documentation
  * Improved/simplified Linux init.d script
  * Config file now expects all times are in seconds (instead of milliseconds). To use milliseconds (for compatibility with old releases), enable legacy_mode.
+ * RPM is now built as part compiling StatsPoller via a Maven goal. RPM logic is in pom.xml. Some of the logic/permissions of the RPM have changed.
  * Bug fixes
 
 Release 1.7-beta
