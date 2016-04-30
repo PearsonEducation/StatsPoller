@@ -116,6 +116,7 @@
             
                 <configuration>
                     <license>Apache 2.0</license>
+                    <name>statspoller</name>
                     <packager>Pearson</packager>
                     <group>Applications/System</group>
                     <targetVendor>redhat</targetVendor>
