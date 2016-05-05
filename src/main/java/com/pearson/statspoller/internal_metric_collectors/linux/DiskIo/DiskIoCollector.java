@@ -69,6 +69,7 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             if ((currentRawDiskStats == null) || currentRawDiskStats.isEmpty()) currentRawDiskStats = getDiskMetrics_GetRawDiskStats_ByDeviceName_FromProc();
             
             if ((currentRawDiskStats == null) || currentRawDiskStats.keySet().isEmpty()) {
+                logger.warn("Unabled to read disk io stats");
                 return allGraphiteMetrics;
             }
             else if (previousRawDiskStats_ == null) {
@@ -111,7 +112,11 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             for (String deviceName : devices) {
                 String deviceStatFilePath = super.getLinuxSysFileSystemLocation() + "/block/" + deviceName + "/stat";
                 String deviceStat = FileIo.readFileToString(deviceStatFilePath);
-                if (deviceStat == null) continue;
+                
+                if ((deviceStat == null) || deviceStat.isEmpty()) {
+                    logger.debug(deviceStatFilePath + " cannot be null or empty");
+                    continue;
+                }
                 
                 deviceStat = deviceStat.trim();
                 String[] deviceStatSplitFields = deviceStat.split("\\s+");
