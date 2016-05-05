@@ -216,7 +216,8 @@ public class DiskIoStat_Delta {
         if (averageQueueLength_ != null) return averageQueueLength_;
         
         try {
-            averageQueueLength_ = weightedNumMillisecondsSpentDoingIo_.divide(ONE_THOUSAND, SCALE, ROUNDING_MODE);
+            if (millisecondsBetweenSamples_.compareTo(BigDecimal.ZERO) <= 0) averageQueueLength_ = BigDecimal.ZERO;
+            else averageQueueLength_ = weightedNumMillisecondsSpentDoingIo_.divide(millisecondsBetweenSamples_, SCALE, ROUNDING_MODE);
             return averageQueueLength_;
         }
         catch (Exception e) {
