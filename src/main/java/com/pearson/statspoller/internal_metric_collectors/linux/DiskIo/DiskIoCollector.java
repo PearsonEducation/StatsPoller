@@ -70,6 +70,8 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             
             if ((currentRawDiskStats == null) || currentRawDiskStats.keySet().isEmpty()) {
                 logger.warn("Unabled to read disk io stats");
+                previousRawDiskStats_ReadTimestamp_ = -1;
+                previousRawDiskStats_ = null;
                 return allGraphiteMetrics;
             }
             else if (previousRawDiskStats_ == null) {
@@ -84,8 +86,14 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             previousRawDiskStats_ReadTimestamp_ = currentTimestampInMilliseconds;
 
             if ((previousRawDiskStats_ReadTimestamp_Local <= 0) || (currentTimestampInMilliseconds <= 0)) return allGraphiteMetrics;
-            if ((previousRawDiskStats_Local == null) || (currentRawDiskStats == null)) return allGraphiteMetrics;
-            if (previousRawDiskStats_Local.isEmpty() || currentRawDiskStats.isEmpty()) return allGraphiteMetrics;
+            if ((previousRawDiskStats_Local == null) || (currentRawDiskStats == null)) {
+                logger.warn("Stats cannot be null");
+                return allGraphiteMetrics;
+            }
+            if (previousRawDiskStats_Local.isEmpty() || currentRawDiskStats.isEmpty()) {
+                logger.warn("Stats cannot be empty");
+                return allGraphiteMetrics;
+            }
             
             Map<String,String> rawDiskStats_DeltaBetweenPreviousAndCurrent = getDiskMetrics_GetDeltaBetweenRawDiskStatsSets(previousRawDiskStats_Local, currentRawDiskStats);
             long millisecondsBetweenPreviousAndCurrentDiskStats = currentTimestampInMilliseconds - previousRawDiskStats_ReadTimestamp_Local;
@@ -266,7 +274,7 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             if ((diskStat.getBytesWrittenPerSecond() != null) && (diskStat.getBytesWrittenPerSecond().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".Write-Bytes|Second", diskStat.getBytesWrittenPerSecond(), currentTimestampInSeconds));
             if ((diskStat.getMegabytesWrittenPerSecond() != null) && (diskStat.getMegabytesWrittenPerSecond().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".Write-Megabytes|Second", diskStat.getMegabytesWrittenPerSecond(), currentTimestampInSeconds));
             if ((diskStat.getWriteRequestAverageTimeInMilliseconds() != null) && (diskStat.getWriteRequestAverageTimeInMilliseconds().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".Write-AvgRequestTime|Millisecond", diskStat.getWriteRequestAverageTimeInMilliseconds(), currentTimestampInSeconds));
-            if ((diskStat.getRequestAverageTimeInMilliseconds() != null) && (diskStat.getRequestAverageTimeInMilliseconds().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".AverageRequestTime|Millisecond", diskStat.getRequestAverageTimeInMilliseconds(), currentTimestampInSeconds));
+            if ((diskStat.getAverageRequestTimeInMilliseconds() != null) && (diskStat.getAverageRequestTimeInMilliseconds().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".AverageRequestTime|Millisecond", diskStat.getAverageRequestTimeInMilliseconds(), currentTimestampInSeconds));
             if ((diskStat.getAverageQueueLength() != null) && (diskStat.getAverageQueueLength().compareTo(BigDecimal.ZERO) != -1)) graphiteMetrics.add(new GraphiteMetric(deviceName + ".AverageQueueLength", diskStat.getAverageQueueLength(), currentTimestampInSeconds));
         }
         catch (Exception e) {

@@ -56,7 +56,7 @@ public class DiskIoStat_Delta {
     private BigDecimal writeBytesPerSecond_;
     private BigDecimal writeMegabytesPerSecond_;
     private BigDecimal writeRequestAverageTimeInMilliseconds_;
-    private BigDecimal requestAverageTimeInMilliseconds_;
+    private BigDecimal averageRequestTimeInMilliseconds_;
     private BigDecimal averageQueueLength_;
     
     public DiskIoStat_Delta(long millisecondsBetweenSamples, String deviceName,
@@ -194,29 +194,34 @@ public class DiskIoStat_Delta {
         }
     }
     
-    public BigDecimal getRequestAverageTimeInMilliseconds() {
-        if (requestAverageTimeInMilliseconds_ != null) return requestAverageTimeInMilliseconds_;
+    public BigDecimal getAverageRequestTimeInMilliseconds() {
+        if (averageRequestTimeInMilliseconds_ != null) return averageRequestTimeInMilliseconds_;
         
         try {
             BigDecimal sumMillisecondsActive = numMillisecondsSpentReading_.add(numMillisecondsSpentWriting_);
             BigDecimal sumIosCompleted = numReadsCompleted_.add(numWritesCompleted_);
             
-            if (sumIosCompleted.compareTo(BigDecimal.ZERO) <= 0) requestAverageTimeInMilliseconds_ = BigDecimal.ZERO;
-            else requestAverageTimeInMilliseconds_ = sumMillisecondsActive.divide(sumIosCompleted, SCALE, ROUNDING_MODE);
+            if (sumIosCompleted.compareTo(BigDecimal.ZERO) <= 0) averageRequestTimeInMilliseconds_ = BigDecimal.ZERO;
+            else averageRequestTimeInMilliseconds_ = sumMillisecondsActive.divide(sumIosCompleted, SCALE, ROUNDING_MODE);
             
-            return requestAverageTimeInMilliseconds_;
+            return averageRequestTimeInMilliseconds_;
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
             return null;
         }
     }
-    
+                
     public BigDecimal getAverageQueueLength() {
         if (averageQueueLength_ != null) return averageQueueLength_;
         
         try {
-            averageQueueLength_ = weightedNumMillisecondsSpentDoingIo_.divide(ONE_THOUSAND, SCALE, ROUNDING_MODE);
+            BigDecimal sumMillisecondsActive = numMillisecondsSpentReading_.add(numMillisecondsSpentWriting_);
+            BigDecimal averageRequestTimeInMilliseconds = getAverageRequestTimeInMilliseconds();
+
+            if (averageRequestTimeInMilliseconds.compareTo(BigDecimal.ZERO) <= 0) averageQueueLength_ = BigDecimal.ZERO;
+            else averageQueueLength_ = sumMillisecondsActive.divide(averageRequestTimeInMilliseconds, SCALE, ROUNDING_MODE);
+            
             return averageQueueLength_;
         }
         catch (Exception e) {
