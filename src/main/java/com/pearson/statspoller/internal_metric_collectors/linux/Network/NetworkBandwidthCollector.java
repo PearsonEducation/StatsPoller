@@ -68,7 +68,7 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
         
         try {
             Map<String,NetworkBandwidthStat> currentNetworkStats = getCurrentNetworkStats_FromSys(super.getLinuxSysFileSystemLocation());
-            if (currentNetworkStats == null || currentNetworkStats.isEmpty()) currentNetworkStats = getCurrentNetworkStats_FromProc(super.getLinuxProcFileSystemLocation());
+            if ((currentNetworkStats == null) || currentNetworkStats.isEmpty()) currentNetworkStats = getCurrentNetworkStats_FromProc(super.getLinuxProcFileSystemLocation());
             
             if ((currentNetworkStats == null) || currentNetworkStats.keySet().isEmpty()) {
                 return allGraphiteMetrics;
