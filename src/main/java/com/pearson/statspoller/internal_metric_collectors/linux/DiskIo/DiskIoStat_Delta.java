@@ -216,12 +216,7 @@ public class DiskIoStat_Delta {
         if (averageQueueLength_ != null) return averageQueueLength_;
         
         try {
-            BigDecimal sumSectorsActive = numSectorsRead_.add(numSectorsWritten_);
-            BigDecimal sumIosCompleted = numReadsCompleted_.add(numWritesCompleted_);
-            
-            if (sumIosCompleted.compareTo(BigDecimal.ZERO) <= 0) averageRequestTimeInMilliseconds_ = BigDecimal.ZERO;
-            else averageQueueLength_ = sumSectorsActive.divide(sumIosCompleted, SCALE, ROUNDING_MODE);
-            
+            averageQueueLength_ = weightedNumMillisecondsSpentDoingIo_.divide(ONE_THOUSAND, SCALE, ROUNDING_MODE);
             return averageQueueLength_;
         }
         catch (Exception e) {
