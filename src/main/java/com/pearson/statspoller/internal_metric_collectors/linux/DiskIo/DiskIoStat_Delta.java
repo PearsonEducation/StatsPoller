@@ -77,7 +77,7 @@ public class DiskIoStat_Delta {
         this.numMillisecondsSpentWriting_ = MathUtilities.safeGetBigDecimal(numMillisecondsSpentWriting);
         this.numIosCurrentInProgress_ = MathUtilities.safeGetBigDecimal(numIosCurrentInProgress);
         this.numMillisecondsSpentDoingIo_ = MathUtilities.safeGetBigDecimal(numMillisecondsSpentDoingIo);
-        this.weightedNumMillisecondsSpentDoingIo_ = MathUtilities.safeGetBigDecimal(numMillisecondsSpentDoingIo);
+        this.weightedNumMillisecondsSpentDoingIo_ = MathUtilities.safeGetBigDecimal(weightedNumMillisecondsSpentDoingIo);
     }
 
     public String getDeviceName() {
