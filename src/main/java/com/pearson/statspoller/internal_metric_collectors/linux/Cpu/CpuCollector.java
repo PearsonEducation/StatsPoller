@@ -65,6 +65,8 @@ public class CpuCollector extends InternalCollectorFramework implements Runnable
             String currentRawProcStats = FileIo.readFileToString(super.getLinuxProcFileSystemLocation() + "/stat");
 
             if ((currentRawProcStats == null) || currentRawProcStats.isEmpty()) {
+                logger.warn("Unabled to read cpu stats");
+                previousRawProcStats_ = null;
                 return allGraphiteMetrics;
             }
             else if (previousRawProcStats_ == null) {

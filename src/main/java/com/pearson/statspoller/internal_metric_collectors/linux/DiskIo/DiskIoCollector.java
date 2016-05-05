@@ -86,14 +86,8 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             previousRawDiskStats_ReadTimestamp_ = currentTimestampInMilliseconds;
 
             if ((previousRawDiskStats_ReadTimestamp_Local <= 0) || (currentTimestampInMilliseconds <= 0)) return allGraphiteMetrics;
-            if ((previousRawDiskStats_Local == null) || (currentRawDiskStats == null)) {
-                logger.warn("Stats cannot be null");
-                return allGraphiteMetrics;
-            }
-            if (previousRawDiskStats_Local.isEmpty() || currentRawDiskStats.isEmpty()) {
-                logger.warn("Stats cannot be empty");
-                return allGraphiteMetrics;
-            }
+            if ((previousRawDiskStats_Local == null) || (currentRawDiskStats == null)) return allGraphiteMetrics;
+            if (previousRawDiskStats_Local.isEmpty() || currentRawDiskStats.isEmpty()) return allGraphiteMetrics;
             
             Map<String,String> rawDiskStats_DeltaBetweenPreviousAndCurrent = getDiskMetrics_GetDeltaBetweenRawDiskStatsSets(previousRawDiskStats_Local, currentRawDiskStats);
             long millisecondsBetweenPreviousAndCurrentDiskStats = currentTimestampInMilliseconds - previousRawDiskStats_ReadTimestamp_Local;
@@ -228,7 +222,6 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
                         BigDecimal previousValue = new BigDecimal(rawDiskStats_DelimtedBySpace_Previous[i]);
                         BigDecimal currentValue = new BigDecimal(rawDiskStats_DelimtedBySpace_Current[i]);
                         BigDecimal deltaValue = currentValue.subtract(previousValue);
-                        if (deltaValue.compareTo(BigDecimal.ZERO) == -1) return new HashMap<>();
                         rawDiskStats_Delta.append(deltaValue.stripTrailingZeros().toPlainString()).append(" ");
                     }
                     catch (Exception e) {

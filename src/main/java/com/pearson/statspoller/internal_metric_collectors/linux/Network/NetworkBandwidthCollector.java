@@ -71,6 +71,8 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
             if ((currentNetworkStats == null) || currentNetworkStats.isEmpty()) currentNetworkStats = getCurrentNetworkStats_FromProc(super.getLinuxProcFileSystemLocation());
             
             if ((currentNetworkStats == null) || currentNetworkStats.keySet().isEmpty()) {
+                logger.warn("Unabled to read network stats");
+                previousNetworkStats_ = null;
                 return allGraphiteMetrics;
             }
             else if (previousNetworkStats_ == null) {
