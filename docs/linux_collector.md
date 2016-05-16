@@ -128,7 +128,7 @@ The File-System collector collectors disk space & disk inode information. Unline
 
 <br>
 
-# Memory
+## Memory
 
 The Memory collect provides two primary outputs: 'raw' and 'derived'. 'Raw' outputs are directly lifted from /proc/meminfo with no alterations. 'Derived' outputs provide more practical metrics by accounting for memory fields that can be reclaimed from the OS. Specifically, derived memory metrics are based around this formula: Memory Used = (MemTotal - (SwapCached + Cached + Buffers + MemFree + SReclaimable)) 
 
