@@ -2,6 +2,8 @@
 
 The Linux Metric Collector package are built-in collectors in StatsPoller. Their function is to collect OS-level metrics from Linux-based operating systems. To properly function, the Linux collectors require the /proc and /sys filesystems to be mounted.
 
+<br>
+
 ## Connections
 
 The Connections collector collects TCP & UDP connection count information.
@@ -19,6 +21,8 @@ TcpIPv4-ConnectionCount 3 1463267223
 UdpIPv4-ConnectionCount 5 1463267223  
 TcpIPv6-ConnectionCount 3 1463267223  
 UdpIPv6-ConnectionCount 2 1463267223  
+
+<br>
 
 ## CPU
 
@@ -54,6 +58,8 @@ CPU-All.GuestNice-Pct 0.0000000 1463264463
 CPU-All.Extra-Pct 0.0000000 1463264463  
 CPU-All.Used-Pct 11.16572 1463264463  
 
+<br>
+
 ## Disk IO
 
 The Disk IO collector provides output that is similar to systat's iostat package. Metrics are output on a per-disk basis. Credit to the iostat man pages for some of the metric descriptions.
@@ -83,6 +89,8 @@ sda.Write-Megabytes|Second 0.0232414 1463264523
 sda.Write-AvgRequestTime|Millisecond 0.15 1463264523  
 sda.AverageRequestTime|Millisecond 0.1481481 1463264523  
 sda.AverageQueueLength 0.0004 1463264523  
+
+<br>
 
 ## File System
 
@@ -118,6 +126,8 @@ The File-System collector collectors disk space & disk inode information. Unline
 |dev|shm.Inodes-Used 10 1463266473  
 |dev|shm.Inodes-Used-Pct 1 1463266473  
 
+<br>
+
 # Memory
 
 The Memory collect provides two primary outputs: 'raw' and 'derived'. 'Raw' outputs are directly lifted from /proc/meminfo with no alterations. 'Derived' outputs provide more practical metrics by accounting for memory fields that can be reclaimed from the OS. Specifically, derived memory metrics are based around this formula: Memory Used = (MemTotal - (SwapCached + Cached + Buffers + MemFree + SReclaimable)) 
@@ -143,6 +153,8 @@ Derived.Free-Megabytes 1148.515625 1463267553
 Derived.Used-Megabytes 2803.0898438 1463267553  
 Derived.Used-Pct 70.93547 1463267553  
 
+<br>
+
 ## Network Bandwidth
 
 The Network Bandwidth collector provides network bandwidth utilization metrics for all network adapters (excluding 'lo', the loopback device). 
@@ -164,6 +176,8 @@ enp0s3.Overall-Bytes-Second 18891.3666667 1463371627
 enp0s3.Received-Megabits-Second 0.1079357 1463371627  
 enp0s3.Transmitted-Megabits-Second 0.0431952 1463371627  
 enp0s3.Overall-Megabits-Second 0.1511309 1463371627  
+
+<br>
 
 ## Uptime
 
