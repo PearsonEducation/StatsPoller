@@ -111,15 +111,23 @@ public class ApplicationConfiguration {
             // advanced core statspoller configuration values
             maxMetricAge_ = applicationConfiguration_.safeGetLong("max_metric_age", 90 * 1000); // remove?
             outputInternalMetricsToDisk_ = applicationConfiguration_.safeGetBoolean("output_internal_metrics_to_disk", true);
-            alwaysCheckOutputFiles_ = applicationConfiguration_.safeGetBoolean("always_check_output_files", true);
             double checkOutputFilesInterval = applicationConfiguration_.safeGetDouble("check_output_files_interval", 5);
             checkOutputFilesInterval_ = legacyMode_ ? (long) checkOutputFilesInterval : (long) (checkOutputFilesInterval * 1000);    
             
+            String alwaysCheckOutputFiles = applicationConfiguration_.safeGetString("always_check_output_files", "auto");
+            if ((alwaysCheckOutputFiles != null) && alwaysCheckOutputFiles.equalsIgnoreCase("true")) alwaysCheckOutputFiles_ = true;
+            else if ((alwaysCheckOutputFiles != null) && alwaysCheckOutputFiles.equalsIgnoreCase("false")) alwaysCheckOutputFiles_ = false;
+            else alwaysCheckOutputFiles_ = !SystemUtils.IS_OS_WINDOWS;
+            
             // core statspoller configuration values
-            globalMetricNamePrefixEnabled_ = applicationConfiguration_.safeGetBoolean("global_metric_name_prefix_enabled", true);
-            globalMetricNamePrefixValue_ = applicationConfiguration_.safeGetString("global_metric_name_prefix_value", getOsHostname()).replace("$HOSTNAME", hostname_);
+            globalMetricNamePrefixEnabled_ = true;
             double outputInterval = applicationConfiguration_.safeGetDouble("output_interval", 30);            
-            outputInterval_ = legacyMode_ ? (long) outputInterval : (long) (outputInterval * 1000);     
+            outputInterval_ = legacyMode_ ? (long) outputInterval : (long) (outputInterval * 1000);  
+            globalMetricNamePrefixValue_ = applicationConfiguration_.safeGetString("global_metric_name_prefix_value", getOsHostname()).replace("$HOSTNAME", hostname_);
+            if ((globalMetricNamePrefixValue_ == null) || globalMetricNamePrefixValue_.trim().isEmpty()) {
+                logger.error("global_metric_name_prefix_value cannot be blank. Aborting application initialization");
+                return false;
+            }
            
             // graphite configuration
             graphiteOutputModules_.addAll(readLegacyGraphiteOutputModule());
@@ -850,7 +858,7 @@ public class ApplicationConfiguration {
         if ((mysqlMetricCollectors_ == null) || mysqlMetricCollectors_.isEmpty()) {
             return;
         }
-        
+
         try {
             Class.forName("org.mariadb.jdbc.Driver").newInstance();
         }

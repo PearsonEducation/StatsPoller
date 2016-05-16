@@ -14,16 +14,16 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
     * For Linux metric collectors, most metrics are retrieved from Linux's proc and/or sys filesystems. As a result, dependencies on apps like vmstat, ifconfig, etc are virtually non-existant in StatsPoller.
 * Advanced Java JMX metric collection is a primary focus in StatsPoller. Its JMX metric retrieval capabilities exceed that of most comparable tools.
 * Built-in metric collectors include....
-	* Linux OS (network, filesystem, disk i/o, cpu, uptime, memory)
+	* [Linux OS](./docs/linux_collector.md) (network, filesystem, disk i/o, cpu, uptime, memory)
+	* File-counter (counts/outputs the number of files in a specified folder)
+	* Process-counter (counts/outputs the number of processes running that match a particular regex pattern)
+	* Apache HTTP server
+	* MongoDB
+	* MySQL
 	* Cassandra (via JMX)
 	* Tomcat (via JMX)
 	* JBoss/Wildfly (via JMX)
 	* Almost any Java-based technology (via JMX)
-	* Apache HTTP server
-	* MongoDB
-	* MySQL
-	* File-counter (counts/outputs the number of files in a specified folder)
-	* Process-counter (counts/outputs the number of processes running that match a particular regex pattern)
 * Support for user-created metric collectors (plugins).
     * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
 * Bundled 'user-created metric collectors' include...

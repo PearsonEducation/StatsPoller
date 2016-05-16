@@ -1,5 +1,3 @@
-* always_check_output_files -- auto mode
-* MySQL -- disk stats? processlist stats?
 * Windows -- auto enable Windows collectors if OS is Windows
 * Create deb file
 * MySQL querier
