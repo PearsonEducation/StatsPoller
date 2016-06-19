@@ -37,7 +37,7 @@ public class ApplicationConfiguration {
     private static HierarchicalIniConfigurationWrapper applicationConfiguration_ = null;
     
     private static boolean globalMetricNamePrefixEnabled_ = false;
-    private static String globalMetricNamePrefixValue_ = null;
+    private static String globalMetricNamePrefix_ = null;
     private static long outputInterval_ = VALUE_NOT_SET_CODE;
     
     private static long checkOutputFilesInterval_ = VALUE_NOT_SET_CODE;
@@ -123,9 +123,9 @@ public class ApplicationConfiguration {
             globalMetricNamePrefixEnabled_ = true;
             double outputInterval = applicationConfiguration_.safeGetDouble("output_interval", 30);            
             outputInterval_ = legacyMode_ ? (long) outputInterval : (long) (outputInterval * 1000);  
-            globalMetricNamePrefixValue_ = applicationConfiguration_.safeGetString("global_metric_name_prefix_value", getOsHostname()).replace("$HOSTNAME", hostname_);
-            if ((globalMetricNamePrefixValue_ == null) || globalMetricNamePrefixValue_.trim().isEmpty()) {
-                logger.error("global_metric_name_prefix_value cannot be blank. Aborting application initialization");
+            globalMetricNamePrefix_ = getGlobalMetricNamePrefix_FromApplicationConfFile_CurrentAndLegacy();
+            if ((globalMetricNamePrefix_ == null) || globalMetricNamePrefix_.trim().isEmpty()) {
+                logger.error("global_metric_name_prefix cannot be blank. Aborting application initialization");
                 return false;
             }
            
@@ -228,6 +228,19 @@ public class ApplicationConfiguration {
             return false;
         }
         
+    }
+    
+    private static String getGlobalMetricNamePrefix_FromApplicationConfFile_CurrentAndLegacy() {
+        String globalMetricNamePrefix = applicationConfiguration_.safeGetString("global_metric_name_prefix", getOsHostname()).replace("$HOSTNAME", hostname_);
+        String globalMetricNamePrefixValue = applicationConfiguration_.safeGetString("global_metric_name_prefix_value", getOsHostname()).replace("$HOSTNAME", hostname_);
+
+        if ((globalMetricNamePrefix != null) && (globalMetricNamePrefixValue != null) && !globalMetricNamePrefixValue.trim().isEmpty() &&
+                globalMetricNamePrefix.equals(hostname_) && !globalMetricNamePrefix.equals(globalMetricNamePrefixValue)) {
+            return globalMetricNamePrefixValue;
+        }
+        else {
+            return globalMetricNamePrefix;
+        }
     }
     
     private static String getOsHostname() {
@@ -627,6 +640,10 @@ public class ApplicationConfiguration {
             String jmxPasswordKey = "jmx_password" + collectorSuffix;
             String jmxPasswordValue = applicationConfiguration_.safeGetString(jmxPasswordKey, "");
 
+            String jmxCollectionIntervalKey = "jmx_collection_interval" + collectorSuffix;
+            double jmxCollectionIntervalValue = applicationConfiguration_.safeGetDouble(jmxCollectionIntervalKey, 30);
+            long jmxCollectionIntervalValue_Long = legacyMode ? (long) jmxCollectionIntervalValue : (long) (jmxCollectionIntervalValue * 1000);    
+
             String jmxNumConnectionAttemptRetriesKey = "jmx_num_connection_attempt_retries" + collectorSuffix;
             int jmxNumConnectionAttemptRetriesValue = applicationConfiguration_.safeGetInteger(jmxNumConnectionAttemptRetriesKey, 3);
 
@@ -641,6 +658,13 @@ public class ApplicationConfiguration {
             String jmxCollectStringAttributesKey = "jmx_collect_string_attributes" + collectorSuffix;
             Boolean jmxCollectStringAttributesValue = applicationConfiguration_.safeGetBoolean(jmxCollectStringAttributesKey, false);
 
+            String jmxDerivedMetricsEnabledKey = "jmx_derived_metrics_enabled" + collectorSuffix;
+            boolean jmxDerivedMetricsEnabledValue = applicationConfiguration_.safeGetBoolean(jmxDerivedMetricsEnabledKey, true);
+
+            String jmxMetricPrefixKey = "jmx_metric_prefix" + collectorSuffix;
+            String jmxMetricPrefixValue = applicationConfiguration_.safeGetString(jmxMetricPrefixKey, "JMX");
+            String graphiteSanitizedJmxMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(jmxMetricPrefixValue, true, true);
+            
             String jmxBlacklistObjectNameRegexsKey = "jmx_blacklist_objectname_regex" + collectorSuffix;
             List<Object> jmxBlacklistObjectNameRegexsValue = applicationConfiguration_.safeGetList(jmxBlacklistObjectNameRegexsKey, null);
             List<String> jmxBlacklistObjectNameRegexsValueStrings = new ArrayList<>();
@@ -667,17 +691,6 @@ public class ApplicationConfiguration {
                     jmxWhitelistRegexsValueStrings.add((String) object);
                 }
             }
-
-            String jmxCollectionIntervalKey = "jmx_collection_interval" + collectorSuffix;
-            double jmxCollectionIntervalValue = applicationConfiguration_.safeGetDouble(jmxCollectionIntervalKey, 30);
-            long jmxCollectionIntervalValue_Long = legacyMode ? (long) jmxCollectionIntervalValue : (long) (jmxCollectionIntervalValue * 1000);    
-
-            String jmxDerivedMetricsEnabledKey = "jmx_derived_metrics_enabled" + collectorSuffix;
-            boolean jmxDerivedMetricsEnabledValue = applicationConfiguration_.safeGetBoolean(jmxDerivedMetricsEnabledKey, true);
-
-            String jmxMetricPrefixKey = "jmx_metric_prefix" + collectorSuffix;
-            String jmxMetricPrefixValue = applicationConfiguration_.safeGetString(jmxMetricPrefixKey, "JMX");
-            String graphiteSanitizedJmxMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(jmxMetricPrefixValue, true, true);
 
             String jmxOutputFileValue = "./output/" + "jmx_" + jmxMetricPrefixValue + ".out";
 
@@ -878,8 +891,8 @@ public class ApplicationConfiguration {
         return globalMetricNamePrefixEnabled_;
     }
 
-    public static String getGlobalMetricNamePrefixValue() {
-        return globalMetricNamePrefixValue_;
+    public static String getGlobalMetricNamePrefix() {
+        return globalMetricNamePrefix_;
     }
 
     public static long getOutputInterval() {

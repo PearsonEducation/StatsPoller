@@ -2,7 +2,6 @@ package com.pearson.statspoller.internal_metric_collectors.mysql_querier;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
-import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
@@ -72,7 +71,6 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
             
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
             
-            // lay on anything worth logging here
             logger.info("Finished MySQL Querier metric collection routine. MyqlServer=" + host_ + ":" + port_ + 
                     ", MetricsCollected=" + openTsdbMetrics.size() +
                     ", MetricCollectionTime=" + routineTimeElapsed);
@@ -91,13 +89,9 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
             
             // connect to the db
             Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
-            
-            getMysqlMetrics(connection); // first iteration, don't store metrics because we dont have rate data
 
-            long sleepTimeInMs = getCollectionInterval();
-            Threads.sleepMilliseconds(sleepTimeInMs);
-
-            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection); // second iteration, get graphite metrics
+            // get metrics
+            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection); 
 
             // disconnect from the db
             DatabaseUtils.disconnect(connection);
@@ -109,8 +103,7 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
             
             logger.info("Finished MySQL Querier metric collection routine." + " MyqlServer=" + host_ + ":" + port_ + 
                     ", MetricsCollected=" + openTsdbMetrics.size() +
-                    ", MetricCollectionTime=" + routineTimeElapsed +
-                    ", MetricCollectionTimeExcludingSleep=" + (routineTimeElapsed - sleepTimeInMs));
+                    ", MetricCollectionTime=" + routineTimeElapsed);
         }
 
     }
@@ -125,7 +118,7 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
             boolean isConnectionValid = DatabaseUtils.isConnectionValid(connection, 5);
 
             if (!isConnectionValid || connection.isClosed()) {
-                openTsdbMetric = new OpenTsdbMetric("Available",  System.currentTimeMillis(), BigDecimal.ZERO, openTsdbTags_);
+                openTsdbMetric = new OpenTsdbMetric("Error",  System.currentTimeMillis(), BigDecimal.ONE, openTsdbTags_);
                 openTsdbMetrics.add(openTsdbMetric);
                 logger.warn("MyqlServer=" + host_ + ":" + port_ + " is unavailable");
                 return openTsdbMetrics;
@@ -134,11 +127,9 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
             
             long currentTimestampMilliseconds = System.currentTimeMillis();
 
-            openTsdbMetric = new OpenTsdbMetric("Available",  currentTimestampMilliseconds, BigDecimal.ONE, openTsdbTags_);
+            openTsdbMetric = new OpenTsdbMetric("Error",  currentTimestampMilliseconds, BigDecimal.ZERO, openTsdbTags_);
             openTsdbMetrics.add(openTsdbMetric);
             
-
-
             Map<String,BigDecimal> queryResults = runQuery(connection, "");
         }
         catch (Exception e) {

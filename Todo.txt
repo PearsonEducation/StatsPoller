@@ -1,3 +1,7 @@
-* Windows -- auto enable Windows collectors if OS is Windows
-* Create deb file
-* MySQL querier
+2.0
+ * Windows -- auto enable Windows collectors if OS is Windows
+ * MySQL querier
+ * Finish docs
+
+2.1 
+ * Create deb

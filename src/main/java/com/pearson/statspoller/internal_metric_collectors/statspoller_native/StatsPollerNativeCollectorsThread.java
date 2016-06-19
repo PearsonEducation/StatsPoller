@@ -125,10 +125,11 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             List<GraphiteMetric> swapSpaceStats = getSwapSpaceStats(timestamp);
             graphiteMetrics.addAll(swapSpaceStats);
 
-            if (isUnix_) {
-                List<GraphiteMetric> fileDescriptorStats = getFileDescriptorStats(timestamp);
-                graphiteMetrics.addAll(fileDescriptorStats);
-            }
+            // disabled since this this metric can give misleading output (per-process file descriptor info is more relevant)
+            //if (isUnix_) {
+            //    List<GraphiteMetric> fileDescriptorStats = getFileDescriptorStats(timestamp);
+            //   graphiteMetrics.addAll(fileDescriptorStats);
+            //}
 
             List<GraphiteMetric> diskUsageStats = getDiskSpaceStats(timestamp);
             graphiteMetrics.addAll(diskUsageStats);

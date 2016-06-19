@@ -50,7 +50,7 @@ public class ReadMetricsFromFileThread implements Runnable {
     public void run() {
         
         String metricPrefix = "";
-        if (ApplicationConfiguration.isGlobalMetricNamePrefixEnabled() && (ApplicationConfiguration.getGlobalMetricNamePrefixValue() != null)) metricPrefix += ApplicationConfiguration.getGlobalMetricNamePrefixValue();
+        if (ApplicationConfiguration.isGlobalMetricNamePrefixEnabled() && (ApplicationConfiguration.getGlobalMetricNamePrefix() != null)) metricPrefix += ApplicationConfiguration.getGlobalMetricNamePrefix();
         if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
         if (metricCollectorPrefix_ != null) metricPrefix += metricCollectorPrefix_;
         if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";

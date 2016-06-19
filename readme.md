@@ -10,34 +10,32 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 
 * Metric collectors that retrieve metrics on a user-specified intervals.
 * Built-in metric collectors have few dependencies.
-    * Most metric collectors are built into the main program & rely only on Java 1.7+ being installed to run StatsPoller. 
+    * Most metric collectors are built into the main program & rely only on Java 1.7+ being installed to run StatsPoller.
     * For Linux metric collectors, most metrics are retrieved from Linux's proc and/or sys filesystems. As a result, dependencies on apps like vmstat, ifconfig, etc are virtually non-existant in StatsPoller.
 * Advanced Java JMX metric collection is a primary focus in StatsPoller. Its JMX metric retrieval capabilities exceed that of most comparable tools.
 * Built-in metric collectors include....
+	* [StatsPoller Native](./docs/statspoller_native.md) (OS metrics from the perspective of the JVM runtime)
 	* [Linux OS](./docs/linux_collector.md) (network, filesystem, disk i/o, cpu, uptime, memory)
-	* File-counter (counts/outputs the number of files in a specified folder)
-	* Process-counter (counts/outputs the number of processes running that match a particular regex pattern)
+  * [Java JMX](./docs/jmx.md) (Cassandra, Tomcat, JBoss/Wildfly, etc)
+	* [File Counter](./docs/file_counter.md) (counts/outputs the number of files in a specified folder)
+	* [Process Counter](./docs/process_counter.md) (counts/outputs the number of processes running that match a particular regex pattern)
 	* Apache HTTP server
 	* MongoDB
 	* MySQL
-	* Cassandra (via JMX)
-	* Tomcat (via JMX)
-	* JBoss/Wildfly (via JMX)
-	* Almost any Java-based technology (via JMX)
 * Support for user-created metric collectors (plugins).
     * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
 * Bundled 'user-created metric collectors' include...
     * Windows OS (cpu, disk, iis, memory, network)
-	* SQL Server 
+	* SQL Server
 * Advanced/flexible configuration capabilities
-	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from an infinite number of external services. 
+	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from an infinite number of external services.
 	* A single deployment of StatsPoller can be configured to monitor many of JVMs (via JMX), MySQL servers, etc
 
 <br>
 
 ## Why release another metrics poller when there are several good ones already out there?
 
-StatsPoller was originally written at a time when there were few peers on the open-source market. Other tools have emerged then, and many of them are very good at what they do. StatsPoller has served Pearson well & is particularly well suited to monitor Java-based applications, so we figured that we'd just give the market another choice. 
+StatsPoller was originally written at a time when there were few peers on the open-source market. Other tools have emerged then, and many of them are very good at what they do. StatsPoller has served Pearson well & is particularly well suited to monitor Java-based applications, so we figured that we'd just give the market another choice.
 
 <br>
 
@@ -52,18 +50,17 @@ StatsPoller currently supports installation via rpm or via manual installation.
 * (Linux) Kernel 2.6 or newer
 * (Linux) Several metric collectors depend on the 'proc' filesystem being mounted somewhere (StatsPoller assumes /proc by default)
 
-### RPM installation on Linux (for RedHat, CentOS, etc)
+### rpm install on Linux (for RedHat, CentOS, etc)
 
-* Instructions coming shortly...
+* sudo rpm -ivh statspoller.rpm
 
-### Manual installation on Linux (may vary on your distro)
+### rpm update on Linux (for RedHat, CentOS, etc)
 
-* sudo unzip statspoller.zip -d /opt
-* sudo cp /opt/StatsPoller/init.d/statspoller /etc/init.d/statspoller
-* sudo chmod -R 744 /opt/StatsPoller/bin/*
-* sudo chmod 744 /opt/StatsPoller/StatsPoller.jar
-* sudo chmod 755 /etc/init.d/statspoller
-* sudo chkconfig --add statspoller
+* sudo rpm -Uvh statspoller.rpm
+
+### deb installation on Linux (for Ubuntu, Mint, etc)
+
+* deb is being worked on & is targeted at a future StatsPoller release
 
 ### Manual installation on Windows
 
@@ -81,17 +78,8 @@ If you feel constrained by putting a large number of configurations into applica
 
 <br>
 
-JMX configuration can be particularly complicated. Here are some default JMX configurations that may help make setting up JMX metric collectors easier.
-...
-
-<br>
-
 ## Thanks to...
 * Grafana : http://grafana.org/
 * Graphite : Orbitz @ https://github.com/graphite-project/
 * OpenTSDB : http://opentsdb.net/
 * Pearson Assessments, a division of Pearson Education: http://www.pearsonassessments.com/
-
-
-
-

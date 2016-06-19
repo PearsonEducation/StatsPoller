@@ -10,10 +10,10 @@ The Connections collector collects TCP & UDP connection count information.
 
 ### Metrics
 
-* TcpIPv4 : The number of currently 'in use' TCP-IP (version 4) connections 
-* UdpIPv4 : The number of currently 'in use' UDP-IP (version 4) connections 
-* TcpIPv6 : The number of currently 'in use' TCP-IP (version 6) connections 
-* UdpIPv6 : The number of currently 'in use' UDP-IP (version 6) connections 
+* TcpIPv4 - Connection Count : The number of currently 'in use' TCP-IP (version 4) connections
+* UdpIPv4 - Connection Count : The number of currently 'in use' UDP-IP (version 4) connections
+* TcpIPv6 - Connection Count : The number of currently 'in use' TCP-IP (version 6) connections
+* UdpIPv6 - Connection Count : The number of currently 'in use' UDP-IP (version 6) connections
 
 ### Example output
 
@@ -26,7 +26,7 @@ UdpIPv6-ConnectionCount 2 1463267223
 
 ## CPU
 
-The CPU collector provides output that is similar to systat's mpstat package. Metrics are output on a per-core basis, and include a rollup of the overall CPU utlization. Credit to the mpstat man pages for some of the metric descriptions.
+The CPU collector provides output that is similar to systat's mpstat package. Metrics are output on a per-core basis, and include a rollup of the overall CPU utilization. Credit to the mpstat man pages for some of the metric descriptions.
 
 ### Metrics
 
@@ -43,7 +43,7 @@ The CPU collector provides output that is similar to systat's mpstat package. Me
 * CPU Extra % : The percentage of time spent spent servicing anything CPU related that isn't covered by the other metrics.
 * CPU Used % : A derived metric for CPU usage percentage. The formula is: (100 - "CPU Idle %")
 
-### Example output 
+### Example output
 
 CPU-All.User-Pct 8.85497 1463264463  
 CPU-All.Nice-Pct 0.0000000 1463264463  
@@ -77,7 +77,7 @@ The Disk IO collector provides output that is similar to systat's iostat package
 * Device - Average Request Time (ms) : The average time (in milliseconds) for I/O requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 * Device - Average Queue Length : The average queue length of the requests that were issued to the device.
 
-### Example output 
+### Example output
 
 sda.Read-Requests|Second 0.0333 1463264523  
 sda.Read-Bytes|Second 136.5504 1463264523  
@@ -94,7 +94,7 @@ sda.AverageQueueLength 0.0004 1463264523
 
 ## File System
 
-The File-System collector collectors disk space & disk inode information. Unline other collectors, the File-System collector uses a 3rd party program to retrieve file-system information. Specifically, the 'df' application must be installed & callable on the operating system. 
+The File-System collector collectors disk space & disk inode information. Unline other collectors, the File-System collector uses a 3rd party program to retrieve file-system information. Specifically, the 'df' application must be installed & callable on the operating system.
 
 ### Metrics
 
@@ -102,9 +102,9 @@ The File-System collector collectors disk space & disk inode information. Unline
 * Mount - Disk Space Total - Bytes : The total number of bytes of disk space on the file system.
 * Mount - Disk Space Free - Bytes : The number of free bytes of disk space on the file system.
 * Mount - Disk Space Used - Bytes : The number of used bytes of disk space on the file system.
-* Mount - Disk Space Total - MB : The total number of megabytes of disk space on the file system.
-* Mount - Disk Space Free - MB : The number of free megabytes of disk space on the file system.
-* Mount - Disk Space Used - MB : The number of used megabytes of disk space on the file system.
+* Mount - Disk Space Total - GB : The total number of gigabytes of disk space on the file system.
+* Mount - Disk Space Free - GB : The number of free gigabytes of disk space on the file system.
+* Mount - Disk Space Used - GB : The number of used gigabytes of disk space on the file system.
 * Mount - Disk Space Used % : The percentage of used disk space on the file system.
 * Mount - Inodes Total : The total number of inodes on the file system.
 * Mount - Inodes Free : The number of free inodes on the file system.
@@ -130,7 +130,7 @@ The File-System collector collectors disk space & disk inode information. Unline
 
 ## Memory
 
-The Memory collect provides two primary outputs: 'raw' and 'derived'. 'Raw' outputs are directly lifted from /proc/meminfo with no alterations. 'Derived' outputs provide more practical metrics by accounting for memory fields that can be reclaimed from the OS. Specifically, derived memory metrics are based around this formula: Memory Used = (MemTotal - (SwapCached + Cached + Buffers + MemFree + SReclaimable)) 
+The Memory collect provides two primary outputs: 'raw' and 'derived'. 'Raw' outputs are directly lifted from /proc/meminfo with no alterations. 'Derived' outputs provide more practical metrics by accounting for memory fields that can be reclaimed from the OS. Specifically, derived memory metrics are based around this formula: Memory Used = (MemTotal - (SwapCached + Cached + Buffers + MemFree + SReclaimable))
 
 ### Metrics
 
@@ -157,7 +157,7 @@ Derived.Used-Pct 70.93547 1463267553
 
 ## Network Bandwidth
 
-The Network Bandwidth collector provides network bandwidth utilization metrics for all network adapters (excluding 'lo', the loopback device). 
+The Network Bandwidth collector provides network bandwidth utilization metrics for all network adapters (excluding 'lo', the loopback device).
 
 ### Metrics
 
@@ -190,8 +190,3 @@ OS_Uptime / Seconds : The number of seconds since the last operating system rebo
 ### Example output
 
 OS_Uptime-Seconds 109675.75 1463371897  
-
-
-
-
-

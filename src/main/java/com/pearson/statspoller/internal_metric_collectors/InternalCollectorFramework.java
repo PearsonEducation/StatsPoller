@@ -221,7 +221,7 @@ public abstract class InternalCollectorFramework {
     private String createFullInternalCollectorMetricPrefix() {
         String metricPrefix = "";
         
-        if (ApplicationConfiguration.isGlobalMetricNamePrefixEnabled() && (ApplicationConfiguration.getGlobalMetricNamePrefixValue() != null)) metricPrefix += ApplicationConfiguration.getGlobalMetricNamePrefixValue();
+        if (ApplicationConfiguration.isGlobalMetricNamePrefixEnabled() && (ApplicationConfiguration.getGlobalMetricNamePrefix() != null)) metricPrefix += ApplicationConfiguration.getGlobalMetricNamePrefix();
         if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
         if (internalCollectorMetricPrefix_ != null) metricPrefix += internalCollectorMetricPrefix_;
         if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
