@@ -18,11 +18,11 @@ The JMX metric collector is a metric collector that plugs into Java JVMs & colle
 
 ## Standard Metrics
 
-Without blacklists and/or whitelists filtering out metrics, the JMX collector will grab every numeric attribute offered by the JVM. A plain JVM will often output 100+ metrics. A JVM that uses lots of fancy libraries and/or exposes lots of JMX metrics will sometimes offer thousands of metrics. For example, a single Apache Cassandra JVM will offer over 3000 metrics. To preview the output of what StatsPoller might fetch/output, connect to your JVM with a tool like VisualVM & use the mBean viewer to see all the available JMX metrcs. Note that StatsPoller always outputs a JVM availability metric, 'Availability.Available'. Whenever StatsPoller is connected to the JVM, 'Availability.Available' will output '1', otherwise it outputs '0'.
+Without blacklists and/or whitelists filtering out metrics, the JMX collector will grab every numeric attribute offered by the JVM. A plain JVM will often output 100+ metrics. A JVM that uses lots of fancy libraries and/or exposes lots of JMX metrics will sometimes offer thousands of metrics. For example, a single Apache Cassandra JVM will offer over 3000 metrics. To preview the output of what StatsPoller might fetch/output, connect to your JVM with a tool like VisualVM & use the mBean viewer to see all the available JMX metrcs. Note that StatsPoller always outputs a JVM availability metric, 'Availability.Available'. Whenever StatsPoller is connected to the target JVM, 'Availability.Available' will output '1', otherwise it outputs '0'.
 
 ### Example Output (Sample)
 
-Availability.Available 1 1466371333
+Availability.Available 1 1466371333  
 java-lang.OperatingSystem.TotalSwapSpaceSize 131608461312 1466370213  
 java-lang.OperatingSystem.ProcessCpuTime 4250340845600 1466370213  
 java-lang.OperatingSystem.SystemCpuLoad 0.05514683146571775 1466370213  
