@@ -33,7 +33,7 @@ stop()
         CURRENT_TIME=$(date +%s)
         ELAPSED_TIME=$[CURRENT_TIME-START_KILL_TIME]
 
-        if [ ELAPSED_TIME -gt $STOP_PROCESS_TIMEOUT ]; then
+        if [ $ELAPSED_TIME -gt $STOP_PROCESS_TIMEOUT ]; then
           EXITCODE=1
           break
         else
