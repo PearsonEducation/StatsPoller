@@ -6,41 +6,73 @@ export process_name="StatsPoller"
 source /opt/$process_name/conf/statspoller.profile
 
 NAME=`basename $0`
-PID=`pgrep -f StatsPoller.jar`
+EXITCODE=0
+STOP_PROCESS_TIMEOUT=15
+
+start()
+{
+  PID=`pgrep -f StatsPoller.jar`
+
+  cd /opt/StatsPoller
+  if [ -z "$PID" ]; then
+    (java $JAVA_OPTS > /dev/null 2>&1 &)
+  else
+    printf "Already running on PID $PID!\n"
+  fi
+}
+
+stop()
+{
+  PID=`pgrep -f StatsPoller.jar`
+
+  if [ -n "$PID" ]; then
+    kill $PID
+    START_KILL_TIME=$(date +%s)
+
+    while [[ ( -d /proc/$PID ) && ( -z `grep zombie /proc/$PID/status` ) ]]; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED_TIME=$[CURRENT_TIME-START_KILL_TIME]
+
+        if [ ELAPSED_TIME -gt $STOP_PROCESS_TIMEOUT ]; then
+          EXITCODE=1
+          break
+        else
+          sleep 1
+        fi
+    done
+  else
+    printf "Service isn't running\n"
+  fi
+}
+
+status()
+{
+  PID=`pgrep -f StatsPoller.jar`
+
+  if [ -n "$PID" ]; then
+    ps -fp $PID
+  else
+    printf "Service isn't running\n"
+  fi
+}
 
 case "$1" in
-    start)
-          cd /opt/StatsPoller
-          if [ -z "$PID" ]; then
-              (java $JAVA_OPTS > /dev/null 2>&1 &)
-          else
-              printf "Already running on PID $PID!\n"
-              exit 1
-          fi
-          sleep 1
-          ;;
-          status)
-              if [ -n "$PID" ]; then
-                  ps -fp $PID
-              else
-                  printf "Serivice isn't running\n"
-                  exit 1
-              fi
-              ;;
-          stop)
-              if [ -n "$PID" ]; then
-                  kill $PID
-              else
-                  printf "Service isn't running\n"
-                  exit 1
-              fi
-              ;;
-          restart)
-              $0 stop
-              sleep 5
-              $0 start
-              ;;
-          *)
-              printf "usage: $0 {status|start|stop|restart}\n"
-              exit 1
-          esac
+  start)
+    start
+    ;;
+  status)
+    status
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  *)
+    printf "usage: $0 {status|start|stop|restart}\n"
+    ;;
+esac
+
+exit $EXITCODE
