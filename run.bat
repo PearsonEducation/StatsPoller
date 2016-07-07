@@ -1,1 +1,1 @@
-java -Xmx=192m -jar StatsPoller.jar
+java -Xmx=128m -jar StatsPoller.jar

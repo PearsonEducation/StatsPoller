@@ -1,7 +1,8 @@
 2.0
  * Windows -- auto enable Windows collectors if OS is Windows
- * MySQL querier
  * Finish docs
+ * % -> Pct
 
 2.1 
  * Create deb
+ * MySQL querier

@@ -782,6 +782,9 @@ public class ApplicationConfiguration {
             String mongoPasswordKey = "mongo_password" + collectorSuffix;
             String mongoPasswordValue = applicationConfiguration_.safeGetString(mongoPasswordKey, "");
             
+            String mongoVerboseOutputKey = "mongo_verbose_output" + collectorSuffix;
+            boolean mongoVerboseOutputValue = applicationConfiguration_.safeGetBoolean(mongoVerboseOutputKey, false);            
+            
             String mongoCollectionIntervalKey = "mongo_collection_interval" + collectorSuffix;
             double mongoCollectionIntervalValue = applicationConfiguration_.safeGetDouble(mongoCollectionIntervalKey, 60);
             long mongoCollectionIntervalValue_Long = legacyMode ? (long) mongoCollectionIntervalValue : (long) (mongoCollectionIntervalValue * 1000);    
@@ -795,7 +798,7 @@ public class ApplicationConfiguration {
             if (mongoEnabledValue && (mongoHostValue != null) && (mongoPortValue != -1)) {
                 MongoMetricCollector mongoMetricCollector = new MongoMetricCollector(mongoEnabledValue, 
                         mongoCollectionIntervalValue_Long, graphiteSanitizedMongoMetricPrefix, mongoOutputFileValue, outputInternalMetricsToDisk_,
-                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue);
+                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue, mongoVerboseOutputValue);
                
                 return mongoMetricCollector;
             }

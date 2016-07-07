@@ -15,6 +15,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import java.math.BigDecimal;
 import java.util.Map.Entry;
+import org.apache.commons.lang.StringUtils;
 import org.boon.Pair;
 import org.bson.Document;
 
@@ -30,15 +31,17 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
     private final int port_;
     private final String username_;
     private final String password_;
+    private final boolean mongoVerboseOutputValue_;
     
     public MongoMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String username, String password) {
+            String host, int port, String username, String password, boolean mongoVerboseOutputValue) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.host_ = host;
         this.port_ = port;
         this.username_ = username;
         this.password_ = password;
+        this.mongoVerboseOutputValue_ = mongoVerboseOutputValue;
     }
     
     @Override
@@ -153,9 +156,9 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                     MongoCursor iterator = collections.iterator();
                     
                     while (iterator.hasNext()) {
-                        String col = iterator.next().toString();
-                        Document collStats = currentDatabase.runCommand(new Document().append("collStats", col).append("scale", 1).append("verbose", true));
-                        graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + col));
+                        String collection = iterator.next().toString();
+                        Document collStats = currentDatabase.runCommand(new Document().append("collStats", collection).append("scale", 1).append("verbose", true));
+                        graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + dbName + "." + collection));
                     }
                 }
             }
@@ -186,9 +189,10 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
         
         try {
-            document = filterDocument(document);
+            document = filterDocument(document, origin);
 
-            List<Pair<String, BigDecimal>> metrics = buildMetrics(origin, document);
+            List<Pair<String, BigDecimal>> metrics = new ArrayList<>();
+            metrics = buildMetrics(origin, document, metrics);
 
             int metricTimestamp = ((int) (System.currentTimeMillis() / 1000));
 
@@ -203,9 +207,9 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         return graphiteMetrics;
     }
     
-    private Document filterDocument(Document document) {
+    private Document filterDocument(Document document, String origin) {
         
-        if ((document == null) || document.isEmpty()) {
+        if ((document == null) || document.isEmpty() || (origin == null)) {
             return new Document();
         }
 
@@ -224,8 +228,13 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                         continue;
                     }
 
+                    if (!mongoVerboseOutputValue_ && !StringUtils.startsWithIgnoreCase(origin, "serverStatus") && (key.equalsIgnoreCase("indexDetails") || key.equalsIgnoreCase("wiredTiger"))) {
+                        documentCopy.remove(key);
+                        continue;
+                    }
+                    
                     Document passdown = (Document) entry.getValue();
-                    documentCopy.put(key, filterDocument(passdown));
+                    documentCopy.put(key, filterDocument(passdown, origin));
 
                     if (((Document) documentCopy.get(key)).isEmpty()) {
                         documentCopy.remove(key);
@@ -249,14 +258,12 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         return documentCopy;
     }
 
-    private List<Pair<String, BigDecimal>> buildMetrics(String start, Document document) {
+    private List<Pair<String, BigDecimal>> buildMetrics(String start, Document document, List<Pair<String, BigDecimal>> metrics) {
 
         if ((start == null) || (document == null) || document.isEmpty()) {
             return new ArrayList<>();
         }
         
-        List<Pair<String, BigDecimal>> metrics = new ArrayList<>();
-       
         try {
             Document documentCopy = Document.parse(document.toJson());
 
@@ -274,10 +281,10 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 else if (entry.getValue() instanceof Document) {
                     Document passdown = (Document) entry.getValue();
                     if (start.isEmpty()) {
-                        buildMetrics(key, passdown);
+                        buildMetrics(key, passdown, metrics);
                     } 
                     else {
-                        buildMetrics(start + "." + key, passdown);
+                        buildMetrics(start + "." + key, passdown, metrics);
                     }
                 }
             }
