@@ -52,19 +52,23 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 ### rpm install on Linux (for RedHat, CentOS, etc)
 
-* sudo rpm -ivh statspoller.rpm
+* sudo rpm -ivh statspoller_version_xyz.rpm
 
 ### rpm update on Linux (for RedHat, CentOS, etc)
 
-* sudo rpm -Uvh statspoller.rpm
+* sudo rpm -Uvh statspoller_version_xyz.rpm
+
+### rpm remove on Linux (for RedHat, CentOS, etc)
+
+* sudo rpm -e statspoller_version_xyz.rpm
 
 ### deb installation on Linux (for Ubuntu, Mint, etc)
 
 * deb is being worked on & is targeted at a future StatsPoller release
 
-### Manual installation on Windows
+### Installation on Windows
 
-* Instructions coming shortly...
+* A Windows installer is planned for a future release.
 
 <br>
 

@@ -148,7 +148,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             double systemLoadPercent = operatingSystemMXBean_.getSystemCpuLoad() * 100;
             BigDecimal cpuPct_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal(systemLoadPercent), SCALE, ROUNDING_MODE);
             cpuPct_BigDecimal = MathUtilities.correctOutOfRangePercentage(cpuPct_BigDecimal);
-            GraphiteMetric cpuPct_Graphite = new GraphiteMetric("Cpu" + "." + "Cpu-%", cpuPct_BigDecimal, timestamp);
+            GraphiteMetric cpuPct_Graphite = new GraphiteMetric("Cpu" + "." + "Cpu-Pct", cpuPct_BigDecimal, timestamp);
             graphiteMetrics.add(cpuPct_Graphite);
 
             GraphiteMetric coreCount_Graphite = new GraphiteMetric("Cpu" + "." + "CoreCount", new BigDecimal(operatingSystemMXBean_.getAvailableProcessors()), timestamp);
@@ -198,7 +198,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             if ((totalPhysicalMemorySizeBytes_Double > 0) && (usedPhysicalMemorySizeBytes_Double > 0)) {
                 double usedPhysicalMemoryPct_Double = (usedPhysicalMemorySizeBytes_Double / totalPhysicalMemorySizeBytes_Double) * 100;
                 BigDecimal usedPhysicalMemoryPct_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal(usedPhysicalMemoryPct_Double), SCALE, ROUNDING_MODE);
-                GraphiteMetric usedPhysicalMemoryPct_Graphite = new GraphiteMetric("PhysicalMemory" + "." + "Used-%", usedPhysicalMemoryPct_BigDecimal, timestamp);
+                GraphiteMetric usedPhysicalMemoryPct_Graphite = new GraphiteMetric("PhysicalMemory" + "." + "Used-Pct", usedPhysicalMemoryPct_BigDecimal, timestamp);
                 graphiteMetrics.add(usedPhysicalMemoryPct_Graphite);
             }
         }
@@ -246,7 +246,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             if ((totalSwapSpaceSizeBytes_Double > 0) && (usedSwapSpaceSizeBytes_Double > 0)) {
                 double usedSwapSpacePct_Double = (usedSwapSpaceSizeBytes_Double / totalSwapSpaceSizeBytes_Double) * 100;
                 BigDecimal usedSwapSpacePct_BigDecimal = MathUtilities.smartBigDecimalScaleChange(new BigDecimal(usedSwapSpacePct_Double), SCALE, ROUNDING_MODE);
-                GraphiteMetric usedSwapSpacePct_Graphite = new GraphiteMetric("SwapSpace" + "." + "Used-%", usedSwapSpacePct_BigDecimal, timestamp);
+                GraphiteMetric usedSwapSpacePct_Graphite = new GraphiteMetric("SwapSpace" + "." + "Used-Pct", usedSwapSpacePct_BigDecimal, timestamp);
                 graphiteMetrics.add(usedSwapSpacePct_Graphite);
             }
         }
@@ -281,7 +281,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             
             if ((maxFileDescriptorCount_Long > 0) && (openFileDescriptorCount_Long > 0)) {
                 double usedFileDescriptorsPct_Double = (openFileDescriptorCount_Long / maxFileDescriptorCount_Long) * 100;
-                GraphiteMetric usedFileDescriptorsPct_Graphite = new GraphiteMetric("FileDescriptors" + "." + "Used-%", new BigDecimal(usedFileDescriptorsPct_Double), timestamp);
+                GraphiteMetric usedFileDescriptorsPct_Graphite = new GraphiteMetric("FileDescriptors" + "." + "Used-Pct", new BigDecimal(usedFileDescriptorsPct_Double), timestamp);
                 graphiteMetrics.add(usedFileDescriptorsPct_Graphite);
             }
         }
