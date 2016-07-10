@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 ' Note: This script works only with WINS server service systems.
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,7 +50,7 @@ outputfile = "windows_threadinfo.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
@@ -60,7 +60,7 @@ GetThreads(StrSrv)
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -86,15 +86,15 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetThreads(StrSrv) 
+Function GetThreads(StrSrv)
       Dim objWMIService, Item, Proc, Time, Comp
-    
+
       strQuery = "select * from Win32_PerfFormattedData_PerfProc_Thread"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
 		 Comp = Proc.Name
 		 Comp = Split(Comp,"/")
@@ -105,9 +105,9 @@ Function GetThreads(StrSrv)
 		 And Comp(0) <> "ProtectionUtilSurrogate" And Comp(0) <> "AeXAgentUIHost" And Comp(0) <> "cscript" _
 		 And Comp(0) <> "notepad++" And Comp(0) <> "NT_System" And Comp(0) <> "wmiprvse" _
 		 And Comp(0) <> "AeXNSAgent" And Comp(0) <> "Rtvscan" And Comp(0) <> "explorer" Then
-		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ContextSwitches/Second " & Proc.ContextSwitchesPerSec & " " & Time
-		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ElapsedTime " & Proc.ElapsedTime & " " & Time		 
-		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ProcessorTime-% " & Proc.PercentProcessorTime & " " & Time
+		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ContextSwitchesPerSecond " & Proc.ContextSwitchesPerSec & " " & Time
+		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ElapsedTime " & Proc.ElapsedTime & " " & Time
+		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".ProcessorTime-Pct " & Proc.PercentProcessorTime & " " & Time
 		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".PriorityBase " & Proc.PriorityBase & " " & Time
 		 objFile.WriteLine Comp(0) & ".Thread" & Comp(1) & ".PriorityCurrent " & Proc.PriorityCurrent & " " & Time
 		 End If

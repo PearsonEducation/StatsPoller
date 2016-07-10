@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 '
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,19 +50,19 @@ outputfile = "sqlserver_statistics.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
 Set objFile = objFSO.CreateTextFile(file, True)
 GetStat(StrSrv)
 GetCursor(StrSrv)
-GetError(StrSrv) 
+GetError(StrSrv)
 '**********End Output Location Section*********
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -88,57 +88,57 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetStat(StrSrv) 
+Function GetStat(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerSQLStatistics"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
-		 objFile.WriteLine "AutoParamAttempts/Second " & Proc.AutoParamAttemptsPersec & " " & Time
-		 objFile.WriteLine "FailedAutoParams/Second " & Proc.FailedAutoParamsPersec & " " & Time
-		 objFile.WriteLine "SafeAutoParams/Second " & Proc.SafeAutoParamsPersec & " " & Time
-		 objFile.WriteLine "UnsafeAutoParams/Second " & Proc.UnsafeAutoParamsPersec & " " & Time
-		 objFile.WriteLine "BatchRequests/Second " & Proc.BatchRequestsPersec & " " & Time
-		 objFile.WriteLine "SQLCompilations/Second " & Proc.SQLCompilationsPersec  & " " & Time
-		 objFile.WriteLine "SQLReCompilations/Second " & Proc.SQLReCompilationsPersec & " " & Time
-		 objFile.WriteLine "SQLAttentionrate " & Proc.SQLAttentionrate & " " & Time
+		 objFile.WriteLine "AutoParamAttemptsPerSecond " & Proc.AutoParamAttemptsPersec & " " & Time
+		 objFile.WriteLine "FailedAutoParamsPerSecond " & Proc.FailedAutoParamsPersec & " " & Time
+		 objFile.WriteLine "SafeAutoParamsPerSecond " & Proc.SafeAutoParamsPersec & " " & Time
+		 objFile.WriteLine "UnsafeAutoParamsPerSecond " & Proc.UnsafeAutoParamsPersec & " " & Time
+		 objFile.WriteLine "BatchRequestsPerSecond " & Proc.BatchRequestsPersec & " " & Time
+		 objFile.WriteLine "SqlCompilationsPerSecond " & Proc.SQLCompilationsPersec  & " " & Time
+		 objFile.WriteLine "SqlReCompilationsPerSecond " & Proc.SQLReCompilationsPersec & " " & Time
+		 objFile.WriteLine "SqlAttentionRate " & Proc.SQLAttentionrate & " " & Time
     Next
 End Function
 
-Function GetCursor(StrSrv) 
+Function GetCursor(StrSrv)
       Dim objWMIService, Item, Proc, Time, Comp
-    
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerCursorManagerbyType"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
 		 Comp = Proc.Name
 		 Comp = Replace(Comp, " ", "_")
-		 objFile.WriteLine Comp & "." & "Activecursors " & Proc.Activecursors & " " & Time
-		 objFile.WriteLine Comp & "." & "CursorRequests/Second " & Proc.CursorRequestsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "ActiveCursors " & Proc.Activecursors & " " & Time
+		 objFile.WriteLine Comp & "." & "CursorRequestsPerSecond " & Proc.CursorRequestsPersec & " " & Time
     Next
 End Function
 
-Function GetError(StrSrv) 
-      Dim objWMIService, Item, Proc, Time, Comp 
-    
+Function GetError(StrSrv)
+      Dim objWMIService, Item, Proc, Time, Comp
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerSQLErrors"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
 		 Comp = Proc.Name
 		 Comp = Replace(Comp, " ", "_")
-		 objFile.WriteLine Comp & "." & "Errors/Second " & Proc.ErrorsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "ErrorsPerSecond " & Proc.ErrorsPersec & " " & Time
     Next
 End Function
 '**************End Query Section***************

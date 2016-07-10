@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 '
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,20 +50,20 @@ outputfile = "sqlserver_locks.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
 Set objFile = objFSO.CreateTextFile(file, True)
 GetStat(StrSrv)
 GetLatch(StrSrv)
-GetTrans(StrSrv) 
-GetLock(StrSrv) 
+GetTrans(StrSrv)
+GetLock(StrSrv)
 '**********End Output Location Section*********
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -89,70 +89,70 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetStat(StrSrv) 
+Function GetStat(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerGeneralStatistics"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
-		 objFile.WriteLine "Logins/Second " & Proc.LoginsPersec & " " & Time
-		 objFile.WriteLine "Logouts/Second " & Proc.LogoutsPersec & " " & Time
+		 objFile.WriteLine "LoginsPerSecond " & Proc.LoginsPersec & " " & Time
+		 objFile.WriteLine "LogoutsPerSecond " & Proc.LogoutsPersec & " " & Time
 		 objFile.WriteLine "UserConnections " & Proc.UserConnections & " " & Time
     Next
 End Function
 
-Function GetLatch(StrSrv) 
+Function GetLatch(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerLatches"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
-		 objFile.WriteLine "AverageLatchWaitTime-ms " & Proc.AverageLatchWaitTimems & " " & Time
-		 objFile.WriteLine "LatchWaits/Second " & Proc.LatchWaitsPersec & " " & Time
-		 objFile.WriteLine "TotalLatchWaitTime-ms " & Proc.TotalLatchWaitTimems & " " & Time
+		 objFile.WriteLine "AverageLatchWaitTime-MS " & Proc.AverageLatchWaitTimems & " " & Time
+		 objFile.WriteLine "LatchWaitsPerSecond " & Proc.LatchWaitsPersec & " " & Time
+		 objFile.WriteLine "TotalLatchWaitTime-MS " & Proc.TotalLatchWaitTimems & " " & Time
     Next
 End Function
 
-Function GetTrans(StrSrv) 
-      Dim objWMIService, Item, Proc, Time, Comp 
-    
+Function GetTrans(StrSrv)
+      Dim objWMIService, Item, Proc, Time, Comp
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerTransactions"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
 		 objFile.WriteLine "LongestTransactionRunningTime " & Proc.LongestTransactionRunningTime & " " & Time
     Next
 End Function
 
-Function GetLock(StrSrv) 
-      Dim objWMIService, Item, Proc, Time, Comp 
-    
+Function GetLock(StrSrv)
+      Dim objWMIService, Item, Proc, Time, Comp
+
       strQuery = "select * from Win32_PerfFormattedData_MSSQLSERVER_SQLServerLocks"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
 		 Comp = Proc.Name
 		 Comp = Replace(Comp, " ", "_")
-		 objFile.WriteLine Comp & "." & "LockWaitTimems " & Proc.LockWaitTimems & " " & Time
-		 objFile.WriteLine Comp & "." & "LockWaitsPersec/Second " & Proc.LockWaitsPersec & " " & Time
-		 objFile.WriteLine Comp & "." & "AverageWaitTimems " & Proc.AverageWaitTimems & " " & Time
-		 objFile.WriteLine Comp & "." & "LockRequestsPersec/Second " & Proc.LockRequestsPersec & " " & Time
-		 objFile.WriteLine Comp & "." & "LockTimeoutsPersec/Second " & Proc.LockTimeoutsPersec & " " & Time
-		 objFile.WriteLine Comp & "." & "NumberofDeadlocksPersec/Second " & Proc.NumberofDeadlocksPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "LockWaitTime-MS " & Proc.LockWaitTimems & " " & Time
+		 objFile.WriteLine Comp & "." & "LockWaitsPerSecond " & Proc.LockWaitsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "AverageWaitTime-MS " & Proc.AverageWaitTimems & " " & Time
+		 objFile.WriteLine Comp & "." & "LockRequestsPerSecond " & Proc.LockRequestsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "LockTimeoutsPerSecond " & Proc.LockTimeoutsPersec & " " & Time
+		 objFile.WriteLine Comp & "." & "NumberOfDeadlocksPerSecond " & Proc.NumberofDeadlocksPersec & " " & Time
     Next
 End Function
 

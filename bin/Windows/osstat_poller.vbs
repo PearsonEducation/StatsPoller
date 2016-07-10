@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 '
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,7 +50,7 @@ outputfile = "windows_osstat.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
@@ -60,7 +60,7 @@ GetSystem(StrSrv)
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -86,26 +86,26 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetSystem(StrSrv) 
+Function GetSystem(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_PerfOS_System"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
      For Each Proc In Item
 		 objFile.WriteLine "Uptime_seconds " & Proc.SystemUpTime & " " & Time
-		 objFile.WriteLine "ExceptionDispatches/Second " & Proc.ExceptionDispatchesPerSec & " " & Time
-		 objFile.WriteLine "FileControlBytes/Second " & Proc.FileControlBytesPerSec & " " & Time
-		 objFile.WriteLine "RegistryQuotaInUse-% " & Proc.PercentRegistryQuotaInUse & " " & Time
+		 objFile.WriteLine "ExceptionDispatchesPerSecond " & Proc.ExceptionDispatchesPerSec & " " & Time
+		 objFile.WriteLine "FileControlBytesPerSecond " & Proc.FileControlBytesPerSec & " " & Time
+		 objFile.WriteLine "RegistryQuotaInUse-Pct " & Proc.PercentRegistryQuotaInUse & " " & Time
 		 objFile.WriteLine "ProcessorQueueLength " & Proc.ProcessorQueueLength & " " & Time
-		 objFile.WriteLine "SystemCalls/Second " & Proc.SystemCallsPerSec & " " & Time
+		 objFile.WriteLine "SystemCallsPerSecond " & Proc.SystemCallsPerSec & " " & Time
 		 objFile.WriteLine "Threads " & Proc.Threads & " " & Time
-		 objFile.WriteLine "FileReadBytes/Second " & Proc.FileReadBytesPerSec & " " & Time
-		 objFile.WriteLine "FileWriteBytes/Second " & Proc.FileWriteBytesPerSec & " " & Time
-		 objFile.WriteLine "FileReadOperations/Second " & Proc.FileReadOperationsPerSec & " " & Time
-		 objFile.WriteLine "FileWriteOperations/Second " & Proc.FileWriteOperationsPerSec & " " & Time
+		 objFile.WriteLine "FileReadBytesPerSecond " & Proc.FileReadBytesPerSec & " " & Time
+		 objFile.WriteLine "FileWriteBytesPerSecond " & Proc.FileWriteBytesPerSec & " " & Time
+		 objFile.WriteLine "FileReadOperationsPerSecond " & Proc.FileReadOperationsPerSec & " " & Time
+		 objFile.WriteLine "FileWriteOperationsPerSecond " & Proc.FileWriteOperationsPerSec & " " & Time
       Next
 End Function
 '**************End Query Section***************

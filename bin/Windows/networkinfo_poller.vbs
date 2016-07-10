@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 ' Note: This script works only with WINS server service systems.
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,7 +50,7 @@ outputfile = "windows_networkinfo.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
@@ -60,7 +60,7 @@ GetNetwork(StrSrv)
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -86,20 +86,20 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetNetwork(StrSrv) 
+Function GetNetwork(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_PerfNet_Server"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
+
      For Each Proc In Item
-		 objFile.WriteLine "ReceivedBytes/Second " & Proc.BytesReceivedPerSec & " " & Time
-		 objFile.WriteLine "TransmittedBytes/Second " & Proc.BytesTransmittedPerSec & " " & Time
-		 objFile.WriteLine "ReceivedMBits/Second " & ((Proc.BytesReceivedPerSec / 1000000) / 8) & " " & Time
-		 objFile.WriteLine "TransmittedMbits/Second " & ((Proc.BytesTransmittedPerSec / 1000000) / 8) & " " & Time
+		 objFile.WriteLine "ReceivedBytesPerSecond " & Proc.BytesReceivedPerSec & " " & Time
+		 objFile.WriteLine "TransmittedBytesPerSecond " & Proc.BytesTransmittedPerSec & " " & Time
+		 objFile.WriteLine "ReceivedMBitsPerSecond " & ((Proc.BytesReceivedPerSec / 1000000) / 8) & " " & Time
+		 objFile.WriteLine "TransmittedMbitsPerSecond " & ((Proc.BytesTransmittedPerSec / 1000000) / 8) & " " & Time
     Next
 End Function
 '**************End Query Section***************

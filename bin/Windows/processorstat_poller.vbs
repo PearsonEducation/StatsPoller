@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 '
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '	   .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,7 +50,7 @@ outputfile = "windows_processorstat.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
@@ -60,7 +60,7 @@ GetProcessor(StrSrv)
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -86,22 +86,22 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetProcessor(StrSrv) 
+Function GetProcessor(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_PerfOS_Processor"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
-	  
-     For Each Proc In Item	 
-		 objFile.WriteLine "CPU-" & Proc.Name & ".UserTime-% " & Proc.PercentUserTime & " " & Time
-		 objFile.WriteLine "CPU-" & Proc.Name & ".IdleTime-% " & Proc.PercentIdleTime & " " & Time
-		 objFile.WriteLine "CPU-" & Proc.Name & ".ProcessorTime-% " & Proc.PercentProcessorTime & " " & Time
-		 objFile.WriteLine "CPU-" & Proc.Name & ".PrivilegedTime-% " & Proc.PercentPrivilegedTime & " " & Time
-		 objFile.WriteLine "CPU-" & Proc.Name & ".InterruptTime-% " & Proc.PercentInterruptTime & " " & Time
-		 objFile.WriteLine "CPU-" & Proc.Name & ".Interrupts/Second " & Proc.InterruptsPerSec & " " & Time
+
+     For Each Proc In Item
+		 objFile.WriteLine "CPU-" & Proc.Name & ".UserTime-Pct " & Proc.PercentUserTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".IdleTime-Pct " & Proc.PercentIdleTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".ProcessorTime-Pct " & Proc.PercentProcessorTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".PrivilegedTime-Pct " & Proc.PercentPrivilegedTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".InterruptTime-Pct " & Proc.PercentInterruptTime & " " & Time
+		 objFile.WriteLine "CPU-" & Proc.Name & ".InterruptsPerSecond " & Proc.InterruptsPerSec & " " & Time
 		 objFile.WriteLine "CPU-" & Proc.Name & ".DPCRate " & Proc.DPCRate & " " & Time
     Next
 End Function

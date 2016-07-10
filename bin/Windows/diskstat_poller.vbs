@@ -1,7 +1,7 @@
-'****************About Section**************** 
+'****************About Section****************
 '
 '  Writes desired command & calculations into output file.
-'  
+'
 '  Output file format:  MetricPath MetricValue EpochTimestamp
 '      MetricPath:  String representing Metric.
 '           "." separates sub-groupings.
@@ -13,11 +13,11 @@
 '               eg:  2234.12345
 '      EpochTimestamp:  Time that measurement was taken.
 '               eg:  1383148462
-'  
+'
 '  Suggested Directory Structure
 '      .../StatsPoller/output           -> Default location of output
 '      .../StatsPoller/bin/Windows      -> Default location of vbscripts
-'  
+'
 '  When calling from the command line
 '    the following parameters are accepted and are optional.
 '        Output directory (Argument 1). Path only
@@ -25,7 +25,7 @@
 '             eg.  cscript command_poller.vbs ..\output\ command.out
 '
 '  Scripts may have programmed delays.  Consider this when setting up run frequency.
-'  
+'
 '  Author:  Judah Walker
 '
 '**************End About Section***************
@@ -50,7 +50,7 @@ outputfile = "windows_diskstat.out"
 ElseIf args = 2 Then
 outputlocation = WScript.Arguments.Item(1)
 outputfile = WScript.Arguments.Item(2)
-End If 
+End If
 
 file = outputlocation & outputfile
 
@@ -60,7 +60,7 @@ GetFormattedDisk(StrSrv)
 
 '**********Epoch Time Compute Section**********
 Function TimeStamp()
-	Dim myDateString 
+	Dim myDateString
 	myDateString = Now()
 	Dim SecsSince
 	SecsSince = CLng(DateDiff("s", "01/01/1970 00:00:00", myDateString))
@@ -86,26 +86,26 @@ End Function
 '********End Epoch Time Compute Section********
 
 '****************Query Section*****************
-Function GetFormattedDisk(StrSrv) 
+Function GetFormattedDisk(StrSrv)
       Dim objWMIService, Item, Proc, Time
-    
+
       strQuery = "select * from Win32_PerfFormattedData_PerfDisk_LogicalDisk"
-   
+
       Set objWMIService = GetObject("winmgmts:\\" & StrSrv & "\root\cimv2")
       Set Item = objWMIService.ExecQuery(strQuery,,48)
 	  Time = CStr(TimeStamp())
      For Each Proc In Item
 		If Proc.Name <> "_Total" Then
-		 objFile.WriteLine Proc.Name & ".DiskReads/Second " & Proc.DiskReadsPerSec & " " & Time
-		 objFile.WriteLine Proc.Name & ".WriteRequests/Second " & Proc.DiskWritesPerSec & " " & Time
-		 objFile.WriteLine Proc.Name & ".Reads-Bytes/Second " & Proc.DiskReadBytesPerSec & " " & Time
-		 objFile.WriteLine Proc.Name & ".Writes-Bytes/Second " & Proc.DiskWriteBytesPerSec & " " & Time
+		 objFile.WriteLine Proc.Name & ".DiskReadsPerSecond " & Proc.DiskReadsPerSec & " " & Time
+		 objFile.WriteLine Proc.Name & ".WriteRequestsPerSecond " & Proc.DiskWritesPerSec & " " & Time
+		 objFile.WriteLine Proc.Name & ".Reads-BytesPerSecond " & Proc.DiskReadBytesPerSec & " " & Time
+		 objFile.WriteLine Proc.Name & ".Writes-BytesPerSecond " & Proc.DiskWriteBytesPerSec & " " & Time
 		 objFile.WriteLine Proc.Name & ".AverageQueueLength " & Proc.AvgDiskQueueLength & " " & Time
 		 objFile.WriteLine Proc.Name & ".CurrentDiskQueueLength " & Proc.CurrentDiskQueueLength & " " & Time
-		 objFile.WriteLine Proc.Name & ".SplitIO/Second " & Proc.SplitIOPerSec & " " & Time
-		 objFile.WriteLine Proc.Name & ".FreeSpace-% " & Proc.PercentFreeSpace & " " & Time
-		 objFile.WriteLine Proc.Name & ".DiskReadTime-% " & Proc.PercentDiskReadTime & " " & Time
-		 objFile.WriteLine Proc.Name & ".DiskWriteTime-% " & Proc.PercentDiskWriteTime & " " & Time
+		 objFile.WriteLine Proc.Name & ".SplitIOPerSecond " & Proc.SplitIOPerSec & " " & Time
+		 objFile.WriteLine Proc.Name & ".FreeSpace-Pct " & Proc.PercentFreeSpace & " " & Time
+		 objFile.WriteLine Proc.Name & ".DiskReadTime-Pct " & Proc.PercentDiskReadTime & " " & Time
+		 objFile.WriteLine Proc.Name & ".DiskWriteTime-Pct " & Proc.PercentDiskWriteTime & " " & Time
 		End If
     Next
 End Function
