@@ -1,6 +1,6 @@
 #!/bin/bash
 # chkconfig: 35 20 80
-# description: simple daemon wrapper to manage start/stopping of statspoller
+# description: A simple daemon wrapper to manage start/stop/restart/status of statspoller
 
 export process_name="StatsPoller"
 source /opt/$process_name/conf/statspoller.profile
@@ -15,7 +15,7 @@ start()
 
   cd /opt/StatsPoller
   if [ -z "$PID" ]; then
-    (java $JAVA_OPTS > /dev/null 2>&1 &)
+    (java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &)
   else
     printf "Already running on PID $PID!\n"
   fi
