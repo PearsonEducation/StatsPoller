@@ -21,7 +21,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 	* [Process Counter](./docs/process_counter.md) (counts/outputs the number of processes running that match a particular regex pattern)
 	* Apache HTTP server
 	* MongoDB
-	* MySQL
+	* [MySQL](./docs/mysql.md) (MySQL server metrics)
 * Support for user-created metric collectors (plugins).
     * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
 * Bundled 'user-created metric collectors' include...
