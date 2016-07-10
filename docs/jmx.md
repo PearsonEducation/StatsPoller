@@ -64,20 +64,22 @@ Derived JMX metrics are metrics that are oftentimes useful for those that are op
 * CPU - JVM CPU Usage % : The % of CPU being used by the JVM (relative to the what CPU resources are  available on the server). This metric represents server CPU % relative to the collection interval of the JMX collector. This metric's output will generally be more accurate than 'JVM Recent CPU Usage %'.
 * CPU - JVM Recent CPU Usage % : The % of CPU being used by the JVM (relative to the what CPU resources are  available on the server). This metric represents server CPU % relative to a JVM-selected time period. Note that this metric is the JVM's view of it's own CPU usage %, and it has been found to be less reliable than 'CPU - JVM CPU Usage %'.
 * CPU - System Recent CPU Usage % : The % of CPU being used by all processes on the server that is running the target JVM. This metric represents server  CPU % relative to a JVM-selected time period.
+* GC - % (by GC collector) : The percentage of garbage collection activity being done by a specific garbage collector. Note that this is the percentage of the JVM CPU usage, and not the percentage of the overall OS CPU usage.
+* GC - Overall % : The overall percentage of garbage collection activity being done in the JVM (includes all garbage collectors). Note that this is the percentage of the JVM CPU usage, and not the percentage of the overall OS CPU usage.
 * Memory - Heap - Overall Usage % : The overall heap memory utilization % of the JVM. Includes/covers all generations of heap memory.
-* Memory - System - Phyiscal Memory Usage % : The overall physical memory utilization % of the operating system that the JVM is running on. Since this metric is viewed through the lens of the target JVM, the value presented will have an OS-specific meaning, and will oftentimes not take factors like cache/buffers/etc into account.
+* Memory - NonHeap - Overall Usage % : The overall non-heap memory utilization % of the JVM. This includes memory spaces such as 'perm gen', 'code cache', etc.
+* Memory - System - Physical Memory Usage % : The overall physical memory utilization % of the operating system that the JVM is running on. Since this metric is viewed through the lens of the target JVM, the value presented will have an OS-specific meaning, and will oftentimes not take factors like cache/buffers/etc into account.
 * Memory - System - Swap Usage % : The overall swap utilization % of the operating system that the JVM is running on. Since this metric is viewed through the lens of the target JVM, the value presented has an OS-specific meanings.
-* GC - GC Activity % (by GC collector) : The percentage of garbage collection activity being done by a specific garbage collector. Note that this is the percentage of the JVM CPU usage, and not the percentage of the overall OS CPU usage.
-* GC - GC Activity % Overall : The overall percentage of garbage collection activity being done in the JVM (includes all garbage collectors). Note that this is the percentage of the JVM CPU usage, and not the percentage of the overall OS CPU usage.
 
 ### Example Output
 
-Derived.Memory.Heap.Overall_Heap_-_Usage_Pct 19.051 1466370213  
-Derived.GC.GC_Activity_G1_Young_Generation_Pct 12.238 1466370213  
-Derived.GC.GC_Activity_G1_Old_Generation_Pct 0 1466370213  
-Derived.GC.GC_Activity_Overall_Pct 12.238 1466370213  
-Derived.CPU.JVM_CPU_Usage_Pct 0.036 1466370213  
-Derived.CPU.JVM_Recent_CPU_Usage_Pct 0.036 1466370213  
-Derived.CPU.System_Recent_CPU_Usage_Pct 5.515 1466370213  
-Derived.Memory.System.System_Physical_Memory_-_Usage_Pct 66.804 1466370213  
-Derived.Memory.System.System_Swap_Size_-_Usage_Pct 56.319 1466370213  
+Derived.CPU.JvmCpu-UsagePct 0.633 1468181023
+Derived.CPU.JvmRecentCpu-UsedPct 0.65 1468181023
+Derived.CPU.SystemRecentCpu-UsedPct 52.174 1468181023
+Derived.GC.PS_MarkSweep-Pct 0 1468181023
+Derived.GC.PS_Scavenge-Pct 2.632 1468181023
+Derived.GC.Overall-Pct 2.632 1468181023
+Derived.Memory.Heap.Overall-UsedPct 17.472 1468181023
+Derived.Memory.NonHeap.Overall-UsedPct 16.202 1468181023
+Derived.Memory.System.PhysicalMemory-UsedPct 3.644 1468181023
+Derived.Memory.System.SystemSwapSize-UsedPct 94.719 1468181023
