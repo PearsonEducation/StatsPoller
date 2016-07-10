@@ -3,13 +3,13 @@ Release 2.0
  * Removed the vast majority of the plugin-based Linux metric collectors. Replaced with equivalent metric collectors that are built into the main Java app.
  * New MongoDB metric collector -- implemented in the main Java app.
  * New MySQL metric collector -- implemented in the main Java app.
- * Several new configuration options. 
+ * Several new configuration options - see example_application.properties. 
  * Configuration is now more automated, so less fields need to be configured.
- * Hostname can now be used as a variable in when setting 'global_metric_name_prefix_value'
+ * Hostname can now be used as a variable in when setting 'global_metric_name_prefix'
  * Improved documentation
  * Improved/simplified Linux init.d script
  * Config file now expects all times are in seconds (instead of milliseconds). To use milliseconds (for compatibility with old releases), enable legacy_mode.
- * RPM is now built as part compiling StatsPoller via a Maven goal. RPM logic is in pom.xml. Some of the logic/permissions of the RPM have changed.
+ * An RPM is now built as part compiling StatsPoller via a Maven goal. RPM logic is in pom.xml. Some of the logic/permissions of the RPM have changed.
  * Bug fixes
 
 Release 1.7-beta

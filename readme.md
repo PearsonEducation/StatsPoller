@@ -20,7 +20,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 	* [File Counter](./docs/file_counter.md) (counts/outputs the number of files in a specified folder)
 	* [Process Counter](./docs/process_counter.md) (counts/outputs the number of processes running that match a particular regex pattern)
 	* Apache HTTP server
-	* MongoDB
+	* [MongoDB](./docs/mongo.md) (Mongo status, database, and collection metrics)
 	* [MySQL](./docs/mysql.md) (MySQL server metrics)
 * Support for user-created metric collectors (plugins).
     * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.

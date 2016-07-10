@@ -13,7 +13,7 @@ The 'Agent' metrics are StatsPoller metrics that always run, and output StatsPol
 * Agent - Available : When StatsPoller is running, this metric will output a '1'. This allows monitoring tools to detect when StatsPoller is not running (or is unable to send metrics).
 * Agent - Version : The version of StatsPoller that is running. The version itself in the key, and the value of this metric will always be '1'.
 
-### Example output
+### Example output (Graphite Formatted)
 
 Agent.Available 1 1463373915  
 Agent.Version=2-0-beta3 1 1463373915  
@@ -29,7 +29,7 @@ The CPU collector collects information about CPU utilization on a system. These 
 * CPU - CPU % : The overall CPU utilization percentage of all CPUs.
 * CPU - Core Count : The number of CPUs detected on the system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 Cpu.Cpu-Pct 3.675 1463373915  
 Cpu.CoreCount 4 1463373915  
@@ -50,7 +50,7 @@ The swap space collector collects information about the amount of physical memor
 * Physical Memory - Used - GB : The number of gigabytes of used swap space on the operating system.
 * Physical Memory - Used % : The percentage of used swap space on the operating system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 PhysicalMemory.Free-Bytes 30896128 1463373915  
 PhysicalMemory.Free-GB 0.029 1463373915  
@@ -76,7 +76,7 @@ The disk space collector collector collects file-system disk space utilization m
 * DiskSpace - Mount - Disk Space Used - GB : The number of used gigabytes of disk space on the file system.
 * DiskSpace - Mount - Disk Space Used % : The percentage of used disk space on the file system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 DiskSpace.|dev|shm.Free-Bytes 2071515136 1463373915  
 DiskSpace.|dev|shm.Free-GB 1.929 1463373915  
@@ -102,7 +102,7 @@ The swap space collector collects information about the amount of swap space use
 * Swap Space - Used - GB : The number of gigabytes of used swap space on the operating system.
 * Swap Space - Used % : The percentage of used swap space on the operating system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 SwapSpace.Free-Bytes 30896128 1463373915  
 SwapSpace.Free-GB 0.029 1463373915  

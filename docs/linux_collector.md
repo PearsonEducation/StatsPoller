@@ -15,7 +15,7 @@ The Connections collector collects TCP & UDP connection count information.
 * TcpIPv6 - Connection Count : The number of currently 'in use' TCP-IP (version 6) connections
 * UdpIPv6 - Connection Count : The number of currently 'in use' UDP-IP (version 6) connections
 
-### Example output
+### Example output (Graphite Formatted)
 
 TcpIPv4-ConnectionCount 3 1463267223  
 UdpIPv4-ConnectionCount 5 1463267223  
@@ -43,7 +43,7 @@ The CPU collector provides output that is similar to systat's mpstat package. Me
 * CPU Extra % : The percentage of time spent spent servicing anything CPU related that isn't covered by the other metrics.
 * CPU Used % : A derived metric for CPU usage percentage. The formula is: (100 - "CPU Idle %")
 
-### Example output
+### Example output (Graphite Formatted)
 
 CPU-All.User-Pct 8.85497 1463264463  
 CPU-All.Nice-Pct 0.0000000 1463264463  
@@ -77,7 +77,7 @@ The Disk IO collector provides output that is similar to systat's iostat package
 * Device - Average Request Time (ms) : The average time (in milliseconds) for I/O requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 * Device - Average Queue Length : The average queue length of the requests that were issued to the device.
 
-### Example output
+### Example output (Graphite Formatted)
 
 sda.Read-Requests|Second 0.0333 1463264523  
 sda.Read-Bytes|Second 136.5504 1463264523  
@@ -111,7 +111,7 @@ The File-System collector collectors disk space & disk inode information. Unline
 * Mount - Inodes Used : The number of used inodes on the file system.
 * Mount - Inodes Used % : The percentage of used inodes on the file system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 |dev|shm.FileSystem=tmpfs 1 1463266473  
 |dev|shm.DiskSpace-Total-Bytes 2071777280 1463266473  
@@ -143,7 +143,7 @@ The Memory collect provides two primary outputs: 'raw' and 'derived'. 'Raw' outp
 * Derived - Used Megabytes : The number of used megabytes of physical memory on the system.
 * Derived - Used % : The percentage of used physical memory on the system.
 
-### Example output
+### Example output (Graphite Formatted)
 
 Derived.Total-Bytes 4143558656 1463267553  
 Derived.Free-Bytes 1204305920 1463267553  
@@ -168,7 +168,7 @@ The Network Bandwidth collector provides network bandwidth utilization metrics f
 * Device - Transmitted-Megabits / Second : The number of megabits transmitted, per second, on this device.
 * Device - Overall-Megabits / Second : The overall number of megabits received & transmitted, per second, on this device.
 
-### Example output
+### Example output (Graphite Formatted)
 
 enp0s3.Received-Bytes-Second 13491.9666667 1463371627  
 enp0s3.Transmitted-Bytes-Second 5399.4 1463371627  
