@@ -276,7 +276,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 metric = getUsagePercent(currentGlobalStatus.get("THREADS_CONNECTED"), globalVariables.get("MAX_CONNECTIONS"));
-                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("ConnectionUsed-Pct", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                openTsdbMetric = (metric != null) ? new OpenTsdbMetric("ConnectionsUsed-Pct", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
                 if (slaveStatus_ByMasterServerId != null) {
