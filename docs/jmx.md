@@ -73,13 +73,13 @@ Derived JMX metrics are metrics that are oftentimes useful for those that are op
 
 ### Example Output
 
-Derived.CPU.JvmCpu-UsagePct 0.633 1468181023
-Derived.CPU.JvmRecentCpu-UsedPct 0.65 1468181023
-Derived.CPU.SystemRecentCpu-UsedPct 52.174 1468181023
-Derived.GC.PS_MarkSweep-Pct 0 1468181023
-Derived.GC.PS_Scavenge-Pct 2.632 1468181023
-Derived.GC.Overall-Pct 2.632 1468181023
-Derived.Memory.Heap.Overall-UsedPct 17.472 1468181023
-Derived.Memory.NonHeap.Overall-UsedPct 16.202 1468181023
-Derived.Memory.System.PhysicalMemory-UsedPct 3.644 1468181023
-Derived.Memory.System.SystemSwapSize-UsedPct 94.719 1468181023
+Derived.CPU.JvmCpu-UsagePct 0.633 1468181023  
+Derived.CPU.JvmRecentCpu-UsedPct 0.65 1468181023  
+Derived.CPU.SystemRecentCpu-UsedPct 52.174 1468181023  
+Derived.GC.PS_MarkSweep-Pct 0 1468181023  
+Derived.GC.PS_Scavenge-Pct 2.632 1468181023  
+Derived.GC.Overall-Pct 2.632 1468181023  
+Derived.Memory.Heap.Overall-UsedPct 17.472 1468181023  
+Derived.Memory.NonHeap.Overall-UsedPct 16.202 1468181023  
+Derived.Memory.System.PhysicalMemory-UsedPct 3.644 1468181023  
+Derived.Memory.System.SystemSwapSize-UsedPct 94.719 1468181023  

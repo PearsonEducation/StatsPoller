@@ -1,10 +1,10 @@
 2.0
  * Finish docs
- * % -> Pct (JMX, Windows Collectors)
 
 2.1
- * Windows -- auto enable Windows collectors if OS is Windows 
- * Windows -- Installer?
- * Windows -- Replace external metric collectors with built-in collectors?
+ * JMX -- Derived should include memory used % for each heap & non-heap memory pool
+ * Windows -- auto enable Windows collectors if OS is Windows
  * Create deb install for Ubuntu
  * Finish MySQL querier
+ * Windows -- Installer?
+ * Windows -- Replace external metric collectors with built-in collectors?
