@@ -29,6 +29,7 @@ import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricColle
 import com.pearson.statspoller.utilities.FileIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +48,15 @@ public class Driver {
         
         boolean initializeSuccess = initializeApplication();
         if (!initializeSuccess) {
-            logger.error("An error occurred during application initialization. Shutting down application...");
+            String errorOutput = "An error occurred during application initialization. Shutting down application @ " + new Date();
+            System.out.println(errorOutput);
+            logger.error(errorOutput);
             System.exit(-1);
+        }
+        else {
+            String successOutput = "Application successfully initialized @ " + new Date();
+            System.out.println(successOutput);
+            logger.error(successOutput);
         }
         
         launchStatsPollerCollector();
@@ -79,12 +87,16 @@ public class Driver {
     
     private static boolean initializeApplication() {
         
-        boolean isLogbackSuccess = readAndSetLogbackConfiguration(System.getProperty("user.dir") + File.separator + "conf", "logback_config.xml");
+        boolean doesDevLogConfExist = FileIo.doesFileExist(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "logback_config_dev.xml");
         
-        boolean doesDevConfExist = FileIo.doesFileExist(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "application_dev.properties");
+        boolean isLogbackSuccess;
+        if (doesDevLogConfExist) isLogbackSuccess = readAndSetLogbackConfiguration(System.getProperty("user.dir") + File.separator + "conf", "logback_config_dev.xml");
+        else isLogbackSuccess = readAndSetLogbackConfiguration(System.getProperty("user.dir") + File.separator + "conf", "logback_config.xml");
+            
+        boolean doesDevAppConfExist = FileIo.doesFileExist(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "application_dev.properties");
         
         boolean isApplicationConfigSuccess;
-        if (doesDevConfExist) isApplicationConfigSuccess = ApplicationConfiguration.initialize(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "application_dev.properties", true);
+        if (doesDevAppConfExist) isApplicationConfigSuccess = ApplicationConfiguration.initialize(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "application_dev.properties", true);
         else isApplicationConfigSuccess = ApplicationConfiguration.initialize(System.getProperty("user.dir") + File.separator + "conf" + File.separator + "application.properties", true);
         
         try {
