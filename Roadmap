@@ -1,7 +1,7 @@
 2.0
  * Windows -- auto enable Windows collectors if OS is Windows
  * Finish docs
- * % -> Pct
+ * % -> Pct (JMX, Windows Collectors)
 
 2.1 
  * Create deb
