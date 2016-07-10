@@ -246,7 +246,7 @@ public class JmxDerivedMetrics {
                     percentUsedHeapType = MathUtilities.correctOutOfRangePercentage(percentUsedHeapType);
                     
                     long averageMetricRetrievalTimestampInMs = (heapUsedTypeJmxMetric.getMetricRetrievalTimestampInMs() + heapMaxTypeJmxMetric.getMetricRetrievalTimestampInMs()) / 2;
-                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Heap." + heapType + " - Usage %", percentUsedHeapType, averageMetricRetrievalTimestampInMs);
+                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Heap." + heapType + "-UsedPct", percentUsedHeapType, averageMetricRetrievalTimestampInMs);
                     heapPercentsByType.add(jmxMetricRaw);
                 } 
             }  
@@ -290,7 +290,7 @@ public class JmxDerivedMetrics {
                     percentUsedNonHeapType = MathUtilities.correctOutOfRangePercentage(percentUsedNonHeapType);
                     
                     long averageMetricRetrievalTimestampInMs = (nonHeapUsedTypeJmxMetric.getMetricRetrievalTimestampInMs() + nonHeapMaxTypeJmxMetric.getMetricRetrievalTimestampInMs()) / 2;
-                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.NonHeap." + nonHeapType + " - Usage %", percentUsedNonHeapType, averageMetricRetrievalTimestampInMs);
+                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.NonHeap." + nonHeapType + "-UsedPct", percentUsedNonHeapType, averageMetricRetrievalTimestampInMs);
                     nonHeapPercentsByType.add(jmxMetricRaw);
                 } 
             }  
@@ -317,7 +317,7 @@ public class JmxDerivedMetrics {
         percentUsedHeap = MathUtilities.correctOutOfRangePercentage(percentUsedHeap);
         
         long averageMetricRetrievalTimestampInMs = (heapUsed.getMetricRetrievalTimestampInMs() + heapMax.getMetricRetrievalTimestampInMs()) / 2;
-        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Heap.Overall Heap - Usage %", percentUsedHeap, averageMetricRetrievalTimestampInMs);
+        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Heap.Overall-UsedPct", percentUsedHeap, averageMetricRetrievalTimestampInMs);
         
         return jmxMetricRaw;
     }
@@ -341,7 +341,7 @@ public class JmxDerivedMetrics {
         percentUsedNonHeap = MathUtilities.correctOutOfRangePercentage(percentUsedNonHeap);
         
         long averageMetricRetrievalTimestampInMs = (nonHeapUsed.getMetricRetrievalTimestampInMs() + nonHeapMax.getMetricRetrievalTimestampInMs()) / 2;
-        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.NonHeap.Overall NonHeap - Usage %", percentUsedNonHeap, averageMetricRetrievalTimestampInMs);
+        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.NonHeap.Overall-UsedPct", percentUsedNonHeap, averageMetricRetrievalTimestampInMs);
         
         return jmxMetricRaw;
     }
@@ -429,7 +429,7 @@ public class JmxDerivedMetrics {
 
                         percentGcActivityForGcType = MathUtilities.correctOutOfRangePercentage(percentGcActivityForGcType);
                         
-                        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "GC.GC Activity " + gcType + " %",  
+                        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "GC." + gcType + "-Pct",  
                                 percentGcActivityForGcType, collectionTimeCounter.getMetricRetrievalTimestampInMs());
                         
                         gcActivityPercents.add(jmxMetricRaw);
@@ -472,7 +472,7 @@ public class JmxDerivedMetrics {
             long averagedMetricRetrievalTimestampInMs = timestampSum / counter;
             gcActivityPercentSum = MathUtilities.correctOutOfRangePercentage(gcActivityPercentSum);
             
-            JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "GC.GC Activity Overall %", gcActivityPercentSum, averagedMetricRetrievalTimestampInMs);
+            JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "GC.Overall-Pct", gcActivityPercentSum, averagedMetricRetrievalTimestampInMs);
             return jmxMetricRaw;
         }
         else {
@@ -509,7 +509,7 @@ public class JmxDerivedMetrics {
 
             jvmCpuUsagePercentValue = MathUtilities.correctOutOfRangePercentage(jvmCpuUsagePercentValue);
             
-            jvmCpuUsagePercent = new JmxMetricRaw("Derived", "CPU.JVM CPU Usage %", jvmCpuUsagePercentValue, processCpuTime.getMetricRetrievalTimestampInMs());
+            jvmCpuUsagePercent = new JmxMetricRaw("Derived", "CPU.JvmCpu-UsagePct", jvmCpuUsagePercentValue, processCpuTime.getMetricRetrievalTimestampInMs());
         }
         
         return jvmCpuUsagePercent;
@@ -531,7 +531,7 @@ public class JmxDerivedMetrics {
             
         jvmRecentCpuUsagePercentValue = MathUtilities.correctOutOfRangePercentage(jvmRecentCpuUsagePercentValue);
             
-        JmxMetricRaw jvmRecentCpuUsagePercent = new JmxMetricRaw("Derived", "CPU.JVM Recent CPU Usage %", jvmRecentCpuUsagePercentValue, processCpuLoad.getMetricRetrievalTimestampInMs());
+        JmxMetricRaw jvmRecentCpuUsagePercent = new JmxMetricRaw("Derived", "CPU.JvmRecentCpu-UsedPct", jvmRecentCpuUsagePercentValue, processCpuLoad.getMetricRetrievalTimestampInMs());
         
         return jvmRecentCpuUsagePercent;
     }
@@ -551,7 +551,7 @@ public class JmxDerivedMetrics {
         
         systemRecentCpuUsagePercentValue = MathUtilities.correctOutOfRangePercentage(systemRecentCpuUsagePercentValue);
             
-        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "CPU.System Recent CPU Usage %", systemRecentCpuUsagePercentValue, systemCpuLoad.getMetricRetrievalTimestampInMs());
+        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "CPU.SystemRecentCpu-UsedPct", systemRecentCpuUsagePercentValue, systemCpuLoad.getMetricRetrievalTimestampInMs());
         
         return jmxMetricRaw;
     }
@@ -574,7 +574,7 @@ public class JmxDerivedMetrics {
         percentUsedPhysicalMemory = MathUtilities.correctOutOfRangePercentage(percentUsedPhysicalMemory);
 
         long averageMetricRetrievalTimestampInMs = (freePhysicalMemorySize.getMetricRetrievalTimestampInMs() + totalPhysicalMemorySize.getMetricRetrievalTimestampInMs()) / 2;
-        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.System.System Physical Memory - Usage %", percentUsedPhysicalMemory, averageMetricRetrievalTimestampInMs);
+        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.System.PhysicalMemory-UsedPct", percentUsedPhysicalMemory, averageMetricRetrievalTimestampInMs);
         
         return jmxMetricRaw;
     }
@@ -597,7 +597,7 @@ public class JmxDerivedMetrics {
         percentUsedSwapSpace = MathUtilities.correctOutOfRangePercentage(percentUsedSwapSpace);
         
         long averageMetricRetrievalTimestampInMs = (freeSwapSpaceSize.getMetricRetrievalTimestampInMs() + totalSwapSpaceSize.getMetricRetrievalTimestampInMs()) / 2;
-        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.System.System Swap Size - Usage %", percentUsedSwapSpace, averageMetricRetrievalTimestampInMs);
+        JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.System.SystemSwapSize-UsedPct", percentUsedSwapSpace, averageMetricRetrievalTimestampInMs);
         
         return jmxMetricRaw;
     }
