@@ -14,7 +14,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
     * For Linux metric collectors, most metrics are retrieved from Linux's proc and/or sys filesystems. As a result, dependencies on apps like vmstat, ifconfig, etc are virtually non-existant in StatsPoller.
 * Advanced Java JMX metric collection is a primary focus in StatsPoller. Its JMX metric retrieval capabilities exceed that of most comparable tools.
 * Built-in metric collectors include....
-	* [StatsPoller Native](./docs/statspoller_native.md) (OS metrics from the perspective of the JVM runtime)
+	* [StatsPoller Native](./docs/statspoller_native.md) (A platform-independent OS metric collector that collects metrics from the perspective of the JVM runtime)
 	* [Linux OS](./docs/linux_collector.md) (network, filesystem, disk i/o, cpu, uptime, memory)
   * [Java JMX](./docs/jmx.md) (Cassandra, Tomcat, JBoss/Wildfly, etc)
 	* [File Counter](./docs/file_counter.md) (counts/outputs the number of files in a specified folder)
@@ -23,10 +23,10 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 	* [MongoDB](./docs/mongo.md) (Mongo status, database, and collection metrics)
 	* [MySQL](./docs/mysql.md) (MySQL server metrics)
 * Support for user-created metric collectors (plugins).
-    * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
+  * StatsPoller supports running user-created metric collectors. These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
 * Bundled 'user-created metric collectors' include...
-    * Windows OS (cpu, disk, iis, memory, network)
-	* SQL Server
+  * Windows OS (cpu, disk, iis, memory, network  -- collected via PerfMon)
+  * SQL Server (collected via PerfMon)
 * Advanced/flexible configuration capabilities
 	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from an infinite number of external services.
 	* A single deployment of StatsPoller can be configured to monitor many of JVMs (via JMX), MySQL servers, etc
