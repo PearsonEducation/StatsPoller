@@ -6,6 +6,6 @@ The 'File Counter' collector is a metric collector counts files in a directory. 
 
 * File Count : The number of files in the specified directory
 
-### Example output
+### Example output (Graphite Formatted)
 
 filecount 4 1463373915

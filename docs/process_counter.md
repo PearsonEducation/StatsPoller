@@ -12,6 +12,6 @@ If the process launch command was "/usr/lib/firefox/firefox safemode taco" ... <
 You count the number of processes running firefox with a regular expression of: "firefox" ... <br>
 Or you could count the number of processes running firefox taco-edition (TE) with a regular expression of: "firefox.*taco"
 
-### Example Output
+### Example Output (Graphite Formatted)
 
 firefox-te 1 1463373915

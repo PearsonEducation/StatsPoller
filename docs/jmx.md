@@ -1,6 +1,8 @@
 # JMX Collector
 
-The JMX metric collector is a metric collector that plugs into Java JVMs & collects JMX metrics. StatsPoller can run up to 10,000 JMX collectors from a single StatsPoller deployment. A single JMX collector's behavior is:
+The JMX metric collector is a metric collector that plugs into Java JVMs & collects JMX metrics. StatsPoller can run up to 10,000 JMX collectors from a single StatsPoller deployment.
+
+A single JMX collector's behavior is:
 
 1. Connect to the JVM
 1. Ask the JVM what all of its available JMX metrics are
@@ -18,9 +20,9 @@ The JMX metric collector is a metric collector that plugs into Java JVMs & colle
 
 ## Standard Metrics
 
-Without blacklists and/or whitelists filtering out metrics, the JMX collector will grab every numeric attribute offered by the JVM. A plain JVM will often output 100+ metrics. A JVM that uses lots of fancy libraries and/or exposes lots of JMX metrics will sometimes offer thousands of metrics. For example, a single Apache Cassandra JVM will offer over 3000 metrics. To preview the output of what StatsPoller might fetch/output, connect to your JVM with a tool like VisualVM & use the mBean viewer to see all the available JMX metrcs. Note that StatsPoller always outputs a JVM availability metric, 'Availability.Available'. Whenever StatsPoller is connected to the target JVM, 'Availability.Available' will output '1', otherwise it outputs '0'.
+Without blacklists and/or whitelists filtering out metrics, the JMX collector will grab every numeric attribute offered by the JVM. A plain JVM will often output 100+ metrics. A JVM that uses lots of fancy libraries and/or exposes lots of JMX metrics will sometimes offer thousands of metrics. For example, a single Apache Cassandra JVM will offer over 3000 metrics. As a result, a description of each metric will not be provided in this documentation. To preview the output of what StatsPoller might fetch/output, connect to your JVM with a tool like VisualVM & use the mBean viewer to see all the available JMX metrcs. Note that StatsPoller always outputs a JVM availability metric, 'Availability.Available'. Whenever StatsPoller is connected to the target JVM, 'Availability.Available' will output '1', otherwise it outputs '0'.
 
-### Example Output (Sample)
+### Example Output (Sample, Graphite Formatted)
 
 Availability.Available 1 1466371333  
 java-lang.OperatingSystem.TotalSwapSpaceSize 131608461312 1466370213  

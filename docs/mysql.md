@@ -1,6 +1,15 @@
 # MySQL Collector
 
-The 'MySQL' collector is a metric collector that connects to MySQL through JDBC and queries MySQL's metadata tables for metrics. The complete list of metrics collected is listed below.
+The 'MySQL' collector is a metric collector that connects to MySQL through JDBC and queries MySQL's metadata tables for metrics. StatsPoller can run up to 10,000 MySQL collectors from a single StatsPoller deployment.
+
+A single MySQL collector's behavior is:
+
+1. Connect to MySQL
+1. Query for metrics from the INFORMATION_SCHEMA
+1. Query for metrics 'SHOW SLAVE STATUS'
+1. Disconnect from MySQL
+1. Output the metrics
+1. Repeat
 
 ### Metrics
 
