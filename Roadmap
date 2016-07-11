@@ -1,10 +1,11 @@
 2.0
- * Finish docs
+ * Review & bugfix
 
 2.1
  * JMX -- Derived should include memory used % for each heap & non-heap memory pool
  * Windows -- auto enable Windows collectors if OS is Windows
  * Create deb install for Ubuntu
+ * Support reading standard-out for external metric collectors
  * Finish MySQL querier
  * Windows -- Installer?
  * Windows -- Replace external metric collectors with built-in collectors?
