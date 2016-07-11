@@ -71,7 +71,7 @@ Derived JMX metrics are metrics that are oftentimes useful for those that are op
 * Memory - System - Physical Memory Usage % : The overall physical memory utilization % of the operating system that the JVM is running on. Since this metric is viewed through the lens of the target JVM, the value presented will have an OS-specific meaning, and will oftentimes not take factors like cache/buffers/etc into account.
 * Memory - System - Swap Usage % : The overall swap utilization % of the operating system that the JVM is running on. Since this metric is viewed through the lens of the target JVM, the value presented has an OS-specific meanings.
 
-### Example Output
+### Example Output (Graphite Formatted)
 
 Derived.CPU.JvmCpu-UsagePct 0.633 1468181023  
 Derived.CPU.JvmRecentCpu-UsedPct 0.65 1468181023  

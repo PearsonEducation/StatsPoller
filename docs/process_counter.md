@@ -6,7 +6,7 @@ The 'Process Counter' collector counts of the number of processes that match a s
 
 * (Process Identifier) : The 'identifier' is a user-specified identifier for the output metric name. The value of this metric will be the count of processes that have a positive match with the provided regular expression.
 
-### Example
+### Example (Graphite Formatted)
 
 If the process launch command was "/usr/lib/firefox/firefox safemode taco" ... <br>
 You count the number of processes running firefox with a regular expression of: "firefox" ... <br>
