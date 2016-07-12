@@ -74,7 +74,7 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 ## Configuration
 
-After installing StatsPoller, one typically only needs to edit a single configuration file. This file is [application.properties](./conf/application.properties). If you're just looking to use the basic metric collectors (ex- Linux OS), then you may only need to configure one of the 'output modules' (Graphite or OpenTSDB). A full listing of StatsPoller's available configuration options, documentation, and examples can be found at [example_application.properties](./conf/example_application.properties).
+After installing StatsPoller, one typically only needs to edit a single configuration file. This file is [application.properties](./conf/application.properties). If you're just looking to use the basic metric collectors (ex- Linux OS), then you may only need to configure one of the 'output modules' (Graphite or OpenTSDB). A full listing of StatsPoller's available configuration options, documentation, and examples can be found at [example_application.properties](./conf/example_application.properties). A demo configuration file, with most fields filled out, can be found at [example_demo_application.properties](./conf/example_demo_application.properties).
 
 <br>
 
