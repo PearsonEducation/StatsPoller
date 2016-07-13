@@ -48,13 +48,13 @@ public class Driver {
         
         boolean initializeSuccess = initializeApplication();
         if (!initializeSuccess) {
-            String errorOutput = "An error occurred during application initialization. Shutting down application @ " + new Date();
+            String errorOutput = "StatsPoller encountered an error during initialization. Shutting down @ " + new Date();
             System.out.println(errorOutput);
             logger.error(errorOutput);
-            System.exit(-1);
+            System.exit(1);
         }
         else {
-            String successOutput = "Application successfully initialized @ " + new Date();
+            String successOutput = "StatsPoller successfully initialized @ " + new Date();
             System.out.println(successOutput);
             logger.error(successOutput);
         }
