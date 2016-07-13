@@ -1,12 +1,14 @@
 #!/bin/bash
 # chkconfig: 35 20 80
-# description: A simple daemon wrapper to manage start/stop/restart/status of statspoller
+# description: A simple daemon wrapper to manage start/stop/status of StatsPoller
 
 export process_name="StatsPoller"
 source /opt/$process_name/conf/statspoller.profile
 
 NAME=`basename $0`
-EXITCODE=0
+EXITCODE_SUCCESS=0
+EXITCODE_ERROR=1
+EXITCODE=$EXITCODE_SUCCESS
 STOP_PROCESS_TIMEOUT=15
 
 start()
@@ -14,10 +16,21 @@ start()
   PID=`pgrep -f StatsPoller.jar`
 
   cd /opt/StatsPoller
+
   if [ -z "$PID" ]; then
     (java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &)
+    sleep 1
+
+    PID=`pgrep -f StatsPoller.jar`
+
+    CURRENT_TIME_HUMAN=$(date)
+    printf "StatsPoller was successfully started. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
+    printf "StatsPoller was successfully started. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
   else
-    printf "Already running on PID $PID!\n"
+    CURRENT_TIME_HUMAN=$(date)
+    printf "StatsPoller is already running; start command took no action. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
+    printf "StatsPoller is already running; start command took no action. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
+    EXITCODE=$EXITCODE_ERROR
   fi
 }
 
@@ -27,21 +40,34 @@ stop()
 
   if [ -n "$PID" ]; then
     kill $PID
+    sleep 3
+
     START_KILL_TIME=$(date +%s)
 
     while [[ ( -d /proc/$PID ) && ( -z `grep zombie /proc/$PID/status` ) ]]; do
-        CURRENT_TIME=$(date +%s)
-        ELAPSED_TIME=$[CURRENT_TIME-START_KILL_TIME]
+      CURRENT_TIME=$(date +%s)
+      ELAPSED_TIME=$[CURRENT_TIME-START_KILL_TIME]
 
-        if [ $ELAPSED_TIME -gt $STOP_PROCESS_TIMEOUT ]; then
-          EXITCODE=1
-          break
-        else
-          sleep 1
-        fi
+      if [ $ELAPSED_TIME -gt $STOP_PROCESS_TIMEOUT ]; then
+        CURRENT_TIME_HUMAN=$(date)
+        printf "StatsPoller failed to stop. Pid: $PID. Date: $CURRENT_TIME_HUMAN\n"
+        printf "StatsPoller failed to stop. Pid: $PID. Date: $CURRENT_TIME_HUMAN\n" >> /var/log/statspoller.log 2>&1 &
+        EXITCODE=$EXITCODE_ERROR
+        break
+      else
+        sleep 1
+      fi
     done
+
+    if [ $EXITCODE -eq $EXITCODE_SUCCESS ]; then
+      CURRENT_TIME_HUMAN=$(date)
+      printf "StatsPoller was successfully stopped. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
+      printf "StatsPoller was successfully stopped. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
+    fi
   else
-    printf "Service isn't running\n"
+    CURRENT_TIME_HUMAN=$(date)
+    printf "StatsPoller was not running; stop command took no action. Date: $CURRENT_TIME_HUMAN.\n"
+    printf "StatsPoller was not running; stop command took no action. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
   fi
 }
 
@@ -52,7 +78,7 @@ status()
   if [ -n "$PID" ]; then
     ps -fp $PID
   else
-    printf "Service isn't running\n"
+    printf "StatsPoller is not running.\n"
   fi
 }
 
@@ -76,4 +102,3 @@ case "$1" in
 esac
 
 exit $EXITCODE
-
