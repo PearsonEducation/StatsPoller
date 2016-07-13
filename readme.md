@@ -28,7 +28,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
   * Windows OS (cpu, disk, iis, memory, network  -- collected via PerfMon)
   * SQL Server (collected via PerfMon)
 * Advanced/flexible configuration capabilities
-	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from an infinite number of external services.
+	* Most metric collectors that collect metrics from external services (Mongo, MySQL, Java JMX, etc) can be configured to collect from up to 10,000 independent external services.
 	* A single deployment of StatsPoller can be configured to monitor many of JVMs (via JMX), MySQL servers, etc
 
 <br>
