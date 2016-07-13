@@ -4,7 +4,7 @@
 
     <groupId>com.pearson.StatsPoller</groupId>
     <artifactId>StatsPoller</artifactId>
-    <version>2.0-rc4</version>
+    <version>2.0-rc6</version>
     <packaging>jar</packaging>
     <name>StatsPoller</name>
     
@@ -214,6 +214,7 @@
                             <sources>
                                 <source><location>conf/application.properties</location></source>
                                 <source><location>conf/example_application.properties</location></source>
+                                <source><location>conf/example_demo_application.properties</location></source>
                                 <source><location>conf/logback_config.xml</location></source>
                                 <source><location>conf/statspoller.profile</location></source>
                             </sources>
@@ -286,7 +287,7 @@
                     </preremoveScriptlet>  
 
                     <postremoveScriptlet>
-                        <script>rm -R /opt/StatsPoller</script>
+                        <script>[ $1 = 0 ] &amp;&amp; rm -R /opt/StatsPoller</script>
                     </postremoveScriptlet>    
                     
                 </configuration>
