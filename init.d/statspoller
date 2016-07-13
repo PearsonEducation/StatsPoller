@@ -1,11 +1,10 @@
 #!/bin/bash
 # chkconfig: 35 20 80
 # description: A simple daemon wrapper to manage start/stop/status of StatsPoller
+# pidfile: /opt/StatsPoller/pid/statspoller.pid
 
-export process_name="StatsPoller"
-source /opt/$process_name/conf/statspoller.profile
+source /opt/StatsPoller/conf/statspoller.profile
 
-NAME=`basename $0`
 EXITCODE_SUCCESS=0
 EXITCODE_ERROR=1
 EXITCODE=$EXITCODE_SUCCESS
@@ -18,10 +17,11 @@ start()
   cd /opt/StatsPoller
 
   if [ -z "$PID" ]; then
-    (java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &)
+    java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &
     sleep 1
 
     PID=`pgrep -f StatsPoller.jar`
+	printf "$PID" > /opt/StatsPoller/pid/statspoller.pid
 
     CURRENT_TIME_HUMAN=$(date)
     printf "StatsPoller was successfully started. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
