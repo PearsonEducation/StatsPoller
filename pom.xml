@@ -4,7 +4,7 @@
 
     <groupId>com.pearson.StatsPoller</groupId>
     <artifactId>StatsPoller</artifactId>
-    <version>2.0-rc8</version>
+    <version>2.0-rc9</version>
     <packaging>jar</packaging>
     <name>StatsPoller</name>
     
@@ -278,7 +278,7 @@
                     <postinstallScriptlet>
                         <script>
                             /sbin/chkconfig --add statspoller
-                            /sbin/service statspoller restart
+                            /sbin/service statspoller stop
                         </script>
                     </postinstallScriptlet>
 
