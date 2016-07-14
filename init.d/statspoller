@@ -5,6 +5,7 @@
 
 source /opt/StatsPoller/conf/statspoller.profile
 
+PIDFILE=/opt/StatsPoller/pid/statspoller.pid
 EXITCODE_SUCCESS=0
 EXITCODE_ERROR=1
 EXITCODE=$EXITCODE_SUCCESS
@@ -21,7 +22,7 @@ start()
     sleep 1
 
     PID=`pgrep -f StatsPoller.jar`
-	printf "$PID" > /opt/StatsPoller/pid/statspoller.pid
+    printf "$PID" > $PIDFILE
 
     CURRENT_TIME_HUMAN=$(date)
     printf "StatsPoller was successfully started. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
