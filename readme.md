@@ -72,6 +72,24 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 <br>
 
+## Stopping/Starting StatsPoller
+
+### RedHat, CentOS, etc  -- Versions 6.x & older
+
+Start StatsPoller: sudo /sbin/service statspoller start  
+Stop StatsPoller: sudo /sbin/service statspoller stop  
+Restart StatsPoller: sudo /sbin/service statspoller restart  
+View StatsPoller status: sudo /sbin/service statspoller status  
+
+### RedHat, CentOS, etc  -- Versions 7.x & newer
+
+Start StatsPoller: sudo systemctl start statspoller  
+Stop StatsPoller: sudo systemctl stop statspoller  
+Restart StatsPoller: sudo systemctl restart statspoller  
+View StatsPoller status: sudo systemctl status statspoller  
+
+<br>
+
 ## Configuration
 
 After installing StatsPoller, one typically only needs to edit a single configuration file. This file is [application.properties](./conf/application.properties). If you're just looking to use the basic metric collectors (ex- Linux OS), then you may only need to configure one of the 'output modules' (Graphite or OpenTSDB). A full listing of StatsPoller's available configuration options, documentation, and examples can be found at [example_application.properties](./conf/example_application.properties). A demo configuration file, with most fields filled out, can be found at [example_demo_application.properties](./conf/example_demo_application.properties).
