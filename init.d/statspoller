@@ -9,6 +9,7 @@ PIDFILE=/opt/StatsPoller/pid/statspoller.pid
 EXITCODE_SUCCESS=0
 EXITCODE_ERROR=1
 EXITCODE=$EXITCODE_SUCCESS
+STOPPED_VIA_STOP=1
 STOP_PROCESS_TIMEOUT=15
 
 start()
@@ -67,7 +68,11 @@ stop()
     fi
   else
     CURRENT_TIME_HUMAN=$(date)
-    printf "StatsPoller was not running; stop command took no action. Date: $CURRENT_TIME_HUMAN.\n"
+
+    if [ $STOPPED_VIA_STOP -eq "1" ]; then
+      printf "StatsPoller was not running; stop command took no action. Date: $CURRENT_TIME_HUMAN.\n"
+    fi
+
     printf "StatsPoller was not running; stop command took no action. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
   fi
 }
@@ -94,6 +99,7 @@ case "$1" in
     stop
     ;;
   restart)
+    STOPPED_VIA_STOP=0
     stop
     start
     ;;
