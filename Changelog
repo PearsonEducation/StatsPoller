@@ -1,3 +1,6 @@
+Release 2.1
+
+
 Release 2.0
  * Restructured Java packages to be more intuitively organized
  * Removed the vast majority of the plugin-based Linux metric collectors. Replaced with equivalent metric collectors that are built into the main Java app.
