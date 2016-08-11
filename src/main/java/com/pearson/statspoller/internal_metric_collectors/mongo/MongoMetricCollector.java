@@ -197,7 +197,8 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
             int metricTimestamp = ((int) (System.currentTimeMillis() / 1000));
 
             for (Pair<String, BigDecimal> pair : metrics) {
-                graphiteMetrics.add(new GraphiteMetric(pair.getFirst(), pair.getSecond(), metricTimestamp));
+                String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(pair.getFirst(), true, true);
+                graphiteMetrics.add(new GraphiteMetric(graphiteFriendlyMetricPath, pair.getSecond(), metricTimestamp));
             }
         }
         catch (Exception e) {
