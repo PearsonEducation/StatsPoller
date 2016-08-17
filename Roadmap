@@ -1,8 +1,11 @@
 2.1
+ * Configurable timeouts on output
  * JMX -- Derived should include memory used % for each heap & non-heap memory pool
  * Windows -- auto enable Windows collectors if OS is Windows
+ * Finish MySQL querier
+
+Future
  * Create deb install for Ubuntu
  * Support reading standard-out for external metric collectors
- * Finish MySQL querier
  * Windows -- Installer?
  * Windows -- Replace external metric collectors with built-in collectors?

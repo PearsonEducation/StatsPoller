@@ -1,5 +1,6 @@
 Release 2.1
-
+ * Set Xms in statspoller.profile
+ * Library updates
 
 Release 2.0
  * Restructured Java packages to be more intuitively organized
