@@ -1,1 +1,1 @@
-JAVA_OPTS="-Xmx128m -jar StatsPoller.jar"
+JAVA_OPTS="-Xms128m -Xmx128m -jar StatsPoller.jar"
