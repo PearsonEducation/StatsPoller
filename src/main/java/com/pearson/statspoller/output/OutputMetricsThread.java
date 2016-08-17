@@ -27,9 +27,25 @@ public class OutputMetricsThread implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(OutputMetricsThread.class.getName());
     
     private boolean isFinished_ = false;
-    
+    private static int maxOutputTimeForAnOutputModule_ = (int) (ApplicationConfiguration.getOutputInterval() - 2500);
+    private static int connectTimeoutForATcpOutputModule_ = (int) ((ApplicationConfiguration.getOutputInterval() - 3000) / 2);
+    private static int connectTimeoutForAHttpOutputModule_ = (int) ((ApplicationConfiguration.getOutputInterval() - 3000) / 3);
+    private static int readTimeoutForAHttpOutputModule_ = (int) (((ApplicationConfiguration.getOutputInterval() - 3000) * 2) / 3);
+
     @Override
     public void run() {
+        // ensure that the threadpool stays alive for at least 2.5 seconds
+        if (maxOutputTimeForAnOutputModule_ < 2500) maxOutputTimeForAnOutputModule_ = 2500;
+        
+        // ensure that at least 1 second is allowed to connect to the server (opentsdb telnet, graphite)
+        if (connectTimeoutForATcpOutputModule_ < 1000) connectTimeoutForATcpOutputModule_ = 1000;
+        
+        // ensure that at least 1 second is allowed to connect to the server (opentsdb http)
+        if (connectTimeoutForAHttpOutputModule_ < 1000) connectTimeoutForAHttpOutputModule_ = 1000;
+        
+        // ensure that at least 1 second is allowed for the server to reply to the http request (opentsdb http)
+        if (readTimeoutForAHttpOutputModule_ < 1000) readTimeoutForAHttpOutputModule_ = 1000;
+        
         List metrics = new ArrayList<>();
         metrics.addAll(getCurrentGraphiteMetricsAndRemoveMetricsFromGlobal());
         metrics.addAll(getCurrentOpenTsdbMetricsAndRemoveMetricsFromGlobal());
@@ -39,10 +55,7 @@ public class OutputMetricsThread implements Runnable {
         outputThreads.addAll(getSendMetricsToAllOpentsdbTelnetOutputModuleThreads(metrics, "OTSDB-T-" + System.currentTimeMillis()));
         outputThreads.addAll(getSendMetricsToAllOpentsdbHttpOutputModuleThreads(metrics, "OTSDB-H-" + System.currentTimeMillis()));
         
-        int maxOutputTimeForAnOutputModule = (int) ApplicationConfiguration.getOutputInterval() / 2;
-        if (maxOutputTimeForAnOutputModule < 2500) maxOutputTimeForAnOutputModule = 2500;
-        
-        Threads.threadExecutorCachedPool(outputThreads, maxOutputTimeForAnOutputModule, TimeUnit.MILLISECONDS);
+        Threads.threadExecutorCachedPool(outputThreads, maxOutputTimeForAnOutputModule_, TimeUnit.MILLISECONDS);
         
         isFinished_ = true;
     }
@@ -63,7 +76,7 @@ public class OutputMetricsThread implements Runnable {
                 
                 SendMetricsToGraphiteThread sendMetricsToGraphiteThread = new SendMetricsToGraphiteThread(graphiteMetrics, 
                         graphiteOutputModule.isSanitizeMetrics(), graphiteOutputModule.isSubstituteCharacters(),
-                        graphiteOutputModule.getHost(), graphiteOutputModule.getPort(), 5000,  
+                        graphiteOutputModule.getHost(), graphiteOutputModule.getPort(), connectTimeoutForATcpOutputModule_,  
                         graphiteOutputModule.getNumSendRetryAttempts(), graphiteOutputModule.getMaxMetricsPerMessage(), threadId);
             
                 Thread thread = new Thread(sendMetricsToGraphiteThread);
@@ -94,7 +107,7 @@ public class OutputMetricsThread implements Runnable {
                 SendMetricsToOpenTsdbThread sendMetricsToOpenTsdbThread = new SendMetricsToOpenTsdbThread(openTsdbMetrics, 
                         openTsdbTelnetOutputModule.isSanitizeMetrics(), "SP_Host", ApplicationConfiguration.getHostname(),
                         openTsdbTelnetOutputModule.getHost(), openTsdbTelnetOutputModule.getPort(), 
-                        5000, openTsdbTelnetOutputModule.getNumSendRetryAttempts(), threadId);
+                        connectTimeoutForATcpOutputModule_, openTsdbTelnetOutputModule.getNumSendRetryAttempts(), threadId);
 
                 Thread thread = new Thread(sendMetricsToOpenTsdbThread);
                 sendMetricsToOpenTsdbTelnetThreads.add(thread);
@@ -123,7 +136,8 @@ public class OutputMetricsThread implements Runnable {
                       
                 SendMetricsToOpenTsdbThread sendMetricsToOpenTsdbThread = new SendMetricsToOpenTsdbThread(openTsdbMetrics, 
                         openTsdbHttpOutputModule.isSanitizeMetrics(), "SP_Host", ApplicationConfiguration.getHostname(),
-                        openTsdbHttpOutputModule.getUrl(), 5000, 5000, openTsdbHttpOutputModule.getNumSendRetryAttempts(), openTsdbHttpOutputModule.getMaxMetricsPerMessage(), 
+                        openTsdbHttpOutputModule.getUrl(), connectTimeoutForAHttpOutputModule_, readTimeoutForAHttpOutputModule_, 
+                        openTsdbHttpOutputModule.getNumSendRetryAttempts(), openTsdbHttpOutputModule.getMaxMetricsPerMessage(), 
                         threadId);
 
                 Thread thread = new Thread(sendMetricsToOpenTsdbThread);
