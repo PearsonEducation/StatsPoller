@@ -213,13 +213,22 @@
                             <filemode>644</filemode>
                             <sources>
                                 <source><location>conf/application.properties</location></source>
-                                <source><location>conf/example_application.properties</location></source>
-                                <source><location>conf/example_demo_application.properties</location></source>
                                 <source><location>conf/logback_config.xml</location></source>
                                 <source><location>conf/statspoller.profile</location></source>
                             </sources>
                         </mapping>
             
+                        <mapping>
+                            <directory>/opt/StatsPoller/conf</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <recurseDirectories>false</recurseDirectories>
+                            <filemode>644</filemode>
+                            <sources>
+                                <source><location>conf/example_application.properties</location></source>
+                                <source><location>conf/example_demo_application.properties</location></source>
+                            </sources>
+                        </mapping>          
+                          
                         <mapping>
                             <directory>/opt/StatsPoller/lib</directory>
                             <filemode>755</filemode>
@@ -386,7 +395,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.2.2</version>
+            <version>3.3.0</version>
         </dependency>
 
         <dependency>
