@@ -3,6 +3,8 @@
  * JMX -- Derived should include memory used % for each heap & non-heap memory pool
  * Windows -- auto enable Windows collectors if OS is Windows
  * Finish MySQL querier
+ * Document external collectors
+ * Linux Zombie Process Detector
 
 Future
  * Create deb install for Ubuntu
