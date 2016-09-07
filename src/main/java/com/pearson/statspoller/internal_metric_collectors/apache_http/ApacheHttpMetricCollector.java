@@ -93,14 +93,23 @@ public class ApacheHttpMetricCollector extends InternalCollectorFramework implem
    
             while (currentLine != null) {
                 int metricKeyIndexRange = currentLine.indexOf(':', 0);
+                
+                if (metricKeyIndexRange == -1) {
+                    currentLine = bufferedReader.readLine();
+                    continue;
+                }
+                
                 String metricKey = currentLine.substring(0, metricKeyIndexRange);
                
                 if (!metricKey.equalsIgnoreCase("Scoreboard")) {
-                    String metricValueString = currentLine.substring(metricKeyIndexRange + 2, currentLine.length());
-                    BigDecimal metricValueBigDecimal = new BigDecimal(metricValueString);
-                    
-                    GraphiteMetric graphiteMetric = new GraphiteMetric(metricKey, metricValueBigDecimal, ((int) (serverStatusDownloadTime / 1000)));
-                    graphiteMetrics.add(graphiteMetric);
+                    try {
+                        String metricValueString = currentLine.substring(metricKeyIndexRange + 2, currentLine.length());
+                        BigDecimal metricValueBigDecimal = new BigDecimal(metricValueString);
+
+                        GraphiteMetric graphiteMetric = new GraphiteMetric(metricKey, metricValueBigDecimal, ((int) (serverStatusDownloadTime / 1000)));
+                        graphiteMetrics.add(graphiteMetric);
+                    }
+                    catch (Exception e) {}
                 }
                 
                 currentLine = bufferedReader.readLine();
