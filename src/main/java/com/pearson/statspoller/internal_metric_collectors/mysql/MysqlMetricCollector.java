@@ -170,7 +170,10 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                 
                 openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "OPEN_FILES", "OpenFiles-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
-
+                
+                openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "PREPARED_STMT_COUNT", "PreparedStatement-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                
                 openTsdbMetric = getSimpleGlobalStatusMetric(currentGlobalStatus, "SLAVE_RUNNING", "SlaveRunning", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
                 
@@ -534,7 +537,8 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             return slaveStatuses_ByMasterServerId;
         }
         catch (Exception e) {
-            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            if (e.toString().contains("Access denied; you need (at least one of) the SUPER")) logger.error(e.toString());
+            else logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
             return null;
         }
         finally {
