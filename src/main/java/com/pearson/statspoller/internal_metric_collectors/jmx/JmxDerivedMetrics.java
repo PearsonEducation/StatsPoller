@@ -98,13 +98,9 @@ public class JmxDerivedMetrics {
         
         BigDecimal numberOfAvailableProcessors = getNumberAvailableProcessors(jmxMetricsRawByUnformattedGraphiteMetricPath.get("java.lang:type=OperatingSystem.AvailableProcessors"));
         
-        Set<String> heapTypes = getHeapTypesFromMetricPath(jmxMetricsRawByUnformattedGraphiteMetricPath.keySet());
-        List<JmxMetricRaw> heapPercentsByType = createHeapPercentsForEachHeapType(jmxMetricsRawByUnformattedGraphiteMetricPath, heapTypes);
-        derivedJmxMetrics.addAll(heapPercentsByType);
-        
-        Set<String> nonHeapTypes = getNonHeapTypesFromMetricPath(jmxMetricsRawByUnformattedGraphiteMetricPath.keySet());
-        List<JmxMetricRaw> nonHeapPercentsByType = createNonHeapPercentsForEachNonHeapType(jmxMetricsRawByUnformattedGraphiteMetricPath, nonHeapTypes);
-        derivedJmxMetrics.addAll(nonHeapPercentsByType);
+        Set<String> memoryPoolTypes = getMemoryPoolTypesFromMetricPath(jmxMetricsRawByUnformattedGraphiteMetricPath.keySet());
+        List<JmxMetricRaw> memoryPoolPercentsByType = createPercentsForEachMemoryPoolType(jmxMetricsRawByUnformattedGraphiteMetricPath, memoryPoolTypes);
+        derivedJmxMetrics.addAll(memoryPoolPercentsByType);
         
         JmxMetricRaw heapUsagePercent = createHeapUsagePercent(
                 jmxMetricsRawByUnformattedGraphiteMetricPath.get("java.lang:type=Memory.HeapMemoryUsage.used"), 
@@ -167,92 +163,70 @@ public class JmxDerivedMetrics {
         return availableProcessors.getMetricValue();
     }
     
-    /* Gets the set of heap memory pool names that the JVM is using. 
+    /* Gets the set of memory pool names that the JVM is using. 
      * Ex- 'Par Survivor Space'
      */
-    private Set<String> getHeapTypesFromMetricPath(Set<String> metricPaths) {
+    private Set<String> getMemoryPoolTypesFromMetricPath(Set<String> metricPaths) {
         
         if ((metricPaths == null) || metricPaths.isEmpty()) {
             return new HashSet<>();
         }
         
-        Set<String> heapTypes = new HashSet<>();
+        Set<String> memoryPoolTypes = new HashSet<>();
         
         for (String metricPath : metricPaths) {
-            if (metricPath.contains("java.lang:type=MemoryPool,name=") && metricPath.contains(".Type-HEAP")) {
-                String heapType = StringUtils.remove(metricPath, "java.lang:type=MemoryPool,name=");
-                heapType = StringUtils.remove(heapType, ".Type-HEAP");
-                heapTypes.add(heapType);
+            if (metricPath.contains("java.lang:type=MemoryPool,name=") && metricPath.contains(".Usage.used")) {
+                String memoryPoolType = StringUtils.remove(metricPath, "java.lang:type=MemoryPool,name=");
+                memoryPoolType = StringUtils.remove(memoryPoolType, ".Usage.used");
+                memoryPoolTypes.add(memoryPoolType);
             }
         }
         
-        return heapTypes;
+        return memoryPoolTypes;
     }
     
-    /* Gets the set of non-heap memory pool names that the JVM is using. 
-     * Ex- 'CMS Perm Gen'
-     */
-    private Set<String> getNonHeapTypesFromMetricPath(Set<String> metricPaths) {
-        
-        if ((metricPaths == null) || metricPaths.isEmpty()) {
-            return new HashSet<>();
-        }
-        
-        Set<String> nonHeapTypes = new HashSet<>();
-        
-        for (String metricPath : metricPaths) {
-            if (metricPath.contains("java.lang:type=MemoryPool,name=")  && metricPath.contains(".Type-NON_HEAP")) {
-                String nonHeapType = StringUtils.remove(metricPath, "java.lang:type=MemoryPool,name=");
-                nonHeapType = StringUtils.remove(nonHeapType, ".Type-NON_HEAP");
-                nonHeapTypes.add(nonHeapType);
-            }
-        }
-        
-        return nonHeapTypes;
-    }
-    
-    private List<JmxMetricRaw> createHeapPercentsForEachHeapType(Map<String,JmxMetricRaw> jmxMetricsRawByUnformattedGraphiteMetricPath, Set<String> heapTypes) {
+    private List<JmxMetricRaw> createPercentsForEachMemoryPoolType(Map<String,JmxMetricRaw> jmxMetricsRawByUnformattedGraphiteMetricPath, Set<String> memoryPoolTypes) {
         
         if ((jmxMetricsRawByUnformattedGraphiteMetricPath == null) || jmxMetricsRawByUnformattedGraphiteMetricPath.isEmpty() || 
-                (heapTypes == null) || heapTypes.isEmpty()) {
+                (memoryPoolTypes == null) || memoryPoolTypes.isEmpty()) {
             return new ArrayList<>();
         }
         
-        List<JmxMetricRaw> heapPercentsByType = new ArrayList<>();
+        List<JmxMetricRaw> memoryPoolPercentsByType = new ArrayList<>();
                 
-        for (String heapType : heapTypes) {
-            String heapUsedMetricPath = "java.lang:type=MemoryPool,name=" + heapType + ".Usage.used";
-            String heapMaxMetricPath = "java.lang:type=MemoryPool,name=" + heapType + ".Usage.max";
+        for (String memoryPoolType : memoryPoolTypes) {
+            String memoryPoolUsedMetricPath = "java.lang:type=MemoryPool,name=" + memoryPoolType + ".Usage.used";
+            String memoryPoolMaxMetricPath = "java.lang:type=MemoryPool,name=" + memoryPoolType + ".Usage.max";
             
-            if (jmxMetricsRawByUnformattedGraphiteMetricPath.containsKey(heapUsedMetricPath) && 
-                    jmxMetricsRawByUnformattedGraphiteMetricPath.containsKey(heapMaxMetricPath)) {
+            if (jmxMetricsRawByUnformattedGraphiteMetricPath.containsKey(memoryPoolUsedMetricPath) && 
+                    jmxMetricsRawByUnformattedGraphiteMetricPath.containsKey(memoryPoolMaxMetricPath)) {
                 
-                JmxMetricRaw heapUsedTypeJmxMetric = jmxMetricsRawByUnformattedGraphiteMetricPath.get(heapUsedMetricPath);
-                JmxMetricRaw heapMaxTypeJmxMetric = jmxMetricsRawByUnformattedGraphiteMetricPath.get(heapMaxMetricPath);
+                JmxMetricRaw memoryPoolUsedTypeJmxMetric = jmxMetricsRawByUnformattedGraphiteMetricPath.get(memoryPoolUsedMetricPath);
+                JmxMetricRaw memoryPoolMaxTypeJmxMetric = jmxMetricsRawByUnformattedGraphiteMetricPath.get(memoryPoolMaxMetricPath);
                 
-                if ((heapUsedTypeJmxMetric == null) || (heapUsedTypeJmxMetric.getMetricValue() == null) || 
-                        (heapMaxTypeJmxMetric == null) || (heapMaxTypeJmxMetric.getMetricValue() == null) ||
-                        (heapUsedTypeJmxMetric.getMetricValue().compareTo(BigDecimal.ZERO) <= 0) ||
-                        (heapMaxTypeJmxMetric.getMetricValue().compareTo(BigDecimal.ZERO) <= 0)) {
-                    logger.debug("Invalid heap usage values for HeapType=" + heapType);
+                if ((memoryPoolUsedTypeJmxMetric == null) || (memoryPoolUsedTypeJmxMetric.getMetricValue() == null) || 
+                        (memoryPoolMaxTypeJmxMetric == null) || (memoryPoolMaxTypeJmxMetric.getMetricValue() == null) ||
+                        (memoryPoolUsedTypeJmxMetric.getMetricValue().compareTo(BigDecimal.ZERO) <= 0) ||
+                        (memoryPoolMaxTypeJmxMetric.getMetricValue().compareTo(BigDecimal.ZERO) <= 0)) {
+                    logger.debug("Invalid usage values for MemoryPool=" + memoryPoolType);
                 }
                 else {
-                    BigDecimal percentUsedHeapType = MathUtilities.smartBigDecimalScaleChange(
-                            heapUsedTypeJmxMetric.getMetricValue()
-                            .divide(heapMaxTypeJmxMetric.getMetricValue(), MATH_CONTEXT)
+                    BigDecimal percentUsedMemoryPoolType = MathUtilities.smartBigDecimalScaleChange(
+                            memoryPoolUsedTypeJmxMetric.getMetricValue()
+                            .divide(memoryPoolMaxTypeJmxMetric.getMetricValue(), MATH_CONTEXT)
                             .multiply(ONE_HUNDRED, MATH_CONTEXT),
                             SCALE, ROUNDING_MODE);
                     
-                    percentUsedHeapType = MathUtilities.correctOutOfRangePercentage(percentUsedHeapType);
+                    percentUsedMemoryPoolType = MathUtilities.correctOutOfRangePercentage(percentUsedMemoryPoolType);
                     
-                    long averageMetricRetrievalTimestampInMs = (heapUsedTypeJmxMetric.getMetricRetrievalTimestampInMs() + heapMaxTypeJmxMetric.getMetricRetrievalTimestampInMs()) / 2;
-                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Heap." + heapType + "-UsedPct", percentUsedHeapType, averageMetricRetrievalTimestampInMs);
-                    heapPercentsByType.add(jmxMetricRaw);
+                    long averageMetricRetrievalTimestampInMs = (memoryPoolUsedTypeJmxMetric.getMetricRetrievalTimestampInMs() + memoryPoolMaxTypeJmxMetric.getMetricRetrievalTimestampInMs()) / 2;
+                    JmxMetricRaw jmxMetricRaw = new JmxMetricRaw("Derived", "Memory.Pools." + memoryPoolType + "-UsedPct", percentUsedMemoryPoolType, averageMetricRetrievalTimestampInMs);
+                    memoryPoolPercentsByType.add(jmxMetricRaw);
                 } 
             }  
         }
         
-        return heapPercentsByType;
+        return memoryPoolPercentsByType;
     }
     
     private List<JmxMetricRaw> createNonHeapPercentsForEachNonHeapType(Map<String,JmxMetricRaw> jmxMetricsRawByUnformattedGraphiteMetricPath, Set<String> nonHeapTypes) {
