@@ -1,0 +1,19 @@
+# This is a work in progress, not finished yet
+
+[Unit]
+Description=StatsPoller Service
+After=syslog.target network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/StatsPoller/conf/statspoller.profile
+ExecStart=java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &
+WorkingDirectory=/opt/StatsPoller
+TimeoutStartSec=10
+TimeoutStopSec=10
+SuccessExitStatus=130 143 SIGKILL
+Restart=on-failure
+Nice=0
+
+[Install]
+WantedBy=multi-user.target
