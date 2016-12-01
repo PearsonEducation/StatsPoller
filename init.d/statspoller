@@ -3,6 +3,8 @@
 # description: A simple daemon wrapper to manage start/stop/status of StatsPoller
 # pidfile: /opt/StatsPoller/pid/statspoller.pid
 
+. /etc/rc.d/init.d/functions
+
 source /opt/StatsPoller/conf/statspoller.profile
 
 PIDFILE=/opt/StatsPoller/pid/statspoller.pid
