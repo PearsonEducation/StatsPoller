@@ -1,6 +1,5 @@
 package com.pearson.statspoller.utilities;
 
-import com.pearson.statspoller.utilities.StackTrace;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -209,6 +208,44 @@ public class DatabaseUtils {
             
             return false;
         }   
+    }
+    
+    public static void setAutoCommit(Connection connection, boolean enabled) {
+        
+        if (connection == null) {
+            return;
+        }
+        
+        try {
+            connection.setAutoCommit(enabled);
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+        
+    }
+        
+    public static boolean commit(Connection connection) {
+        
+        if (connection == null) {
+            return false;
+        }
+        
+        try {
+            if (!connection.getAutoCommit()) {
+                connection.commit();
+            }
+            else {
+                logger.debug("Cannot commit when Auto-Commit is enabled");
+            }
+
+            return true;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            return false;
+        }
+        
     }
     
 }
