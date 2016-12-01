@@ -4,7 +4,7 @@
 
     <groupId>com.pearson.StatsPoller</groupId>
     <artifactId>StatsPoller</artifactId>
-    <version>2.1-beta1</version>
+    <version>2.1-beta2</version>
     <packaging>jar</packaging>
     <name>StatsPoller</name>
     
@@ -22,7 +22,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
@@ -212,9 +212,19 @@
                             <recurseDirectories>false</recurseDirectories>
                             <filemode>644</filemode>
                             <sources>
-                                <source><location>conf/application.properties</location></source>
                                 <source><location>conf/logback_config.xml</location></source>
                                 <source><location>conf/statspoller.profile</location></source>
+                            </sources>
+                        </mapping>
+            
+                        <mapping>
+                            <directory>/opt/StatsPoller/conf</directory>
+                            <configuration>true</configuration>
+                            <directoryIncluded>false</directoryIncluded>
+                            <recurseDirectories>false</recurseDirectories>
+                            <filemode>640</filemode>
+                            <sources>
+                                <source><location>conf/application.properties</location></source>
                             </sources>
                         </mapping>
             
@@ -282,12 +292,12 @@
                     <preinstallScriptlet>
                         <script>useradd statspoller</script>
                     </preinstallScriptlet>
-                    -->   
+                    --> 
                     
                     <postinstallScriptlet>
                         <script>
                             /sbin/chkconfig --add statspoller
-                            systemctl daemon-reload > /dev/null 2>&amp;1
+                            /usr/bin/systemctl daemon-reload > /dev/null 2>&amp;1
                             printf "Post-installation notice: Please remember to start/restart StatsPoller\n"
                         </script>
                     </postinstallScriptlet>
@@ -299,7 +309,7 @@
                     <postremoveScriptlet>
                         <script>
                             [ $1 = 0 ] &amp;&amp; rm -R /opt/StatsPoller
-                            systemctl daemon-reload > /dev/null 2>&amp;1
+                            /usr/bin/systemctl daemon-reload > /dev/null 2>&amp;1
                             printf "StatsPoller has been uninstalled\n"
                         </script>
                     </postremoveScriptlet>    
@@ -309,6 +319,7 @@
             </plugin>
             
         </plugins>
+        
     </build>
 
     <dependencies>
@@ -359,7 +370,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.5</version>
         </dependency>
         
         <dependency>
@@ -383,13 +394,13 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>19.0</version>
+            <version>20.0</version>
         </dependency>
         
         <dependency>
             <groupId>io.fastjson</groupId>
             <artifactId>boon</artifactId>
-            <version>0.33</version>
+            <version>0.34</version>
         </dependency>
         
         <dependency>
@@ -401,13 +412,13 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.39</version>
+            <version>5.1.40</version>
         </dependency>
         
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>1.4.6</version>
+            <version>1.5.5</version>
         </dependency>
         
         <dependency>
