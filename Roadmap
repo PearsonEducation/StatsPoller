@@ -1,12 +1,8 @@
-2.1
- * Configurable timeouts on output
- * JMX -- Derived should include memory used % for each heap & non-heap memory pool
+Future
  * Windows -- auto enable Windows collectors if OS is Windows
  * Finish MySQL querier
- * Document external collectors
  * Linux Zombie Process Detector
-
-Future
+ * Configurable timeouts on output
  * Create deb install for Ubuntu
  * Support reading standard-out for external metric collectors
  * Windows -- Installer?

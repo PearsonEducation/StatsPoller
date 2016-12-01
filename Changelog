@@ -1,6 +1,9 @@
 Release 2.1
  * Set Xms in statspoller.profile
  * Library updates
+ * Redirect to systemctl in the init.d script (if appropriate)
+ * Fixed outputting of memory pools usage percents for JMX metrics when using Java 1.8 JVMs
+ * Modified output connection timeouts to be less restrictive
 
 Release 2.0
  * Restructured Java packages to be more intuitively organized
