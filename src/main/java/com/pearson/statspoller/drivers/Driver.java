@@ -56,7 +56,7 @@ public class Driver {
         else {
             String successOutput = "StatsPoller successfully initialized @ " + new Date();
             System.out.println(successOutput);
-            logger.error(successOutput);
+            logger.info(successOutput);
         }
         
         launchStatsPollerCollector();
