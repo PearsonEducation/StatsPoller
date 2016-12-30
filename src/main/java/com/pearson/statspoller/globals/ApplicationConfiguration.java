@@ -10,7 +10,7 @@ import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCount
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
-import com.pearson.statspoller.internal_metric_collectors.mysql_querier.MysqlQuerier;
+import com.pearson.statspoller.internal_metric_collectors.db_querier.DbQuerier;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteOutputModule;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbHttpOutputModule;
@@ -67,7 +67,7 @@ public class ApplicationConfiguration {
     private static final List<ApacheHttpMetricCollector> apacheHttpMetricCollectors_ = new ArrayList<>();
     private static final List<MongoMetricCollector> mongoMetricCollectors_ = new ArrayList<>();
     private static final List<MysqlMetricCollector> mysqlMetricCollectors_ = new ArrayList<>();
-    private static final List<MysqlQuerier> mysqlQuerier_ = new ArrayList<>();
+    private static final List<DbQuerier> mysqlQuerier_ = new ArrayList<>();
     
     private static long applicationStartTimeInMs_ = VALUE_NOT_SET_CODE;
     private static String hostname_ = null;
@@ -869,6 +869,65 @@ public class ApplicationConfiguration {
         }
     }
     
+    private static DbQuerier readDbQuerierMetricCollector(String collectorSuffix, boolean legacyMode) {
+        
+        if (applicationConfiguration_ == null) {
+            return null;
+        }
+        
+        if (collectorSuffix == null) collectorSuffix = "";
+        List<OpenTsdbTag> openTsdbTags = new ArrayList<>();
+        
+        try {
+            String dbQuerierEnabledKey = "db_querier_querier_enabled" + collectorSuffix;
+            boolean dbQuerierEnabledValue = applicationConfiguration_.safeGetBoolean(dbQuerierEnabledKey, false);
+            if (!dbQuerierEnabledValue) return null;
+            
+            String dbQuerierHostKey = "db_querier_querier_host" + collectorSuffix;
+            String dbQuerierHostValue = applicationConfiguration_.safeGetString(dbQuerierHostKey, "127.0.0.1");
+            String graphiteFriendlyHost = GraphiteMetric.getGraphiteSanitizedString(dbQuerierHostValue, true, true);
+            openTsdbTags.add(new OpenTsdbTag("Host=" + graphiteFriendlyHost));
+
+            String dbQuerierPortKey = "db_querier_querier_port" + collectorSuffix;
+            int dbQuerierPortValue = applicationConfiguration_.safeGetInteger(dbQuerierPortKey, 3306);
+            String graphiteFriendlyPort = GraphiteMetric.getGraphiteSanitizedString(Integer.toString(dbQuerierPortValue), true, true);
+            openTsdbTags.add(new OpenTsdbTag("Port=" + graphiteFriendlyPort));
+
+            String dbQuerierUsernameKey = "db_querier_username" + collectorSuffix;
+            String dbQuerierUsernameValue = applicationConfiguration_.safeGetString(dbQuerierUsernameKey, "");
+            
+            String dbQuerierPasswordKey = "db_querier_password" + collectorSuffix;
+            String dbQuerierPasswordValue = applicationConfiguration_.safeGetString(dbQuerierPasswordKey, "");
+            
+            String dbQuerierJdbcKey = "db_querier_jdbc" + collectorSuffix;
+            String dbQuerierJdbcValue = applicationConfiguration_.safeGetString(dbQuerierJdbcKey, "");
+            
+            String dbQuerierCollectionIntervalKey = "db_querier_collection_interval" + collectorSuffix;
+            double dbQuerierCollectionIntervalValue = applicationConfiguration_.safeGetDouble(dbQuerierCollectionIntervalKey, 60);
+            long dbQuerierCollectionIntervalValue_Long = legacyMode ? (long) dbQuerierCollectionIntervalValue : (long) (dbQuerierCollectionIntervalValue * 1000);    
+
+            String dbQuerierMetricPrefixKey = "db_querier_metric_prefix" + collectorSuffix;
+            String dbQuerierMetricPrefixValue = applicationConfiguration_.safeGetString(dbQuerierMetricPrefixKey, "DB_Querier");
+            String graphiteSanitizedDbQuerierMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(dbQuerierMetricPrefixValue, true, true);
+            
+            String dbQuerierOutputFileValue = "./output/" + "db_querier_" + graphiteSanitizedDbQuerierMetricPrefix + ".out";
+
+            if (dbQuerierEnabledValue && (dbQuerierHostValue != null) && (dbQuerierPortValue != -1)) {
+                DbQuerier dbQuerier = new DbQuerier(dbQuerierEnabledValue, 
+                        dbQuerierCollectionIntervalValue_Long, graphiteSanitizedDbQuerierMetricPrefix, dbQuerierOutputFileValue, outputInternalMetricsToDisk_,
+                        dbQuerierHostValue, dbQuerierPortValue, dbQuerierUsernameValue, dbQuerierPasswordValue, dbQuerierJdbcValue, 
+                        openTsdbTags);
+               
+                return dbQuerier;
+            }
+            else return null;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));      
+            return null;
+        }
+    }
+    
     private static void loadMySQLDrivers() {
         
         if ((mysqlMetricCollectors_ == null) || mysqlMetricCollectors_.isEmpty()) {
@@ -1004,7 +1063,7 @@ public class ApplicationConfiguration {
         return new ArrayList<>(mysqlMetricCollectors_);
     }
     
-    public static List<MysqlQuerier> getMysqlQueriers() {
+    public static List<DbQuerier> getMysqlQueriers() {
         if (mysqlQuerier_ == null) return null;
         return new ArrayList<>(mysqlQuerier_);
     }

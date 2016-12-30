@@ -1,4 +1,4 @@
-package com.pearson.statspoller.internal_metric_collectors.mysql_querier;
+package com.pearson.statspoller.internal_metric_collectors.db_querier;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Jeffrey Schmidt
  */
-public class MysqlQuerier extends InternalCollectorFramework implements Runnable {
+public class DbQuerier extends InternalCollectorFramework implements Runnable {
     
-    private static final Logger logger = LoggerFactory.getLogger(MysqlQuerier.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(DbQuerier.class.getName());
     
     private static final BigDecimal ONE_THOUSAND = new BigDecimal("1000");
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
@@ -38,7 +38,7 @@ public class MysqlQuerier extends InternalCollectorFramework implements Runnable
     private final boolean isUserSpecifiedJdbcString_;
     private final List<OpenTsdbTag> openTsdbTags_;
 
-    public MysqlQuerier(boolean isEnabled, long collectionInterval, String metricPrefix, 
+    public DbQuerier(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles,
             String host, int port, String username, String password, String jdbcString, 
             List<OpenTsdbTag> openTsdbTags) {
