@@ -106,7 +106,8 @@ public class ApacheHttpMetricCollector extends InternalCollectorFramework implem
                         String metricValueString = currentLine.substring(metricKeyIndexRange + 2, currentLine.length());
                         BigDecimal metricValueBigDecimal = new BigDecimal(metricValueString);
 
-                        GraphiteMetric graphiteMetric = new GraphiteMetric(metricKey, metricValueBigDecimal, ((int) (serverStatusDownloadTime / 1000)));
+                        String graphiteFriendlyMetricKey = GraphiteMetric.getGraphiteSanitizedString(metricKey, true, true);
+                        GraphiteMetric graphiteMetric = new GraphiteMetric(graphiteFriendlyMetricKey, metricValueBigDecimal, ((int) (serverStatusDownloadTime / 1000)));
                         graphiteMetrics.add(graphiteMetric);
                     }
                     catch (Exception e) {}
