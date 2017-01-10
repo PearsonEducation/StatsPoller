@@ -13,6 +13,7 @@ import com.pearson.statspoller.output.OutputMetricsInvokerThread;
 import com.pearson.statspoller.external_metric_collectors.ReadMetricsFromFileThread;
 import com.pearson.statspoller.external_metric_collectors.ExternalMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.apache_http.ApacheHttpMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.db_querier.DbQuerier;
 import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxJvmShutdownHook;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
@@ -26,6 +27,7 @@ import com.pearson.statspoller.internal_metric_collectors.linux.ProcessCounter.P
 import com.pearson.statspoller.internal_metric_collectors.linux.Uptime.UptimeCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.postgres.PostgresMetricCollector;
 import com.pearson.statspoller.utilities.FileIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
@@ -72,6 +74,10 @@ public class Driver {
         launchMongoCollectors();
                 
         launchMysqlCollectors();
+        
+        launchPostgresCollectors();
+
+        launchDbQueriers();
         
         launchExternalMetricCollectors();
         
@@ -255,6 +261,22 @@ public class Driver {
               
         for (MysqlMetricCollector mysqlMetricCollector : ApplicationConfiguration.getMysqlMetricCollectors()) {
             threadExecutor_.execute(mysqlMetricCollector);
+        }
+        
+    }
+    
+    private static void launchPostgresCollectors() {
+              
+        for (PostgresMetricCollector postgresMetricCollector : ApplicationConfiguration.getPostgresMetricCollectors()) {
+            threadExecutor_.execute(postgresMetricCollector);
+        }
+        
+    }
+    
+    private static void launchDbQueriers() {
+              
+        for (DbQuerier ddbQuerier : ApplicationConfiguration.getDbQueriers()) {
+            threadExecutor_.execute(ddbQuerier);
         }
         
     }
