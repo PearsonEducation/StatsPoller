@@ -1,6 +1,9 @@
+2.2
+ * Document DB querier
+ * Bugfixes for postgres poller
+
 Future
  * Windows -- auto enable Windows collectors if OS is Windows
- * Finish MySQL querier
  * Linux Zombie Process Detector
  * Configurable timeouts on output
  * Create deb install for Ubuntu
