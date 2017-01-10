@@ -2,7 +2,7 @@ package com.pearson.statspoller.internal_metric_collectors.db_querier;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
-import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
+import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
@@ -12,9 +12,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,26 +28,19 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
     private static final int SCALE = 7;
     private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
     
-    private final String host_;
-    private final int port_;
     private final String username_;
     private final String password_;
     private final String jdbcString_;
-    private final boolean isUserSpecifiedJdbcString_;
-    private final List<OpenTsdbTag> openTsdbTags_;
+    private final List<String> queries_;
 
     public DbQuerier(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String username, String password, String jdbcString, 
-            List<OpenTsdbTag> openTsdbTags) {
+            String username, String password, String jdbcString, List<String> queries) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
-        this.host_ = host;
-        this.port_ = port;
         this.username_ = username;
         this.password_ = password;
-        this.jdbcString_ = ((jdbcString == null) || jdbcString.isEmpty()) ? "jdbc:mysql://" + host_ + ":" + port_ + "?connectTimeout=7500&socketTimeout=7500&autoReconnect=false" : jdbcString;
-        this.isUserSpecifiedJdbcString_ = ((jdbcString != null) && !jdbcString.isEmpty());
-        this.openTsdbTags_ = openTsdbTags;
+        this.jdbcString_ = jdbcString;
+        this.queries_ = queries;
     }
 
     @Override
@@ -59,20 +50,20 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
             long routineStartTime = System.currentTimeMillis();
             
             // connect to the db
-            Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
+            Connection connection = DatabaseUtils.connect(jdbcString_, username_, password_);
             
-            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection);
+            List<GraphiteMetric> graphiteMetrics = getMetrics(connection);
             
             // disconnect from the db
             DatabaseUtils.disconnect(connection);
             
             // output opentsdb metrics
-            super.outputOpenTsdbMetrics(openTsdbMetrics);
+            super.outputGraphiteMetrics(graphiteMetrics);
             
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
-            
-            logger.info("Finished MySQL Querier metric collection routine. MyqlServer=" + host_ + ":" + port_ + 
-                    ", MetricsCollected=" + openTsdbMetrics.size() +
+
+            logger.info("Finished Database Querier metric collection routine. Server=\"" + jdbcString_ + "\"" +
+                    ", MetricsCollected=" + graphiteMetrics.size() +
                     ", MetricCollectionTime=" + routineTimeElapsed);
             
             long sleepTimeInMs = getCollectionInterval() - routineTimeElapsed;
@@ -81,65 +72,55 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
         }
 
     }
-    
-    public void singleRun() {
-         
-        if (super.isEnabled()) {
-            long routineStartTime = System.currentTimeMillis();
-            
-            // connect to the db
-            Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
 
-            // get metrics
-            List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection); 
-
-            // disconnect from the db
-            DatabaseUtils.disconnect(connection);
-            
-            // output opentsdb metrics
-            super.outputOpenTsdbMetrics(openTsdbMetrics);
-            
-            long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
-            
-            logger.info("Finished MySQL Querier metric collection routine." + " MyqlServer=" + host_ + ":" + port_ + 
-                    ", MetricsCollected=" + openTsdbMetrics.size() +
-                    ", MetricCollectionTime=" + routineTimeElapsed);
+    private List<GraphiteMetric> getMetrics(Connection connection) {
+        
+        if (queries_ == null || queries_.isEmpty()) {
+            return new ArrayList<>();
         }
-
-    }
-    
-    private List<OpenTsdbMetric> getMysqlMetrics(Connection connection) {
-
-        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
-        OpenTsdbMetric openTsdbMetric;
-        BigDecimal metric;
+        
+        List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
+        GraphiteMetric graphiteMetric;
         
         try {
             boolean isConnectionValid = DatabaseUtils.isConnectionValid(connection, 5);
 
             if (!isConnectionValid || connection.isClosed()) {
-                openTsdbMetric = new OpenTsdbMetric("Error",  System.currentTimeMillis(), BigDecimal.ONE, openTsdbTags_);
-                openTsdbMetrics.add(openTsdbMetric);
-                logger.warn("MyqlServer=" + host_ + ":" + port_ + " is unavailable");
-                return openTsdbMetrics;
+                graphiteMetric = new GraphiteMetric("Available",  BigDecimal.ZERO, (int) (System.currentTimeMillis() / 1000));
+                graphiteMetrics.add(graphiteMetric);
+                logger.warn("Server=\"" + jdbcString_ + "\" is unavailable");
+                return graphiteMetrics;
             }
-            else connection.setReadOnly(true);
+            else {
+                connection.setReadOnly(true);
+                graphiteMetric = new GraphiteMetric("Available",  BigDecimal.ONE, (int) (System.currentTimeMillis() / 1000));
+                graphiteMetrics.add(graphiteMetric);
+            }
+  
+            for (String query : queries_) {
+                long startQuery_TimestampMilliseconds = System.currentTimeMillis();
+                int startQuery_TimestampMillisecond_Int = (int) (startQuery_TimestampMilliseconds / 1000);
+                DbQuerier_Result dbQuerier_Result = runQuery(connection, query);
+                long elapsedTime_TimestampMilliseconds = System.currentTimeMillis() - startQuery_TimestampMilliseconds;
+                
+                if (dbQuerier_Result != null) {
+                    graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "Result", dbQuerier_Result.getStatValue(), startQuery_TimestampMillisecond_Int);
+                    graphiteMetrics.add(graphiteMetric);
+                    
+                    graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "QueryTime_Ms", new BigDecimal(elapsedTime_TimestampMilliseconds), startQuery_TimestampMillisecond_Int);
+                    graphiteMetrics.add(graphiteMetric);
+                }
+            }
             
-            long currentTimestampMilliseconds = System.currentTimeMillis();
-
-            openTsdbMetric = new OpenTsdbMetric("Error",  currentTimestampMilliseconds, BigDecimal.ZERO, openTsdbTags_);
-            openTsdbMetrics.add(openTsdbMetric);
-            
-            Map<String,BigDecimal> queryResults = runQuery(connection, "");
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
         }
         
-        return openTsdbMetrics;
+        return graphiteMetrics;
     }
   
-    private Map<String,BigDecimal> runQuery(Connection connection, String sql) {
+    private DbQuerier_Result runQuery(Connection connection, String sql) {
         
         if (connection == null) {
             return null;
@@ -151,13 +132,10 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
-            String query = "select * from information_schema.GLOBAL_STATUS";
             statement = connection.createStatement();
-            resultSet = statement.executeQuery(query);
+            resultSet = statement.executeQuery(sql);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-            
-            Map<String,BigDecimal> globalStatus = new HashMap<>();
-            
+                        
             while (resultSet.next()) {
                 String variableName = resultSet.getString("STAT_NAME");
                 if (resultSet.wasNull()) variableName = null;
@@ -166,10 +144,13 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
                 BigDecimal variableValue_BigDecimal = new BigDecimal(variableValue_Object.toString());
                 if (resultSet.wasNull()) variableValue_BigDecimal = null;
                 
-                if ((variableName != null) && (variableValue_BigDecimal != null)) globalStatus.put(variableName, variableValue_BigDecimal);
+                if ((variableName != null) && (variableValue_BigDecimal != null)) {
+                    DbQuerier_Result dbQuerier_Result = new DbQuerier_Result(variableName, variableValue_BigDecimal);
+                    return dbQuerier_Result;
+                }
             }
 
-            return globalStatus;
+            return null;
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
