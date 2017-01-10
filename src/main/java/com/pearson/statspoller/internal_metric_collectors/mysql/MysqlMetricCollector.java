@@ -65,7 +65,14 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             long routineStartTime = System.currentTimeMillis();
             
             // connect to the db
-            Connection connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
+            Connection connection = null;
+            try {
+                connection = !isUserSpecifiedJdbcString_ ? DatabaseUtils.connect(jdbcString_, username_, password_) : DatabaseUtils.connect(jdbcString_);
+                connection.setReadOnly(true);
+            }
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
             
             List<OpenTsdbMetric> openTsdbMetrics = getMysqlMetrics(connection);
             
