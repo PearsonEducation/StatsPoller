@@ -140,10 +140,12 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
             if ((currentStatistics != null) && !currentStatistics.isEmpty()) {
                 Map<String, String> previousStatistics = previousStatistics_;
                 previousStatistics_ = currentStatistics; // sets up previousStatistics_ for the next iteration
+                long previousTimestampMilliseconds = previousTimestampInMilliseconds_;
                 previousTimestampInMilliseconds_ = currentTimestampMilliseconds_Status; // sets up previousTimestampInMilliseconds_ for the next iteration
-
+                long millisecondsBetweenSamples = currentTimestampMilliseconds_Status - previousTimestampMilliseconds;
+                BigDecimal millisecondsBetweenSamples_BigDecimal = new BigDecimal(millisecondsBetweenSamples);
                 Map<String, BigDecimal> statisticsDelta_ByVariable = getStatisticsDelta(currentStatistics, previousStatistics, statisticsVariablesToDelta);
-
+                
                 //List of all metrics gathered from Postgres
                 //------------------------------------------
                 //Global level Metrics
@@ -220,38 +222,35 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Secs", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-
                 try {
                     for (String variableValue : databases_) {
                         if (variableValue != null) {
                             openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "lock_count", "DatabaseSpecific." + variableValue + ".LockedElements-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-
                             openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "cache_rate", "DatabaseSpecific." + variableValue + ".CacheRate", currentTimestampMilliseconds_Status, openTsdbTags_);
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                             openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "cache_hit_ratio", "DatabaseSpecific." + variableValue + ".CacheHit-Pct", currentTimestampMilliseconds_Status, openTsdbTags_);
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
-
-                            metric = getDifference(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_commit"), statisticsDelta_ByVariable.get(variableValue + "." + "number_of_commit"));
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfCommit-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_commit"), millisecondsBetweenSamples_BigDecimal);
+                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfCommit-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getDifference(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_rollbacks"), statisticsDelta_ByVariable.get(variableValue + "." + "number_of_rollbacks"));
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfRollbacks-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_rollbacks"), millisecondsBetweenSamples_BigDecimal);
+                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfRollbacks-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getDifference(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_inserted"), statisticsDelta_ByVariable.get(variableValue + "." + "number_of_inserted"));
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfInserted-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_inserted"), millisecondsBetweenSamples_BigDecimal);
+                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfInserted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getDifference(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_updated"), statisticsDelta_ByVariable.get(variableValue + "." + "number_of_updated"));
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfUpdated-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_updated"), millisecondsBetweenSamples_BigDecimal);
+                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfUpdated-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getDifference(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_deleted"), statisticsDelta_ByVariable.get(variableValue + "." + "number_of_deleted"));
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfDeleted-PerInterval", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_deleted"), millisecondsBetweenSamples_BigDecimal);
+                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfDeleted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
                             if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                             openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "number_of_temp_files", "DatabaseSpecific." + variableValue + ".CreatedTmpTables-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
@@ -445,39 +444,42 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
             
             if (!database.equals("")) {
                 //Number of locked elements
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT COUNT(*) FROM pg_locks";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("count");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "lock_count", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("count");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "lock_count", variableValue);
+                    }
                 }
 
                 //rate of cache hit, the higher the number is the better
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT SUM(blks_hit) / SUM(blks_read) AS div FROM pg_stat_database";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("div");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "cache_rate", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("div");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "cache_rate", variableValue);
+                    }
                 }
 
                 //ratio of cache hit, the closer to 1 the better
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT blks_hit::float/(blks_read + blks_hit) as cache_hit_ratio FROM pg_stat_database WHERE datname=current_database()";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("cache_hit_ratio");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "cache_hit_ratio", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("cache_hit_ratio");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "cache_hit_ratio", variableValue);
+                    }
                 }
                 
                 //total number of transactions
@@ -485,155 +487,161 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 query = "SELECT SUM(xact_commit) AS \"sum_commit\", SUM(xact_rollback) AS \"sum_rollback\", SUM(tup_inserted) AS \"sum_inserted\", SUM(tup_updated) AS \"sum_updated\", SUM(tup_deleted) AS \"sum_deleted\", SUM(temp_files) AS \"sum_temp_files\" FROM pg_stat_database";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("sum_commit");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_commit", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("sum_commit");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_commit", variableValue);
 
-                    variableValue = resultSet.getString("sum_rollback");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_rollback", variableValue);
+                        variableValue = resultSet.getString("sum_rollback");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_rollback", variableValue);
 
-                    variableValue = resultSet.getString("sum_inserted");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_inserted", variableValue);
+                        variableValue = resultSet.getString("sum_inserted");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_inserted", variableValue);
 
-                    variableValue = resultSet.getString("sum_updated");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_updated", variableValue);
+                        variableValue = resultSet.getString("sum_updated");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_updated", variableValue);
 
-                    variableValue = resultSet.getString("sum_deleted");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_deleted", variableValue);
+                        variableValue = resultSet.getString("sum_deleted");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_deleted", variableValue);
 
-                    variableValue = resultSet.getString("sum_temp_files");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "number_of_temp_files", variableValue);
+                        variableValue = resultSet.getString("sum_temp_files");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "number_of_temp_files", variableValue);
+                    }
                 }
 
                 //index scan ratio
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT sum(idx_scan)/(sum(idx_scan) + sum(seq_scan)) as idx_scan_ratio FROM pg_stat_all_tables";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("idx_scan_ratio");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put(database + "." + "idx_scan_ratio", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("idx_scan_ratio");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put(database + "." + "idx_scan_ratio", variableValue);
+                    }
                 }
 
             } 
             else {
                 //open connections
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT COUNT(*) FROM pg_stat_activity";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("count");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("open_connections", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("count");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("open_connections", variableValue);
+                    }
                 }
 
                 //max connections
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SHOW max_connections";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("max_connections");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("max_connections", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("max_connections");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("max_connections", variableValue);
+                    }
                 }
 
                 //bg elements
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT maxwritten_clean, checkpoints_timed, checkpoints_req, buffers_backend, checkpoint_write_time, checkpoint_sync_time, buffers_clean, buffers_alloc, buffers_checkpoint, buffers_backend_fsync FROM pg_stat_bgwriter";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("maxwritten_clean");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("maxwritten_clean", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("maxwritten_clean");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("maxwritten_clean", variableValue);
 
-                    variableValue = resultSet.getString("checkpoints_timed");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("checkpoints_timed", variableValue);
+                        variableValue = resultSet.getString("checkpoints_timed");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("checkpoints_timed", variableValue);
 
-                    variableValue = resultSet.getString("checkpoints_req");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("checkpoints_req", variableValue);
+                        variableValue = resultSet.getString("checkpoints_req");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("checkpoints_req", variableValue);
 
-                    variableValue = resultSet.getString("buffers_backend");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("buffers_backend", variableValue);
-                    
-                    variableValue = resultSet.getString("checkpoint_write_time");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("checkpoint_write_time", variableValue);
+                        variableValue = resultSet.getString("buffers_backend");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("buffers_backend", variableValue);
 
-                    variableValue = resultSet.getString("checkpoint_sync_time");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("checkpoint_sync_time", variableValue);
+                        variableValue = resultSet.getString("checkpoint_write_time");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("checkpoint_write_time", variableValue);
 
-                    variableValue = resultSet.getString("buffers_clean");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("buffers_clean", variableValue);
+                        variableValue = resultSet.getString("checkpoint_sync_time");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("checkpoint_sync_time", variableValue);
 
-                    variableValue = resultSet.getString("buffers_alloc");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("buffers_alloc", variableValue);
+                        variableValue = resultSet.getString("buffers_clean");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("buffers_clean", variableValue);
 
-                    variableValue = resultSet.getString("buffers_checkpoint");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("buffers_checkpoint", variableValue);
+                        variableValue = resultSet.getString("buffers_alloc");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("buffers_alloc", variableValue);
 
-                    variableValue = resultSet.getString("buffers_backend_fsync");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("buffers_backend_fsync", variableValue);
+                        variableValue = resultSet.getString("buffers_checkpoint");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("buffers_checkpoint", variableValue);
+
+                        variableValue = resultSet.getString("buffers_backend_fsync");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("buffers_backend_fsync", variableValue);
+                    }
                 }
 
                 //slave running
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "select count(*) from pg_stat_replication";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("count");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) {
-                        statistics.put("slave_running", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("count");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("slave_running", variableValue);
                     }
                 }
                 
                 //replication lag
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("date_part");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("replication_lag", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("date_part");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("replication_lag", variableValue);
+                    }
                 }
 
                 //uptime
-                if (!DatabaseUtils.isConnectionValid(connection)) return null;
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT EXTRACT(epoch FROM now() - pg_postmaster_start_time())";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);                
-                if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
-                while (resultSet.next()) {
-                    String variableValue = resultSet.getString("date_part");
-                    if (resultSet.wasNull()) variableValue = null;
-                    if (variableValue != null) statistics.put("uptime", variableValue);
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        String variableValue = resultSet.getString("date_part");
+                        if (resultSet.wasNull()) variableValue = null;
+                        if (variableValue != null) statistics.put("uptime", variableValue);
+                    }
                 }
             }
 
@@ -656,6 +664,8 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
         databases_.clear();
 
         try {
+            if (!DatabaseUtils.isConnectionValid(connection)) return statisticsVariablesToDelta;
+            
             Statement statement;
             ResultSet resultSet;
             String query = "SELECT datname FROM pg_database WHERE datistemplate = false AND datname <> 'rdsadmin'";
