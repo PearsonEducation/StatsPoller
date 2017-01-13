@@ -60,7 +60,7 @@ StatsPoller currently supports installation via rpm or via manual installation.
 
 ### rpm remove on Linux (for RedHat, CentOS, etc)
 
-* sudo rpm -e statspoller_version_xyz.rpm
+* sudo rpm -e statspoller_version_xyz
 
 ### deb installation on Linux (for Ubuntu, Mint, etc)
 
