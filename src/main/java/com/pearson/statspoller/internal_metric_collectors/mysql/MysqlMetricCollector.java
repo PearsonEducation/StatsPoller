@@ -403,7 +403,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
             return null;
         }
     }
-    
+
     private Map<String,String> getGlobalStatus(Connection connection) {
         
         if (connection == null) {
@@ -416,7 +416,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
-            String query = "select * from information_schema.GLOBAL_STATUS";
+            String query = "SHOW STATUS";
             statement = connection.createStatement();
             resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
@@ -427,10 +427,10 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                 String variableName = resultSet.getString("VARIABLE_NAME");
                 if (resultSet.wasNull()) variableName = null;
                 
-                String variableValue = resultSet.getString("VARIABLE_VALUE");
+                String variableValue = resultSet.getString("VALUE");
                 if (resultSet.wasNull()) variableValue = null;
                 
-                if ((variableName != null) && (variableValue != null)) globalStatus.put(variableName, variableValue);
+                if ((variableName != null) && (variableValue != null)) globalStatus.put(variableName.toUpperCase(), variableValue);
             }
 
             return globalStatus;
@@ -457,24 +457,24 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
-            String query = "select * from information_schema.GLOBAL_VARIABLES";
+            String query = "SHOW VARIABLES";
             statement = connection.createStatement();
             resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
             
-            Map<String,String> globalStatuses = new HashMap<>();
+            Map<String,String> globalVariables = new HashMap<>();
             
             while (resultSet.next()) {
                 String variableName = resultSet.getString("VARIABLE_NAME");
                 if (resultSet.wasNull()) variableName = null;
                 
-                String variableValue = resultSet.getString("VARIABLE_VALUE");
+                String variableValue = resultSet.getString("VALUE");
                 if (resultSet.wasNull()) variableValue = null;
                 
-                if ((variableName != null) && (variableValue != null)) globalStatuses.put(variableName, variableValue);
+                if ((variableName != null) && (variableValue != null)) globalVariables.put(variableName.toUpperCase(), variableValue);
             }
 
-            return globalStatuses;
+            return globalVariables;
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
