@@ -3,7 +3,6 @@ package com.pearson.statspoller.internal_metric_collectors.db_querier;
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
 import java.math.BigDecimal;
@@ -100,15 +99,19 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
             for (String query : queries_) {
                 long startQuery_TimestampMilliseconds = System.currentTimeMillis();
                 int startQuery_TimestampMillisecond_Int = (int) (startQuery_TimestampMilliseconds / 1000);
-                DbQuerier_Result dbQuerier_Result = runQuery(connection, query);
+                List<DbQuerier_Result> dbQuerier_Results = runQuery(connection, query);
                 long elapsedTime_TimestampMilliseconds = System.currentTimeMillis() - startQuery_TimestampMilliseconds;
                 
-                if (dbQuerier_Result != null) {
-                    graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "Result", dbQuerier_Result.getStatValue(), startQuery_TimestampMillisecond_Int);
-                    graphiteMetrics.add(graphiteMetric);
-                    
-                    graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "QueryTime_Ms", new BigDecimal(elapsedTime_TimestampMilliseconds), startQuery_TimestampMillisecond_Int);
-                    graphiteMetrics.add(graphiteMetric);
+                if (dbQuerier_Results != null) {
+                    for (DbQuerier_Result dbQuerier_Result : dbQuerier_Results) {
+                        if (dbQuerier_Result == null) continue; 
+                        
+                        graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "Result", dbQuerier_Result.getStatValue(), startQuery_TimestampMillisecond_Int);
+                        graphiteMetrics.add(graphiteMetric);
+
+                        graphiteMetric = new GraphiteMetric(dbQuerier_Result.getStatName() + "." + "QueryTime_Ms", new BigDecimal(elapsedTime_TimestampMilliseconds), startQuery_TimestampMillisecond_Int);
+                        graphiteMetrics.add(graphiteMetric);
+                    }
                 }
             }
             
@@ -120,21 +123,23 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
         return graphiteMetrics;
     }
   
-    private DbQuerier_Result runQuery(Connection connection, String sql) {
+    private List<DbQuerier_Result> runQuery(Connection connection, String sql) {
         
         if (connection == null) {
-            return null;
+            return new ArrayList<>();
         }
+        
+        List<DbQuerier_Result> dbQuerier_Results = new ArrayList<>();
         
         Statement statement = null;
         ResultSet resultSet = null;
          
         try {
-            if (!DatabaseUtils.isConnectionValid(connection)) return null;
+            if (!DatabaseUtils.isConnectionValid(connection)) return dbQuerier_Results;
 
             statement = connection.createStatement();
             resultSet = statement.executeQuery(sql);
-            if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
+            if (!DatabaseUtils.isResultSetValid(resultSet)) return dbQuerier_Results;
                         
             while (resultSet.next()) {
                 String variableName = resultSet.getString("STAT_NAME");
@@ -146,15 +151,15 @@ public class DbQuerier extends InternalCollectorFramework implements Runnable {
                 
                 if ((variableName != null) && (variableValue_BigDecimal != null)) {
                     DbQuerier_Result dbQuerier_Result = new DbQuerier_Result(variableName, variableValue_BigDecimal);
-                    return dbQuerier_Result;
+                    dbQuerier_Results.add(dbQuerier_Result);
                 }
             }
 
-            return null;
+            return dbQuerier_Results;
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-            return null;
+            return dbQuerier_Results;
         }
         finally {
             DatabaseUtils.cleanup(statement, resultSet);
