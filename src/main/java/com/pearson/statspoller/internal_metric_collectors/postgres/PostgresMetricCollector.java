@@ -124,6 +124,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                                 : DatabaseUtils.connect("jdbc:postgresql://" + host_ + ":" + port_ + "/" + variableValue);
                         Map<String, String> tempStatistics = getStatistics(tempConnection, variableValue);
                         currentStatistics.putAll(tempStatistics);
+                        DatabaseUtils.disconnect(tempConnection);
                     }
                 }
             } 
@@ -219,7 +220,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "replication_lag", "ReplicationLag", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Secs", currentTimestampMilliseconds_Status, openTsdbTags_);
+                openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Seconds", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 try {
