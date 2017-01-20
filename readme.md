@@ -22,6 +22,7 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
   * [Apache HTTP Server](./docs/apache_http.md) (Apache HTTP Server server-status metrics)
   * [MongoDB](./docs/mongo.md) (Mongo status, database, and collection metrics)
   * [MySQL](./docs/mysql.md) (MySQL server metrics)
+  * [PostgreSQL](./docs/postgres.md) (PostgreSQL server metrics)
 * Support for user-created metric collectors (plugins).
   * StatsPoller supports running [user-created metric collectors](./docs/external_metric_collectors.md). These plugins are executed by StatsPoller & allow StatsPoller to output the metrics that they collect.
 * Bundled 'user-created metric collectors' include...
