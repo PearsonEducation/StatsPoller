@@ -1,3 +1,9 @@
+Release 2.2
+ * New Postgres metric collector -- implemented in the main Java app
+ * New 'Database querier' metric collector -- for querying & collecting arbirary metrics from databases
+ * MySQL metric collector now supports MySQL 5.7+
+ * Bugfix for mysql collector -- hostname wasn't correct in some cases
+
 Release 2.1
  * Set Xms in statspoller.profile
  * Library updates
@@ -10,7 +16,7 @@ Release 2.0
  * Removed the vast majority of the plugin-based Linux metric collectors. Replaced with equivalent metric collectors that are built into the main Java app.
  * New MongoDB metric collector -- implemented in the main Java app.
  * New MySQL metric collector -- implemented in the main Java app.
- * Several new configuration options - see example_application.properties. 
+ * Several new configuration options - see example_application.properties.
  * Configuration is now more automated, so less fields need to be configured.
  * Hostname can now be used as a variable in when setting 'global_metric_name_prefix'
  * Improved documentation
@@ -31,4 +37,4 @@ Release 1.6
  * New config option -- 'jmx_collect_string_attributes'. Allows JMX attribute strings to be collected.
  * New metric collectors for df, mpstat, iostat -- written in bash/python for more efficiency. Should also be CentOS 7 compatible.
  * Updates to mongo/tokumx collector
- * New metric collectors -- process monitor, file counter, and MySQL querier 
+ * New metric collectors -- process monitor, file counter, and MySQL querier

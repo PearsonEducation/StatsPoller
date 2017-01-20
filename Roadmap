@@ -1,6 +1,5 @@
 2.2
- * Document DB querier
- * Bugfixes for postgres poller
+ * QA
 
 Future
  * Windows -- auto enable Windows collectors if OS is Windows
