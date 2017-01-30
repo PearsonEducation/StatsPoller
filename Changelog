@@ -1,6 +1,6 @@
 Release 2.2
  * New Postgres metric collector -- implemented in the main Java app
- * New 'Database querier' metric collector -- for querying & collecting arbirary metrics from databases
+ * New 'Database querier' metric collector -- for querying & collecting arbitrary metrics from databases
  * MySQL metric collector now supports MySQL 5.7+
  * Bugfix for mysql collector -- hostname wasn't correct in some cases
 
