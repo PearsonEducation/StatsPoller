@@ -416,7 +416,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
-            String query = "SHOW GLOGAL STATUS";
+            String query = "SHOW GLOBAL STATUS";
             statement = connection.createStatement();
             resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
@@ -457,7 +457,7 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
         try {
             if (!DatabaseUtils.isConnectionValid(connection)) return null;
 
-            String query = "SHOW GLOGAL VARIABLES";
+            String query = "SHOW GLOBAL VARIABLES";
             statement = connection.createStatement();
             resultSet = statement.executeQuery(query);
             if (!DatabaseUtils.isResultSetValid(resultSet)) return null;
