@@ -1,6 +1,7 @@
 2.2
  * QA
  * DB Querier docs
+ * Pid file 
 
 Future
  * Windows -- auto enable Windows collectors if OS is Windows
