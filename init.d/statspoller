@@ -22,9 +22,7 @@ start()
 
   if [ -z "$PID" ]; then
     java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &
-    sleep 1
-
-    PID=`pgrep -f StatsPoller.jar`
+    PID=$!
     printf "$PID" > $PIDFILE
 
     CURRENT_TIME_HUMAN=$(date)
