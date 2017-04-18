@@ -3,6 +3,7 @@ Release 2.2
  * New 'Database querier' metric collector -- for querying & collecting arbitrary metrics from databases
  * MySQL metric collector now supports MySQL 5.7+
  * Bugfix for mysql collector -- hostname wasn't correct in some cases
+ * Bugfix for sysv script having a race condition on starting statspoller
 
 Release 2.1
  * Set Xms in statspoller.profile

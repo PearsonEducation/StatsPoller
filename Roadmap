@@ -1,9 +1,9 @@
 2.2
- * QA
- * DB Querier docs
  * Pid file 
 
 Future
+ * Reduced output flag (default?)
+ * Remove legacy statspoller conf stuff
  * Windows -- auto enable Windows collectors if OS is Windows
  * Linux Zombie Process Detector
  * Configurable timeouts on output
