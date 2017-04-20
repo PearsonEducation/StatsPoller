@@ -21,6 +21,7 @@ start()
   cd /opt/StatsPoller
 
   if [ -z "$PID" ]; then
+    rm $PIDFILE 2> /dev/null
     java $JAVA_OPTS >> /var/log/statspoller.log 2>&1 &
     PID=$!
     printf "$PID" > $PIDFILE
@@ -62,6 +63,7 @@ stop()
     done
 
     if [ $EXITCODE -eq $EXITCODE_SUCCESS ]; then
+      rm $PIDFILE 2> /dev/null
       CURRENT_TIME_HUMAN=$(date)
       printf "StatsPoller was successfully stopped. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n"
       printf "StatsPoller was successfully stopped. Pid: $PID. Date: $CURRENT_TIME_HUMAN.\n" >> /var/log/statspoller.log 2>&1 &
