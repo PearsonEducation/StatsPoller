@@ -1,8 +1,11 @@
 2.3
- * Cleanup pid file when using sysv
+ * Add ability to disable statspoller metadata metrics (availability, version, etc)
+ * Linux Zombie Process Detector
+
+2.4
  * Reduced output flag (default?)
  * Remove legacy statspoller conf compatibility
- * Linux Zombie Process Detector
+ * Docker support?
 
 Future
  * Configurable timeouts on output
