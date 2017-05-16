@@ -1,6 +1,7 @@
 2.3
  * Add ability to disable statspoller metadata metrics (availability, version, etc)
- * Linux Zombie Process Detector
+ * Process status - document
+ * Mongo collector enhancements - document
 
 2.4
  * Reduced output flag (default?)

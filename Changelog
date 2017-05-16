@@ -1,3 +1,7 @@
+Release 2.3
+ * Enhancements to Mongo collector (now gets replication status)
+ * New Linux collector - gets process status metrics (process count, thread count, process state information, etc)
+
 Release 2.2
  * New Postgres metric collector -- implemented in the main Java app
  * New 'Database querier' metric collector -- for querying & collecting arbitrary metrics from databases
