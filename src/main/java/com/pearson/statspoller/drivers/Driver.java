@@ -23,7 +23,8 @@ import com.pearson.statspoller.internal_metric_collectors.linux.DiskIo.DiskIoCol
 import com.pearson.statspoller.internal_metric_collectors.linux.FileSystem.FileSystemCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.Memory.MemoryCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.Network.NetworkBandwidthCollector;
-import com.pearson.statspoller.internal_metric_collectors.linux.ProcessCounter.ProcessCounterMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.linux.ProcessCounter.ProcessCounterCollector;
+import com.pearson.statspoller.internal_metric_collectors.linux.ProcessStatus.ProcessStatusCollector;
 import com.pearson.statspoller.internal_metric_collectors.linux.Uptime.UptimeCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mysql.MysqlMetricCollector;
@@ -219,7 +220,12 @@ public class Driver {
                 ApplicationConfiguration.isOutputInternalMetricsToDisk()));
         threadExecutor_.execute(linuxDiskIoCollectorThread);
         
-        Thread processCounterCollectorThread = new Thread(new ProcessCounterMetricCollector(true,
+        Thread processStatusCollectorThread = new Thread(new ProcessStatusCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.ProcessStatus", "./output/linux_process_status.out", 
+                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+        threadExecutor_.execute(processStatusCollectorThread);
+        
+        Thread processCounterCollectorThread = new Thread(new ProcessCounterCollector(true,
                 ApplicationConfiguration.getProcessCounterMetricCollectorCollectionInterval(), "ProcessCounter", "./output/linux_process_counter.out", 
                 ApplicationConfiguration.isOutputInternalMetricsToDisk(), ApplicationConfiguration.getProcessCounterPrefixesAndRegexes()));
         threadExecutor_.execute(processCounterCollectorThread);
