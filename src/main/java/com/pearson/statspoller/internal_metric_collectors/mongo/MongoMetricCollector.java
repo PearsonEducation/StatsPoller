@@ -105,30 +105,16 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
             MongoDatabase db = mongoClient.getDatabase("admin");
 
-            Document serverStatus;
-            try {
-                serverStatus = db.runCommand(new Document().append("serverStatus", 1));
-            }
-            catch (Exception e) {
-                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-                graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ZERO, ((int) (System.currentTimeMillis() / 1000))));
-                return graphiteMetrics;
-            }
-
-            graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ONE, ((int) (System.currentTimeMillis() / 1000))));
-
-            if (serverStatus.containsKey("ok") && serverStatus.get("ok").equals(1.0)) {
-                graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus"));
-            }
-
             Document replSetStatus = new Document();
             Document isMaster = new Document();
             
             try {
                 isMaster = db.runCommand(new Document().append("isMaster", 1));
+                graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ONE, ((int) (System.currentTimeMillis() / 1000))));
             }
             catch (Exception e) {
                 logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ZERO, ((int) (System.currentTimeMillis() / 1000))));
             }
 
             if (isMaster.containsKey("setName")) {
@@ -152,8 +138,43 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 }
 
             }
+            
+            Document serverStatus = null;
+            
+            try {
+                serverStatus = db.runCommand(new Document().append("serverStatus", 1));
+            }
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                return graphiteMetrics;
+            }
+
+            if ((serverStatus != null) && serverStatus.containsKey("ok") && serverStatus.get("ok").equals(1.0)) {
+                
+                // if not verbose & is an arbiter, then limit the metric output
+                if ((replSetStatus != null) && (replSetStatus.isEmpty() || (replSetStatus.containsKey("myState") && (new BigDecimal(replSetStatus.get("myState").toString()).intValue() != 7)))) {
+                   graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus")); 
+                }
+                else if (!mongoVerboseOutputValue_) {
+                   List<GraphiteMetric> serverStatusGraphiteMetrics = processDocumentAndAddToMetrics(serverStatus, "serverStatus");
+                   for (GraphiteMetric graphiteMetric : serverStatusGraphiteMetrics) {
+                       if ((graphiteMetric.getMetricPath() != null) && 
+                               (graphiteMetric.getMetricPath().startsWith("serverStatus.network") || 
+                               graphiteMetric.getMetricPath().startsWith("serverStatus.connections") ||
+                               graphiteMetric.getMetricPath().startsWith("serverStatus.uptime") ||
+                               graphiteMetric.getMetricPath().startsWith("serverStatus.pid"))) {
+                           graphiteMetrics.add(graphiteMetric);
+                       }
+                   }
+                }
+                else {
+                    graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus")); 
+                }
+            }
 
             Document databasesList = new Document();
+            
+            // if arbiter, do not run. if not arbiter, collect collection & database metrics
             if ((replSetStatus != null) && (replSetStatus.isEmpty() || (replSetStatus.containsKey("myState") && (new BigDecimal(replSetStatus.get("myState").toString()).intValue() != 7)))) {
                 try {
                     databasesList = db.runCommand(new Document().append("listDatabases", 1));
