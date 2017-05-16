@@ -22,16 +22,16 @@ import org.slf4j.LoggerFactory;
  * Counts the number of processes that are running that match a user-specified regex (matched against process cmdline)
  * Based on raw data from /proc/(pid)/cmdline
  */
-public class ProcessCounterMetricCollector extends InternalCollectorFramework implements Runnable {
+public class ProcessCounterCollector extends InternalCollectorFramework implements Runnable {
     
-    private static final Logger logger = LoggerFactory.getLogger(ProcessCounterMetricCollector.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(ProcessCounterCollector.class.getName());
     
     private final List<String[]> processCounterPrefixesAndRegexes_;
     
     private final Map<String,Pattern> regexPatterns_ = new HashMap<>();
     private final List<String[]> processCounterPrefixesAndRegexes_Trimmed_;
 
-    public ProcessCounterMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
+    public ProcessCounterCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles, List<String[]> processCounterPrefixesAndRegexes) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         
