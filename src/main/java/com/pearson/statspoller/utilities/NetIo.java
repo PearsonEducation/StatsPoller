@@ -44,7 +44,6 @@ public class NetIo {
         }
 
         return webpageString;
-        
     }
     
     public static String downloadUrl(String urlString) {

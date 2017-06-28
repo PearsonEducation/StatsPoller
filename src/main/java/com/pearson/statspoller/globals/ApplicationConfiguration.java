@@ -6,6 +6,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import com.pearson.statspoller.internal_metric_collectors.apache_http.ApacheHttpMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.cadvisor.CadvisorMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.mongo.MongoMetricCollector;
@@ -67,6 +68,7 @@ public class ApplicationConfiguration {
     private static final List<ExternalMetricCollector> externalMetricCollectors_ = new ArrayList<>();
     private static final List<JmxMetricCollector> jmxMetricCollectors_ = new ArrayList<>();
     private static final List<ApacheHttpMetricCollector> apacheHttpMetricCollectors_ = new ArrayList<>();
+    private static final List<CadvisorMetricCollector> cadvisorMetricCollectors_ = new ArrayList<>();
     private static final List<MongoMetricCollector> mongoMetricCollectors_ = new ArrayList<>();
     private static final List<MysqlMetricCollector> mysqlMetricCollectors_ = new ArrayList<>();
     private static final List<PostgresMetricCollector> postgresMetricCollectors_ = new ArrayList<>();
@@ -205,6 +207,15 @@ public class ApplicationConfiguration {
                 if (apacheHttpMetricCollector != null) apacheHttpMetricCollectors_.add(apacheHttpMetricCollector);
             }
             
+            // add cadvisor collectors
+            CadvisorMetricCollector cadvisorMetricCollector = readCadvisorMetricCollector("", legacyMode_);
+            if (cadvisorMetricCollector != null) cadvisorMetricCollectors_.add(cadvisorMetricCollector);
+            for (int i = -1; i <= 10000; i++) {
+                String collectorSuffix = "_" + (i + 1);
+                cadvisorMetricCollector = readCadvisorMetricCollector(collectorSuffix, legacyMode_);
+                if (cadvisorMetricCollector != null) cadvisorMetricCollectors_.add(cadvisorMetricCollector);
+            }
+                        
             // add mongo collectors
             MongoMetricCollector mongoMetricCollector = readMongoMetricCollector("", legacyMode_);
             if (mongoMetricCollector != null) mongoMetricCollectors_.add(mongoMetricCollector);
@@ -779,6 +790,62 @@ public class ApplicationConfiguration {
         }
     }
     
+    private static CadvisorMetricCollector readCadvisorMetricCollector(String collectorSuffix, boolean legacyMode) {
+        
+        if (applicationConfiguration_ == null) {
+            return null;
+        }
+        
+        if (collectorSuffix == null) collectorSuffix = "";
+
+        try {
+            String cadvisorEnabledKey = "cadvisor_enabled" + collectorSuffix;
+            boolean cadvisorEnabledValue = applicationConfiguration_.safeGetBoolean(cadvisorEnabledKey, false);
+            if (!cadvisorEnabledValue) return null;
+            
+            String cadvisorProtocolKey = "cadvisor_protocol" + collectorSuffix;
+            String cadvisorProtocolValue = applicationConfiguration_.safeGetString(cadvisorProtocolKey, "http");
+            
+            String cadvisorHostKey = "cadvisor_host" + collectorSuffix;
+            String cadvisorHostValue = applicationConfiguration_.safeGetString(cadvisorHostKey, "127.0.0.1");
+
+            String cadvisorPortKey = "cadvisor_port" + collectorSuffix;
+            int cadvisorPortValue = applicationConfiguration_.safeGetInteger(cadvisorPortKey, 8080);
+            
+            String cadvisorUsernameKey = "cadvisor_username" + collectorSuffix;
+            String cadvisorUsernameValue = applicationConfiguration_.safeGetString(cadvisorUsernameKey, "");
+            
+            String cadvisorPasswordKey = "cadvisor_password" + collectorSuffix;
+            String cadvisorPasswordValue = applicationConfiguration_.safeGetString(cadvisorPasswordKey, "");
+            
+            String cadvisorApiVersionKey = "cadvisor_api_version" + collectorSuffix;
+            String cadvisorApiVersionValue = applicationConfiguration_.safeGetString(cadvisorApiVersionKey, "v1.3");
+            
+            String cadvisorCollectionIntervalKey = "cadvisor_collection_interval" + collectorSuffix;
+            double cadvisorCollectionIntervalValue = applicationConfiguration_.safeGetDouble(cadvisorCollectionIntervalKey, 30);
+            long cadvisorCollectionIntervalValue_Long = legacyMode ? (long) cadvisorCollectionIntervalValue : (long) (cadvisorCollectionIntervalValue * 1000);    
+
+            String cadvisorMetricPrefixKey = "cadvisor_metric_prefix" + collectorSuffix;
+            String cadvisorMetricPrefixValue = applicationConfiguration_.safeGetString(cadvisorMetricPrefixKey, "cAdvisor");
+            String graphiteSanitizedCadvisorMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(cadvisorMetricPrefixValue, true, true);
+
+            String cadvisorOutputFileValue = "./output/" + "cadvisor_" + graphiteSanitizedCadvisorMetricPrefix + ".out";
+            
+            if (cadvisorEnabledValue && (cadvisorHostValue != null) && (cadvisorPortValue != -1)) {
+                CadvisorMetricCollector cadvisorMetricCollector = new CadvisorMetricCollector(cadvisorEnabledValue,
+                        cadvisorCollectionIntervalValue_Long, graphiteSanitizedCadvisorMetricPrefix, cadvisorOutputFileValue, outputInternalMetricsToDisk_,
+                        cadvisorProtocolValue, cadvisorHostValue, cadvisorPortValue, cadvisorUsernameValue, cadvisorPasswordValue, cadvisorApiVersionValue);
+               
+                return cadvisorMetricCollector;
+            }
+            else return null;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));      
+            return null;
+        }
+    }
+    
     private static MongoMetricCollector readMongoMetricCollector(String collectorSuffix, boolean legacyMode) {
         
         if (applicationConfiguration_ == null) {
@@ -1127,6 +1194,11 @@ public class ApplicationConfiguration {
         return new ArrayList<>(apacheHttpMetricCollectors_);
     }
 
+    public static List<CadvisorMetricCollector> getCadvisorMetricCollectors() {
+        if (cadvisorMetricCollectors_ == null) return null;
+        return new ArrayList<>(cadvisorMetricCollectors_);
+    }
+    
     public static List<MongoMetricCollector> getMongoMetricCollectors() {
         if (mongoMetricCollectors_ == null) return null;
         return new ArrayList<>(mongoMetricCollectors_);

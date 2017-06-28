@@ -1,5 +1,9 @@
 package com.pearson.statspoller.utilities;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.slf4j.Logger;
@@ -84,6 +88,45 @@ public class JsonUtils {
         else if ((object instanceof Boolean) && treatBooleanAsNumeric) return true;
         
         return false;
+    }
+    
+    public static JsonObject getJsonObjectFromRequestBody(String json) {
+        
+        if (json == null) {
+            return null;
+        }
+        
+        JsonObject jsonObject = null;
+        
+        try {
+            JsonParser parser = new JsonParser();
+            JsonElement jsonElement = parser.parse(json);
+            jsonObject = new Gson().toJsonTree(jsonElement).getAsJsonObject();
+        } 
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        } 
+        
+        return jsonObject;
+    }
+    
+    public static JsonElement getJsonElementFromRequestBody(String json) {
+        
+        if (json == null) {
+            return null;
+        }
+        
+        JsonElement jsonElement = null;
+        
+        try {
+            JsonParser parser = new JsonParser();
+            jsonElement = parser.parse(json);
+        } 
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        } 
+        
+        return jsonElement;
     }
     
 }

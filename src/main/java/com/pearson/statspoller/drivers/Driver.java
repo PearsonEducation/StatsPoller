@@ -13,6 +13,7 @@ import com.pearson.statspoller.output.OutputMetricsInvokerThread;
 import com.pearson.statspoller.external_metric_collectors.ReadMetricsFromFileThread;
 import com.pearson.statspoller.external_metric_collectors.ExternalMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.apache_http.ApacheHttpMetricCollector;
+import com.pearson.statspoller.internal_metric_collectors.cadvisor.CadvisorMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.db_querier.DbQuerier;
 import com.pearson.statspoller.internal_metric_collectors.file_counter.FileCounterMetricCollector;
 import com.pearson.statspoller.internal_metric_collectors.jmx.JmxJvmShutdownHook;
@@ -71,6 +72,8 @@ public class Driver {
         launchJmxCollectors();
 
         launchApacheCollectors();
+        
+        launchCadvisorCollectors();
         
         launchMongoCollectors();
                 
@@ -250,6 +253,15 @@ public class Driver {
               
         for (ApacheHttpMetricCollector apacheHttpMetricCollector : ApplicationConfiguration.getApacheHttpMetricCollectors()) {
             threadExecutor_.execute(apacheHttpMetricCollector);
+            Threads.sleepSeconds(1);
+        }
+        
+    }
+    
+    private static void launchCadvisorCollectors() {
+              
+        for (CadvisorMetricCollector cadvisorMetricCollector : ApplicationConfiguration.getCadvisorMetricCollectors()) {
+            threadExecutor_.execute(cadvisorMetricCollector);
             Threads.sleepSeconds(1);
         }
         
