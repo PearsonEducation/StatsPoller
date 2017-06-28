@@ -567,7 +567,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
 
         try {
-            Date timestamp = getDateFromTimestampString(statMetadata.getStat()) ;
+            Date timestamp = getDateFromTimestampString(statMetadata.getStat().getTimestamp()) ;
             if (timestamp == null) return openTsdbMetrics;
 
             List<Filesystem> filesystems = statMetadata.getStat().getFilesystem();
