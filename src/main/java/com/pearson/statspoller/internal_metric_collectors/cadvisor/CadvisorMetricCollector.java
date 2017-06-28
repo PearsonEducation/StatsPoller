@@ -175,13 +175,13 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     
     protected String getCadvisorDockerJson() {
         String url = protocol_ + "://" + host_ + ":" + port_ + "/api/" + apiVersion_ + "/docker/";
-        String docker_RawJson = NetIo.downloadUrl(url, 2, 1, true);
+        String docker_RawJson = NetIo.downloadUrl(url, 1, 1, true);
         return docker_RawJson;
     }   
     
     protected String getCadvisorMachineJson() {
         String url = protocol_ + "://" + host_ + ":" + port_ + "/api/" + apiVersion_ + "/machine/";
-        String machine_RawJson = NetIo.downloadUrl(url, 2, 1, true);
+        String machine_RawJson = NetIo.downloadUrl(url, 1, 1, true);
         return machine_RawJson;
     }   
     
