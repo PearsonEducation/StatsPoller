@@ -1,6 +1,6 @@
 # Mongo Collector
 
-The 'Mongo' collector is a metric collector that connects to Mongo through Mongo's Java driver and queries Mongo for metrics. The admin database, as well as user-created databases, are queried. Retrieved metrics include 'serverStatus' metrics, 'collStats' (collection stats) metrics, and 'dbStats' metrics. StatsPoller can run up to 10,000 Mongo collectors from a single StatsPoller deployment. Mongo 2.4 through 3.2 & are explicitly supported, though other versions of Mongo may be compatible.
+The 'Mongo' collector is a metric collector that connects to Mongo through Mongo's Java driver and queries Mongo for metrics. The admin database, as well as user-created databases, are queried. Retrieved metrics include 'serverStatus' metrics, 'collStats' (collection stats) metrics, and 'dbStats' metrics. StatsPoller can run up to 10,000 Mongo collectors from a single StatsPoller deployment. Mongo 2.4 through 3.4 & are explicitly supported, though other versions of Mongo may be compatible.
 
 A single Mongo collector's behavior is:
 
