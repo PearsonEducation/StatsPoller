@@ -26,7 +26,7 @@ public class StatMetadata {
         this.machine_ = machine;
     }
 
-    public boolean areAnyFieldsNull() {
+    public boolean areCoreFieldsNull() {
         if (this.docker_ == null) return true;
         if (this.stat_ == null) return true;
         if (this.timestamp_ == null) return true;

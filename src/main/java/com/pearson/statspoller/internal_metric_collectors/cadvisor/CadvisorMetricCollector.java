@@ -77,7 +77,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         boolean isValidApiVersion = isValidApiVersion(apiVersion_);
         if (!isValidApiVersion) {
             logger.error("Error running cAdvisor metric collection routine. Invalid API version specified.  " +
-                    "CAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\", Version=\"" + apiVersion_ + "\"");
+                    "cAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\", Version=\"" + apiVersion_ + "\"");
             return;
         }
         
@@ -100,8 +100,8 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                 
                 // for each docker container, get metrics
                 for (Docker docker : dockers) {
-                    if ((docker.getId() == null) || docker.getId().isEmpty()) continue;
-                    if (docker.getSpec() == null) continue;
+                    if ((docker == null) || (docker.getId() == null) || docker.getId().isEmpty() || (docker.getSpec() == null) || (docker.getStats() == null)) continue;
+                    if (machine == null) continue;
                     
                     StatMetadata previousStatMetadata = previousStatMetadatas_ByDockerId_.get(docker.getId());
                                         
@@ -157,10 +157,10 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
 
                 routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
 
-                logger.info("Finished cAdvisor metric collection routine. CAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\"" +
+                logger.info("Finished cAdvisor metric collection routine. cAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\"" +
                         ", ConnectionSuccess=" + true +
-                        ", CAdvisorMetricsCollected=" + openTsdbMetrics.size() +
-                        ", CAdvisorMetricCollectionTime=" + routineTimeElapsed);
+                        ", cAdvisorMetricsCollected=" + openTsdbMetrics.size() +
+                        ", cAdvisorMetricCollectionTime=" + routineTimeElapsed);
             }
             catch (Exception e) {
                 logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
@@ -203,6 +203,10 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
      
     protected static List<Docker> parseCadvisorDockerJson(String json) {
         
+        if ((json == null) || json.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
         List<Docker> dockers = new ArrayList<>();
         
         try {
@@ -232,7 +236,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     
     protected static Machine parseCadvisorMachineJson(String json) {
         
-        if (json == null) {
+        if ((json == null) || json.isEmpty()) {
             return null;
         }
         
@@ -392,7 +396,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     protected static List<OpenTsdbMetric> getDockerStatsMetrics_Cpu(StatMetadata currentStatMetadata, StatMetadata previousStatMetadata, 
             String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
-        if ((currentStatMetadata == null) || currentStatMetadata.areAnyFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areAnyFieldsNull() ) {
+        if ((currentStatMetadata == null) || currentStatMetadata.areCoreFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areCoreFieldsNull() ) {
             return new ArrayList<>();
         }
         
@@ -488,14 +492,14 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
 
             if ((statMetadata.getDocker().getSpec() == null) || (statMetadata.getDocker().getSpec().getMemory() == null) || (statMetadata.getDocker().getSpec().getMemory().getReservation() == null)) return openTsdbMetrics;
             Long memorySoftLimit = (statMetadata.getDocker().getSpec().getMemory().getReservation() > statMetadata.getMachine().getMemoryCapacity()) ? statMetadata.getMachine().getMemoryCapacity() : statMetadata.getDocker().getSpec().getMemory().getReservation();
-            if ((memorySoftLimit != null) && (memory.getUsage() != null)) {
+            if ((memorySoftLimit != null) && (memory.getUsage() != null) && (memorySoftLimit != 0)) {
                 BigDecimal memoryUsageRelativeToSoftLimitPercent = new BigDecimal(memory.getUsage()).divide(new BigDecimal(memorySoftLimit), SCALE, ROUNDING_MODE).multiply(ONE_HUNDRED);
                 openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.UsageRelativeToSoftLimit-Pct", timestamp.getTime(), memoryUsageRelativeToSoftLimitPercent, openTsdbTags));
             }
             
             if ((statMetadata.getDocker().getSpec() == null) || (statMetadata.getDocker().getSpec().getMemory() == null) || (statMetadata.getDocker().getSpec().getMemory().getLimit() == null)) return openTsdbMetrics;
             Long memoryHardLimit = (statMetadata.getDocker().getSpec().getMemory().getLimit() > statMetadata.getMachine().getMemoryCapacity()) ? statMetadata.getMachine().getMemoryCapacity() : statMetadata.getDocker().getSpec().getMemory().getLimit();
-            if ((memoryHardLimit != null) && (memory.getUsage() != null)) {
+            if ((memoryHardLimit != null) && (memory.getUsage() != null) && (memoryHardLimit != 0)) {
                 BigDecimal memoryUsageRelativeToHardLimitPercent = new BigDecimal(memory.getUsage()).divide(new BigDecimal(memoryHardLimit), SCALE, ROUNDING_MODE).multiply(ONE_HUNDRED);
                 openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.UsageRelativeToHardLimit-Pct", timestamp.getTime(), memoryUsageRelativeToHardLimitPercent, openTsdbTags));
             }
@@ -560,7 +564,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     
     protected static List<OpenTsdbMetric> getDockerStatsMetrics_Filesystem(StatMetadata statMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
-        if ((statMetadata == null) || statMetadata.areAnyFieldsNull()) {
+        if ((statMetadata == null) || statMetadata.areCoreFieldsNull()) {
             return new ArrayList<>();
         }
         
@@ -591,7 +595,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     protected static List<OpenTsdbMetric> getDockerStatsMetrics_Network(StatMetadata currentStatMetadata, StatMetadata previousStatMetadata, 
             String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
-        if ((currentStatMetadata == null) || currentStatMetadata.areAnyFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areAnyFieldsNull()) {
+        if ((currentStatMetadata == null) || currentStatMetadata.areCoreFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areCoreFieldsNull()) {
             return new ArrayList<>();
         }
         
