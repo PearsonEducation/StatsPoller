@@ -137,8 +137,8 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                     }
                     
                     // get task stats metrics
-                    List<OpenTsdbMetric> cadvisorDockerTaskStats_OpenTsdbMetrics = getDockerStatsMetrics_TaskStats(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
-                    if (cadvisorDockerTaskStats_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerTaskStats_OpenTsdbMetrics);
+                    //List<OpenTsdbMetric> cadvisorDockerTaskStats_OpenTsdbMetrics = getDockerStatsMetrics_TaskStats(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
+                    //if (cadvisorDockerTaskStats_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerTaskStats_OpenTsdbMetrics);
                     
                     // get container uptime metrics
                     List<OpenTsdbMetric> cadvisorDockerUptime_OpenTsdbMetrics = getDockerStatsMetrics_Uptime(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
