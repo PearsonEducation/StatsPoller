@@ -187,6 +187,32 @@ The uptime collector reports the number of seconds since the last operating syst
 
 OS_Uptime / Seconds : The number of seconds since the last operating system reboot.
 
-### Example output
+### Example output (Graphite Formatted)
 
 OS_Uptime-Seconds 109675.75 1463371897  
+
+<br>
+
+## Process Status
+
+The 'Process Status' collector collects high-level information data about the count of processes in each state, the total number of processes, and the total number of threads. Information about what each process state is can be found at http://man7.org/linux/man-pages/man5/proc.5.html. An example use for this data would be to detect when there are zombie processes & take action to terminate them. Counts for processes in states D,T,S,R,Z are always outputted. Counts of other states are only outputted if encountered.
+
+### Metrics
+
+* Total Process Count : The total number of processes running on this system.
+* Total Thread Count : The total number of threads running on this system.
+* State -  Count Of Processes In State 'D' : The number of processes that are 'Waiting in uninterruptible disk sleep'
+* State -  Count Of Processes In State 'T' : The number of processes that are 'Stopped'
+* State -  Count Of Processes In State 'S' : The number of processes that are 'Sleeping in an interruptible wait'
+* State -  Count Of Processes In State 'R' : The number of processes that are 'Running'
+* State -  Count Of Processes In State 'Z' : The number of processes that are 'Zombies'
+
+### Example output (Graphite Formatted)
+
+TotalProcessCount 217 1500328450  
+TotalThreadCount 739 1500328450  
+States.CountOfProcessesInState-D 0 1500328450  
+States.CountOfProcessesInState-T 0 1500328450  
+States.CountOfProcessesInState-S 216 1500328450  
+States.CountOfProcessesInState-R 1 1500328450  
+States.CountOfProcessesInState-Z 0 1500328450  
