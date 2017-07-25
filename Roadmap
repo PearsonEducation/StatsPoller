@@ -1,9 +1,8 @@
 2.3
- * Process status - document
- * cAdvisor
-   * add http auth support
+
 
 2.4
+ * cAdvisor - add http auth support
  * Reduced output flag (default?)
  * Remove legacy statspoller conf compatibility
 

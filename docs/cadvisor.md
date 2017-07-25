@@ -9,6 +9,13 @@ A single cAdvisor collector's behavior is:
 1. Process/output the metrics  
 1. Repeat  
 
+Metric paths will follow the format of: {global_metric_prefix}.cAdvisor.{container_prefix}.<br>
+{container_prefix} is auto-generated, and follows the convention of...<br>
+
+1. If the container is running on Amazon Web Services (AWS) via their ECS platform, then {container_prefix} = {ecs_taskdefinition_family}.{ecs_container_name}.{short_container_id}
+1. If the container is not on ECS, but has a name, then {container_prefix} = {container_name}
+1. If the container does not meet any other criteria, then {container_prefix} = {short_container_id}
+
 ### Metrics
 
 * Available : Was StatsPoller able to connect to cAdvisor? Outputs 1 if true, 0 if false.
@@ -31,31 +38,42 @@ A single cAdvisor collector's behavior is:
 * Network - Received-Megabits / Second : The number of megabits received, per second, on this container.
 * Network - Transmitted-Megabits / Second : The number of megabits transmitted, per second, on this container.
 * Network - Overall-Megabits / Second : The overall number of megabits received & transmitted, per second, on this container.
+* Cpu - Overall Usage Relative To Host - % : The amount of cpu that this container is using, relative to the host OS. For example, if this metric reads 20%, then 20% of the total cpu of the *server* is being consumed by this container.
+* Cpu - User Usage Relative To Host - % : The overall amount of 'user' cpu that this container is using, relative to the host OS. This is the amount of time being spent running your code/program (as opposed to doing OS stuff, waiting on disk/network I/O, etc).
+* Cpu - System Usage Relative To Host - % : The overall amount of 'system' cpu that this container is using, relative to the host OS. This is the amount of time being spent by the container making system calls (ex- spawning threads, etc).
+* Cpu - Other Usage Relative To Host - % : The overall amount of 'other' cpu that this container is using, relative to the host OS. This is the amount of time being spent by the container being spent on anything other than 'user' or 'system' (ex - disk I/O).
+* Cpu - Overall Usage Relative To Cpu Shares - % : The amount of cpu that this container is using, relative to the number of cpu shares that have been reserved for this container. Since this only reserves a *minimum* cpu capacity (which this container can go over if the server has available cpu capacity), this value rise over 100%.
+* Uptime - Seconds : The amount of time, in seconds, that this container has been running.
 
-MyServer.MyTask.4d82acc4d671.Memory.WorkingSet-Bytes 1498661366624 242987008 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.RSS-Bytes 1498661366624 215134208 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.Cache-Bytes 1498661366624 73871360 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.Swap-Bytes 1498661366624 0 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.Usage-Bytes 1498661366624 291803136 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.PageFault-Container-Count 1498661366624 436579 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.PageFaultMajor-Container-Count 1498661366624 196 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.PageFault-Hierarchical-Count 1498661366624 436579 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.PageFaultMajor-Hierarchical-Count 1498661366624 196 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.UsageRelativeToSoftLimit-Pct 1498661366624 56.10588 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Memory.UsageRelativeToHardLimit-Pct 1498661366624 7.39035 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Connections.TcpV4-Count 1498661366624 0 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Connections.TcpV6-Count 1498661366624 0 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Received-Bytes-Second 1498661366624 36952.9879431 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Transmitted-Bytes-Second 1498661366624 23650.6455534 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Overall-Bytes-Second 1498661366624 60603.6334965 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Received-Megabits-Second 1498661366624 0.2956239 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Transmitted-Megabits-Second 1498661366624 0.1892052 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Network.Bandwidth.Overall-Megabits-Second 1498661366624 0.4848291 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Uptime.Uptime-Seconds 1498661459770 64995 ContainerId=4d82acc4d671  
-MyServer.MyTask.4d82acc4d671.Cpu.CpuOverallUsage-RelativeToHost-Pct 1498661366624 1.0935452 ContainerId=4d82acc4d671 CpuShares=2  
-MyServer.MyTask.4d82acc4d671.Cpu.CpuUserUsage-RelativeToHost-Pct 1498661366624 0.1314104 ContainerId=4d82acc4d671 CpuShares=2  
-MyServer.MyTask.4d82acc4d671.Cpu.CpuSystemUsage-RelativeToHost-Pct 1498661366624 0.4927889 ContainerId=4d82acc4d671 CpuShares=2  
-MyServer.MyTask.4d82acc4d671.Cpu.CpuOtherUsage-RelativeToHost-Pct 1498661366624 0.469346 ContainerId=4d82acc4d671 CpuShares=2  
-MyServer.MyTask.4d82acc4d671.Cpu.CpuOverallUsage-RelativeToCpuShares-Pct 1498661366624 559.8951434 ContainerId=4d82acc4d671 CpuShares=2
+### Key Metrics
 
-MyServer.MyTask.4d82acc4d671.Memory.Usage-Bytes 1498661366624 291803136 ContainerId=4d82acc4d671   
+* Cpu: "Overall Usage Relative To Host" and "Overall Usage Relative To Cpu Shares" are the two main metrics to care about for cpu.
+* Memory: "Usage - Bytes" and "Usage Relative To Hard Limit" (if set) are the two main metrics to care about for memory.
+* Network: "Bandwidth Overall" is the most important network metric.
+
+### Example output (OpenTSDB formatted)
+MyContainer.Memory.WorkingSet-Bytes 1498661366624 242987008 ContainerId=4d82acc4d671  
+MyContainer.Memory.RSS-Bytes 1498661366624 215134208 ContainerId=4d82acc4d671  
+MyContainer.Memory.Cache-Bytes 1498661366624 73871360 ContainerId=4d82acc4d671  
+MyContainer.Memory.Swap-Bytes 1498661366624 0 ContainerId=4d82acc4d671  
+MyContainer.Memory.Usage-Bytes 1498661366624 291803136 ContainerId=4d82acc4d671  
+MyContainer.Memory.PageFault-Container-Count 1498661366624 436579 ContainerId=4d82acc4d671  
+MyContainer.Memory.PageFaultMajor-Container-Count 1498661366624 196 ContainerId=4d82acc4d671  
+MyContainer.Memory.PageFault-Hierarchical-Count 1498661366624 436579 ContainerId=4d82acc4d671  
+MyContainer.Memory.PageFaultMajor-Hierarchical-Count 1498661366624 196 ContainerId=4d82acc4d671  
+MyContainer.Memory.UsageRelativeToSoftLimit-Pct 1498661366624 56.10588 ContainerId=4d82acc4d671  
+MyContainer.Memory.UsageRelativeToHardLimit-Pct 1498661366624 7.39035 ContainerId=4d82acc4d671  
+MyContainer.Network.Connections.TcpV4-Count 1498661366624 0 ContainerId=4d82acc4d671  
+MyContainer.Network.Connections.TcpV6-Count 1498661366624 0 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Received-Bytes-Second 1498661366624 36952.9879431 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Transmitted-Bytes-Second 1498661366624 23650.6455534 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Overall-Bytes-Second 1498661366624 60603.6334965 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Received-Megabits-Second 1498661366624 0.2956239 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Transmitted-Megabits-Second 1498661366624 0.1892052 ContainerId=4d82acc4d671  
+MyContainer.Network.Bandwidth.Overall-Megabits-Second 1498661366624 0.4848291 ContainerId=4d82acc4d671  
+MyContainer.Uptime.Uptime-Seconds 1498661459770 64995 ContainerId=4d82acc4d671  
+MyContainer.Cpu.CpuOverallUsage-RelativeToHost-Pct 1498661366624 1.0935452 ContainerId=4d82acc4d671 CpuShares=2  
+MyContainer.Cpu.CpuUserUsage-RelativeToHost-Pct 1498661366624 0.1314104 ContainerId=4d82acc4d671 CpuShares=2  
+MyContainer.Cpu.CpuSystemUsage-RelativeToHost-Pct 1498661366624 0.4927889 ContainerId=4d82acc4d671 CpuShares=2  
+MyContainer.Cpu.CpuOtherUsage-RelativeToHost-Pct 1498661366624 0.469346 ContainerId=4d82acc4d671 CpuShares=2  
+MyContainer.Cpu.CpuOverallUsage-RelativeToCpuShares-Pct 1498661366624 559.8951434 ContainerId=4d82acc4d671 CpuShares=2
