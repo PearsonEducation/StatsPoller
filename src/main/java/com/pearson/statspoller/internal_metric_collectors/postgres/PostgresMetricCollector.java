@@ -123,7 +123,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                                 ? DatabaseUtils.connect("jdbc:postgresql://" + host_ + ":" + port_ + "/" + variableValue, username_, password_)
                                 : DatabaseUtils.connect("jdbc:postgresql://" + host_ + ":" + port_ + "/" + variableValue);
                         Map<String, String> tempStatistics = getStatistics(tempConnection, variableValue);
-                        currentStatistics.putAll(tempStatistics);
+                        if (tempStatistics != null) currentStatistics.putAll(tempStatistics);
                         DatabaseUtils.disconnect(tempConnection);
                     }
                 }
@@ -331,25 +331,30 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
 
         Map<String, BigDecimal> statisticsDelta_ByVariable = new HashMap<>();
 
-        for (String statisticsVariable : statisticsVariablesToDelta) {
-            try {
-                String previousStatisticsValue = previousStatistics.get(statisticsVariable);
-                String currentStatisticsValue = currentStatistics.get(statisticsVariable);
-                
-                if ((previousStatisticsValue == null) || (currentStatisticsValue == null)) continue;
-                if (!StringUtils.isNumeric(previousStatisticsValue) || !StringUtils.isNumeric(currentStatisticsValue)) continue;
+        try {
+            for (String statisticsVariable : statisticsVariablesToDelta) {
+                try {
+                    String previousStatisticsValue = previousStatistics.get(statisticsVariable);
+                    String currentStatisticsValue = currentStatistics.get(statisticsVariable);
 
-                BigDecimal previousStatisticsValue_BigDecimal = new BigDecimal(previousStatisticsValue);
-                BigDecimal currentStatisticsValue_BigDecimal = new BigDecimal(currentStatisticsValue);
-                BigDecimal deltaStatisticsValue_BigDecimal = currentStatisticsValue_BigDecimal.subtract(previousStatisticsValue_BigDecimal);
+                    if ((previousStatisticsValue == null) || (currentStatisticsValue == null)) continue;
+                    if (!StringUtils.isNumeric(previousStatisticsValue) || !StringUtils.isNumeric(currentStatisticsValue)) continue;
 
-                statisticsDelta_ByVariable.put(statisticsVariable, deltaStatisticsValue_BigDecimal);
-            } 
-            catch (Exception e) {
-                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                    BigDecimal previousStatisticsValue_BigDecimal = new BigDecimal(previousStatisticsValue);
+                    BigDecimal currentStatisticsValue_BigDecimal = new BigDecimal(currentStatisticsValue);
+                    BigDecimal deltaStatisticsValue_BigDecimal = currentStatisticsValue_BigDecimal.subtract(previousStatisticsValue_BigDecimal);
+
+                    statisticsDelta_ByVariable.put(statisticsVariable, deltaStatisticsValue_BigDecimal);
+                } 
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
         }
-
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+        
         return statisticsDelta_ByVariable;
     }
 
@@ -369,6 +374,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
     }
 
     private BigDecimal getDifference(BigDecimal minuend, BigDecimal subtrahend) {
+        
         if ((minuend == null) || (subtrahend == null)) {
             return null;
         }
@@ -384,6 +390,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
     }
 
     private BigDecimal getUsagePercent(String numerator, String denominator) {
+        
         if ((numerator == null) || (denominator == null)) {
             return null;
         }
@@ -416,6 +423,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
         ResultSet resultSet = null;
         String query;
         Map<String, String> statistics = new HashMap<>();
+        
         try {
             //List of all metrics gathered from Postgres
             //------------------------------------------
@@ -606,32 +614,38 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                     }
                 }
 
-                //slave running
-                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
-                query = "select count(*) from pg_stat_replication";
-                statement = connection.createStatement();
-                resultSet = statement.executeQuery(query);
-                if (DatabaseUtils.isResultSetValid(resultSet)) {
-                    while (resultSet.next()) {
-                        String variableValue = resultSet.getString("count");
-                        if (resultSet.wasNull()) variableValue = null;
-                        if (variableValue != null) statistics.put("slave_running", variableValue);
+                try {
+                    // slave running
+                    if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
+                    query = "select count(*) from pg_stat_replication";
+                    statement = connection.createStatement();
+                    resultSet = statement.executeQuery(query);
+                    if (DatabaseUtils.isResultSetValid(resultSet)) {
+                        while (resultSet.next()) {
+                            String variableValue = resultSet.getString("count");
+                            if (resultSet.wasNull()) variableValue = null;
+                            if (variableValue != null) statistics.put("slave_running", variableValue);
+                        }
                     }
+
+                    //replication lag
+                    if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
+                    query = "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT";
+                    statement = connection.createStatement();
+                    resultSet = statement.executeQuery(query);
+                    if (DatabaseUtils.isResultSetValid(resultSet)) {
+                        while (resultSet.next()) {
+                            String variableValue = resultSet.getString("date_part");
+                            if (resultSet.wasNull()) variableValue = null;
+                            if (variableValue != null) statistics.put("replication_lag", variableValue);
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    if (e.toString().contains("Aurora")) logger.debug(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                    else logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
                 }
                 
-                //replication lag
-                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
-                query = "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT";
-                statement = connection.createStatement();
-                resultSet = statement.executeQuery(query);
-                if (DatabaseUtils.isResultSetValid(resultSet)) {
-                    while (resultSet.next()) {
-                        String variableValue = resultSet.getString("date_part");
-                        if (resultSet.wasNull()) variableValue = null;
-                        if (variableValue != null) statistics.put("replication_lag", variableValue);
-                    }
-                }
-
                 //uptime
                 if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT EXTRACT(epoch FROM now() - pg_postmaster_start_time())";
@@ -650,7 +664,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
         } 
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-            return null;
+            return statistics;
         } 
         finally {
             DatabaseUtils.cleanup(statement, resultSet);
@@ -661,10 +675,10 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
     private List<String> getStatisticsVariablesToDelta(Connection connection) {
 
         List<String> statisticsVariablesToDelta = new ArrayList<>();
-
-        databases_.clear();
-
+        
         try {
+            databases_.clear();
+            
             if (!DatabaseUtils.isConnectionValid(connection)) return statisticsVariablesToDelta;
             
             Statement statement;
