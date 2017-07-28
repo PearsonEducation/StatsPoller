@@ -13,6 +13,7 @@ import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +132,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
             //   graphiteMetrics.addAll(fileDescriptorStats);
             //}
 
-            List<GraphiteMetric> diskUsageStats = getDiskSpaceStats(timestamp);
+            List<GraphiteMetric> diskUsageStats = getDiskSpaceStats(timestamp, SystemUtils.IS_OS_WINDOWS);
             graphiteMetrics.addAll(diskUsageStats);
         }
         catch (Exception e) {}
@@ -290,7 +291,7 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
         return graphiteMetrics;
     }
     
-    private List<GraphiteMetric> getDiskSpaceStats(Integer timestamp) {
+    private List<GraphiteMetric> getDiskSpaceStats(Integer timestamp, boolean isWindows) {
         if (timestamp == null) timestamp = (int) (System.currentTimeMillis() / 1000);
         
         List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
@@ -301,7 +302,17 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
                 try {
                     String fileStoreString = fileStore.toString();
                     String fileStoreName = fileStore.name();
-                    String adjustedFileStoreName = StringUtils.removeEnd(fileStoreString, "(" + fileStoreName + ")").replace('.', '_').trim();
+                    String adjustedFileStoreName = fileStoreString;
+                    
+                    if (isWindows && adjustedFileStoreName.endsWith(")")) {
+                        adjustedFileStoreName = StringUtils.removeStart(fileStoreString, fileStoreName).trim();
+                        adjustedFileStoreName = StringUtils.removeEnd(adjustedFileStoreName, ")").trim();
+                        adjustedFileStoreName = StringUtils.removeStart(adjustedFileStoreName, "(").trim();
+                        adjustedFileStoreName = adjustedFileStoreName.replace('.', '_').trim();
+                    }
+                    else {
+                        adjustedFileStoreName = StringUtils.removeEnd(fileStoreString, "(" + fileStoreName + ")").replace('.', '_').trim();
+                    }
                     
                     long freeBytes_Long = fileStore.getUnallocatedSpace();
                     if (freeBytes_Long > 0) {
