@@ -2,6 +2,7 @@ package com.pearson.statspoller.internal_metric_collectors.postgres;
 
 import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
+import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.utilities.StackTrace;
@@ -224,50 +225,51 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
                 try {
-                    for (String variableValue : databases_) {
-                        if (variableValue != null) {
-                            openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "lock_count", "DatabaseSpecific." + variableValue + ".LockedElements-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                    for (String databaseName : databases_) {
+                        if (databaseName == null) continue;
+                        String graphiteFriendlyDatabaseName = GraphiteMetric.getGraphiteSanitizedString(databaseName, true, true);
+                        
+                        openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, databaseName + "." + "lock_count", "DatabaseSpecific." + graphiteFriendlyDatabaseName + ".LockedElements-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "cache_rate", "DatabaseSpecific." + variableValue + ".CacheRate", currentTimestampMilliseconds_Status, openTsdbTags_);
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, databaseName + "." + "cache_rate", "DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CacheRate", currentTimestampMilliseconds_Status, openTsdbTags_);
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "cache_hit_ratio", "DatabaseSpecific." + variableValue + ".CacheHit-Pct", currentTimestampMilliseconds_Status, openTsdbTags_);
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
-                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_commit"), millisecondsBetweenSamples_BigDecimal);
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfCommit-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, databaseName + "." + "cache_hit_ratio", "DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CacheHit-Pct", currentTimestampMilliseconds_Status, openTsdbTags_);
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        metric = getRatePerSecond(statisticsDelta_ByVariable.get(databaseName + "." + "number_of_commit"), millisecondsBetweenSamples_BigDecimal);
+                        openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CountOfCommit-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_rollbacks"), millisecondsBetweenSamples_BigDecimal);
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfRollbacks-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        metric = getRatePerSecond(statisticsDelta_ByVariable.get(databaseName + "." + "number_of_rollbacks"), millisecondsBetweenSamples_BigDecimal);
+                        openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CountOfRollbacks-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_inserted"), millisecondsBetweenSamples_BigDecimal);
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfInserted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        metric = getRatePerSecond(statisticsDelta_ByVariable.get(databaseName + "." + "number_of_inserted"), millisecondsBetweenSamples_BigDecimal);
+                        openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CountOfInserted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_updated"), millisecondsBetweenSamples_BigDecimal);
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfUpdated-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        metric = getRatePerSecond(statisticsDelta_ByVariable.get(databaseName + "." + "number_of_updated"), millisecondsBetweenSamples_BigDecimal);
+                        openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CountOfUpdated-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            metric = getRatePerSecond(statisticsDelta_ByVariable.get(variableValue + "." + "number_of_deleted"), millisecondsBetweenSamples_BigDecimal);
-                            openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".CountOfDeleted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        metric = getRatePerSecond(statisticsDelta_ByVariable.get(databaseName + "." + "number_of_deleted"), millisecondsBetweenSamples_BigDecimal);
+                        openTsdbMetric = (metric != null) ? new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CountOfDeleted-PerSecond", currentTimestampMilliseconds_Status, metric, openTsdbTags_) : null;
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "number_of_temp_files", "DatabaseSpecific." + variableValue + ".CreatedTmpTables-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, databaseName + "." + "number_of_temp_files", "DatabaseSpecific." + graphiteFriendlyDatabaseName + ".CreatedTmpTables-Count", currentTimestampMilliseconds_Status, openTsdbTags_);
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, variableValue + "." + "idx_scan_ratio", "DatabaseSpecific." + variableValue + ".IdxScanRatio", currentTimestampMilliseconds_Status, openTsdbTags_);
-                            if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                        openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, databaseName + "." + "idx_scan_ratio", "DatabaseSpecific." + graphiteFriendlyDatabaseName + ".IdxScanRatio", currentTimestampMilliseconds_Status, openTsdbTags_);
+                        if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                            String querySize = "SELECT pg_size_pretty(pg_database_size('" + variableValue + "'))";
-                            Statement statementSize = connection.createStatement();
-                            ResultSet resultSetSize = statementSize.executeQuery(querySize);
-                            resultSetSize.next();
-                            String size = resultSetSize.getString("pg_size_pretty").split(" ")[0];
-                            openTsdbMetric = new OpenTsdbMetric("DatabaseSpecific." + variableValue + ".DatabaseSize-kB", currentTimestampMilliseconds_Status, new BigDecimal(size), openTsdbTags_);
-                            openTsdbMetrics.add(openTsdbMetric);
-                        }
+                        String querySize = "SELECT pg_size_pretty(pg_database_size('" + databaseName + "'))";
+                        Statement statementSize = connection.createStatement();
+                        ResultSet resultSetSize = statementSize.executeQuery(querySize);
+                        resultSetSize.next();
+                        String size = resultSetSize.getString("pg_size_pretty").split(" ")[0];
+                        openTsdbMetric = new OpenTsdbMetric("DatabaseSpecific." + graphiteFriendlyDatabaseName + ".DatabaseSize-kB", currentTimestampMilliseconds_Status, new BigDecimal(size), openTsdbTags_);
+                        openTsdbMetrics.add(openTsdbMetric);
                     }
 
                 } 
@@ -275,15 +277,15 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                     logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
                 }
 
-                if (openTsdbMetrics.size() > 0) {
-                    Collections.sort(openTsdbMetrics, new Comparator<OpenTsdbMetric>() {
-                        @Override
-                        public int compare(final OpenTsdbMetric object1, final OpenTsdbMetric object2) {
-                            return object1.getMetricKey().compareToIgnoreCase(object2.getMetricKey());
-                        }
-                    });
-                }
-
+                // sorting for debugging purposes
+                //if (openTsdbMetrics.size() > 0) {
+                //    Collections.sort(openTsdbMetrics, new Comparator<OpenTsdbMetric>() {
+                //        @Override
+                //        public int compare(final OpenTsdbMetric object1, final OpenTsdbMetric object2) {
+                //            return object1.getMetricKey().compareToIgnoreCase(object2.getMetricKey());
+                //        }
+                //    });
+                //}
             } 
             else {
                 previousStatistics_ = new HashMap<>();
