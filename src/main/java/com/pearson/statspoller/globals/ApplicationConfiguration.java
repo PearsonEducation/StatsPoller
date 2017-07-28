@@ -20,6 +20,7 @@ import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTelnetOutputModule;
 import com.pearson.statspoller.utilities.HierarchicalIniConfigurationWrapper;
+import com.pearson.statspoller.utilities.NetIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import java.net.InetAddress;
 import org.apache.commons.lang3.SystemUtils;
@@ -267,30 +268,50 @@ public class ApplicationConfiguration {
         String globalMetricNamePrefix = applicationConfiguration_.safeGetString("global_metric_name_prefix", getOsHostname()).replace("$HOSTNAME", hostname_);
         String globalMetricNamePrefixValue = applicationConfiguration_.safeGetString("global_metric_name_prefix_value", getOsHostname()).replace("$HOSTNAME", hostname_);
 
+        String awsInstanceId = null;
+        if (((globalMetricNamePrefix != null) && globalMetricNamePrefix.contains("$AWS-INSTANCE-ID")) ||  
+                ((globalMetricNamePrefixValue != null) && globalMetricNamePrefixValue.contains("$AWS-INSTANCE-ID"))) {
+            awsInstanceId = getAwsInstanceId();
+        }
+        
         if ((globalMetricNamePrefix != null) && (globalMetricNamePrefixValue != null) && !globalMetricNamePrefixValue.trim().isEmpty() &&
                 globalMetricNamePrefix.equals(hostname_) && !globalMetricNamePrefix.equals(globalMetricNamePrefixValue)) {
+            if ((awsInstanceId != null) && (globalMetricNamePrefixValue != null)) globalMetricNamePrefixValue = globalMetricNamePrefixValue.replace("$AWS-INSTANCE-ID", awsInstanceId);
             return globalMetricNamePrefixValue;
         }
         else {
+            if ((awsInstanceId != null) && (globalMetricNamePrefix != null)) globalMetricNamePrefix = globalMetricNamePrefix.replace("$AWS-INSTANCE-ID", awsInstanceId);
             return globalMetricNamePrefix;
         }
     }
     
     private static String getOsHostname() {
         
-        String hostname = System.getenv().get("COMPUTERNAME");
-        if ((hostname != null) && !hostname.trim().equals("")) return hostname;
-
-        hostname = System.getenv().get("HOSTNAME");
-        if ((hostname != null) && !hostname.trim().equals("")) return hostname;
-
         try {
+            String hostname = System.getenv().get("COMPUTERNAME");
+            if ((hostname != null) && !hostname.trim().equals("")) return hostname;
+
+            hostname = System.getenv().get("HOSTNAME");
+            if ((hostname != null) && !hostname.trim().equals("")) return hostname;
+        
             hostname = InetAddress.getLocalHost().getHostName();
             if ((hostname != null) && !hostname.trim().equals("")) return hostname;
         }
         catch (Exception e) {}
         
         return "UNKNOWN-HOST";
+    }
+    
+    private static String getAwsInstanceId() {
+        
+        try {
+            String url = "http://169.254.169.254/latest/meta-data/instance-id";
+            String awsInstanceId = NetIo.downloadUrl(url, 1, 1, true);
+            if ((awsInstanceId != null) && !awsInstanceId.trim().isEmpty()) return awsInstanceId.trim();
+        }
+        catch (Exception e) {}
+        
+        return "UNKNOWN-AWS-INSTANCE-ID";
     }
     
     private static List<GraphiteOutputModule> readLegacyGraphiteOutputModule() {
