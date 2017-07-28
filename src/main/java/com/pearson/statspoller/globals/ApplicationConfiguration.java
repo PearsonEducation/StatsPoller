@@ -297,7 +297,9 @@ public class ApplicationConfiguration {
             hostname = InetAddress.getLocalHost().getHostName();
             if ((hostname != null) && !hostname.trim().equals("")) return hostname;
         }
-        catch (Exception e) {}
+        catch (Exception e) {
+            logger.debug(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
         
         return "UNKNOWN-HOST";
     }
@@ -309,7 +311,9 @@ public class ApplicationConfiguration {
             String awsInstanceId = NetIo.downloadUrl(url, 1, 1, true);
             if ((awsInstanceId != null) && !awsInstanceId.trim().isEmpty()) return awsInstanceId.trim();
         }
-        catch (Exception e) {}
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
         
         return "UNKNOWN-AWS-INSTANCE-ID";
     }
