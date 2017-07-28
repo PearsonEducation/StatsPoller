@@ -1,6 +1,6 @@
 # JMX Collector
 
-The JMX metric collector is a metric collector that plugs into Java JVMs & collects JMX metrics. StatsPoller can run up to 10,000 JMX collectors from a single StatsPoller deployment.
+The JMX metric collector is a metric collector that plugs into Java JVMs via a remote JMX connection & collects JMX metrics. StatsPoller can run up to 10,000 JMX collectors from a single StatsPoller deployment.
 
 A single JMX collector's behavior is:
 

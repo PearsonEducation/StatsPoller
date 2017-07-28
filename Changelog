@@ -1,6 +1,9 @@
 Release 2.3
  * Enhancements to Mongo collector (now gets replication status)
  * New Linux collector - gets process status metrics (process count, thread count, process state information, etc)
+ * Improved Postgres compatibly with AWS Aurora Postgres
+ * New 'cAdvisor' metric collector -- for collecting metrics about Docker containers
+ * Bug fixes & hardening
 
 Release 2.2
  * New Postgres metric collector -- implemented in the main Java app
