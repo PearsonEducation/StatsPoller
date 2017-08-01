@@ -1,8 +1,3 @@
-2.3
- * Windows StatsPoller Filesystem collector -- review
- * Add support for AWS instance-id in global_metric_prefix
- * Update main readme for release
-
 2.4
  * cAdvisor - add http auth support
  * Reduced output flag (default?)

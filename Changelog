@@ -3,6 +3,8 @@ Release 2.3
  * New Linux collector - gets process status metrics (process count, thread count, process state information, etc)
  * Improved Postgres compatibly with AWS Aurora Postgres
  * New 'cAdvisor' metric collector -- for collecting metrics about Docker containers
+ * Fixed/adjusted filesystem size output for the 'StatsPoller Native' collector when running on Windows
+ * Added support for putting Amazon Web Services (aws) instance-id's in the global_metric_name_prefix
  * Bug fixes & hardening
 
 Release 2.2
