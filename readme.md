@@ -11,12 +11,13 @@ StatsPoller is an agent-based metric collection & reporting platform. It current
 * Metric collectors that retrieve metrics on a user-specified intervals.
 * Built-in metric collectors have few dependencies.
     * Most metric collectors are built into the main program & rely only on Java 1.7+ being installed to run StatsPoller.
-    * For Linux metric collectors, most metrics are retrieved from Linux's proc and/or sys filesystems. As a result, dependencies on apps like vmstat, ifconfig, etc are virtually non-existant in StatsPoller.
+    * For Linux metric collectors, most metrics are retrieved from Linux's 'proc' and/or 'sys' filesystems. As a result, dependencies on apps like vmstat, ifconfig, etc are virtually non-existant in StatsPoller.
 * Advanced Java JMX metric collection is a primary focus in StatsPoller. Its JMX metric retrieval capabilities exceed that of most comparable tools.
 * Built-in metric collectors include....
   * [StatsPoller Native](./docs/statspoller_native.md) (A platform-independent OS metric collector that collects metrics from the perspective of the JVM runtime)  
   * [Linux OS](./docs/linux_collector.md) (network, filesystem, disk i/o, cpu, uptime, memory)
   * [Java JMX](./docs/jmx.md) (Cassandra, Tomcat, JBoss/Wildfly, etc)
+  * [cAdvisor](./docs/cadvisor.md) (Google cAdvisor, for docker container monitoring)  
   * [File Counter](./docs/file_counter.md) (counts/outputs the number of files in a specified folder)
   * [Process Counter](./docs/process_counter.md) (counts/outputs the number of processes running that match a particular regex pattern)
   * [Apache HTTP Server](./docs/apache_http.md) (Apache HTTP Server server-status metrics)
@@ -50,10 +51,10 @@ StatsPoller currently supports installation via rpm or via manual installation.
 * Java 1.7 (or newer). Oracle Java is preferred. OpenJDK may also work, but some functionality may be disabled.
 * A valid version of Java must be configured as an environment variable for the user that is running StatsPoller.
 * (Linux) Kernel 2.6 or newer
-* (Linux) Several metric collectors depend on the 'proc' filesystem being mounted somewhere (StatsPoller assumes /proc by default)
+* (Linux) Several metric collectors depend on the 'proc' & 'sys' filesystems being mounted somewhere (StatsPoller assumes /proc & /sys by default)
 
 ### rpm install on Linux (for RedHat, CentOS, etc)
-
+g
 * sudo rpm -ivh statspoller_version_xyz.rpm
 
 ### rpm update on Linux (for RedHat, CentOS, etc)
@@ -98,7 +99,7 @@ After installing StatsPoller, one typically only needs to edit a single configur
 
 <br>
 
-If you feel constrained by putting a large number of configurations into application.properties, then you can put some of them into configuration files of your own creation @ /conf/optional. Put any file with an extension of .properties into /conf/optional & StatsPoller will read its configuration fields. Please note that several fields can only be set in the main application.properties file. Configurations that can be read from /conf/optional/*.properties include: JMX, ApacheHTTP, FileCounter, ProcessCounter, MySQL, MongoDB, external metric-collectors.
+If you feel constrained by putting a large number of configurations into application.properties, then you can put some of them into configuration files of your own creation @ /conf/optional. Put any file with an extension of .properties into /conf/optional & StatsPoller will read its configuration fields. Please note that several fields can only be set in the main application.properties file. Configurations that can be read from /conf/optional/*.properties include: JMX, ApacheHTTP, FileCounter, ProcessCounter, MySQL, MongoDB, PostgreSQL, cAdvisor, Database Querier, and external metric-collectors.
 
 <br>
 
