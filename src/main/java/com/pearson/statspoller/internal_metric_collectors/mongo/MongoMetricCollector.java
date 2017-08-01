@@ -198,9 +198,10 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                         MongoCursor iterator = collections.iterator();
 
                         while (iterator.hasNext()) {
+                            String graphiteFriendlyDbName = GraphiteMetric.getGraphiteSanitizedString(dbName, true, true);
                             String collection = iterator.next().toString();
                             Document collStats = currentDatabase.runCommand(new Document().append("collStats", collection).append("scale", 1).append("verbose", true));
-                            graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + dbName + "." + collection));
+                            graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + graphiteFriendlyDbName + "." + collection));
                         }
                     }
                 }
