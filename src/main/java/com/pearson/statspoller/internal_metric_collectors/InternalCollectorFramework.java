@@ -28,11 +28,13 @@ public abstract class InternalCollectorFramework {
     private final String internalCollectorMetricPrefix_;
     private final String outputFilePathAndFilename_;
     private final boolean writeOutputFiles_;
-    private final String fullInternalCollectorMetricPrefix_;
     
     private final String linuxProcFileSystemLocation_ = removeTrailingSlash(ApplicationConfiguration.getLinuxProcLocation());
     private final String linuxSysFileSystemLocation_ = removeTrailingSlash(ApplicationConfiguration.getLinuxSysLocation());
 
+    private String fullInternalCollectorMetricPrefix_ = null;
+    private String finalOutputFilePathAndFilename_ = null;
+    
     public InternalCollectorFramework(boolean isEnabled, long collectionInterval, String internalCollectorMetricPrefix, 
             String outputFilePathAndFilename, boolean writeOutputFiles) {
         this.isEnabled_ = isEnabled;
@@ -40,7 +42,9 @@ public abstract class InternalCollectorFramework {
         this.internalCollectorMetricPrefix_ = internalCollectorMetricPrefix;
         this.outputFilePathAndFilename_ = outputFilePathAndFilename;
         this.writeOutputFiles_ = writeOutputFiles;
-        this.fullInternalCollectorMetricPrefix_ = createFullInternalCollectorMetricPrefix();
+        
+        createFullInternalCollectorMetricPrefix();
+        this.finalOutputFilePathAndFilename_ = this.outputFilePathAndFilename_;
     }
     
     public void outputGraphiteMetrics(List<GraphiteMetric> graphiteMetrics) {
@@ -145,7 +149,7 @@ public abstract class InternalCollectorFramework {
         
         try {
             for (int i = 0; i <= NUM_FILE_WRITE_RETRIES; i++) {
-                isSuccessfulWrite = FileIo.saveStringToFile(outputFilePathAndFilename_, output);
+                isSuccessfulWrite = FileIo.saveStringToFile(finalOutputFilePathAndFilename_, output);
 
                 if (isSuccessfulWrite) break;
                 else Threads.sleepMilliseconds(DELAY_BETWEEN_WRITE_RETRIES_IN_MS);
@@ -218,15 +222,51 @@ public abstract class InternalCollectorFramework {
     /*
     returns GlobalMetricPrefix.CollectorMetricPrefix.
     */
-    private String createFullInternalCollectorMetricPrefix() {
+    protected final void createFullInternalCollectorMetricPrefix() {
+        createAndUpdateFullInternalCollectorMetricPrefix(null, null);
+    }
+    
+    protected void createAndUpdateFullInternalCollectorMetricPrefix(String textToReplace, String replacement) {
+        
         String metricPrefix = "";
         
         if (ApplicationConfiguration.isGlobalMetricNamePrefixEnabled() && (ApplicationConfiguration.getGlobalMetricNamePrefix() != null)) metricPrefix += ApplicationConfiguration.getGlobalMetricNamePrefix();
-        if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
-        if (internalCollectorMetricPrefix_ != null) metricPrefix += internalCollectorMetricPrefix_;
+        
         if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
         
-        return metricPrefix;
+        if (internalCollectorMetricPrefix_ != null) {
+            String localInternalCollectorMetricPrefix = internalCollectorMetricPrefix_;
+            if ((textToReplace != null) && localInternalCollectorMetricPrefix.contains(textToReplace)) {
+                if (replacement == null) localInternalCollectorMetricPrefix = localInternalCollectorMetricPrefix.replace(textToReplace, "");
+                else localInternalCollectorMetricPrefix = localInternalCollectorMetricPrefix.replace(textToReplace, replacement);
+                metricPrefix += localInternalCollectorMetricPrefix;
+            }
+            else metricPrefix += internalCollectorMetricPrefix_;
+        }
+        
+        if (!metricPrefix.isEmpty() && !metricPrefix.endsWith(".")) metricPrefix += ".";
+        
+        fullInternalCollectorMetricPrefix_ = metricPrefix;
+    }
+    
+    protected void updateOutputFilePathAndFilename(String textToReplace, String replacement) {
+        String localOutputFilePathAndFilename = outputFilePathAndFilename_;
+
+        try {
+            if ((localOutputFilePathAndFilename != null) && (textToReplace != null) && localOutputFilePathAndFilename.contains(textToReplace)) {
+                if (replacement == null) {
+                    localOutputFilePathAndFilename = localOutputFilePathAndFilename.replace(textToReplace, "");
+                }
+                else {
+                    localOutputFilePathAndFilename = localOutputFilePathAndFilename.replace(textToReplace, replacement);
+                }
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+      
+        finalOutputFilePathAndFilename_ = localOutputFilePathAndFilename;
     }
     
     private static String removeTrailingSlash(String input) {
@@ -243,7 +283,11 @@ public abstract class InternalCollectorFramework {
     protected long getCollectionInterval() {
         return collectionInterval_;
     }
-
+    
+    protected String getInternalCollectorMetricPrefix() {
+        return internalCollectorMetricPrefix_;
+    }
+    
     protected boolean isWriteOutputFiles() {
         return writeOutputFiles_;
     }

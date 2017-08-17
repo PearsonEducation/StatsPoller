@@ -35,6 +35,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     
     private static final Logger logger = LoggerFactory.getLogger(JmxMetricCollector.class.getName());
 
+    private static final String REMOTE_JMX_NAME_FIELD_IDENTIFIER = "$REMOTE-JMX-NAME";
+    
     private final String host_;
     private final int port_;
     private final String jmxServiceUrl_;
@@ -59,8 +61,15 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private boolean didConnectOnThisInterval_ = false;
     private boolean didQueryMetricTree_ = false;
     
+    // regex of jvm input arguments & variable to hold the jmx name argument
+    private final String inputArgsRegex_ = "java-lang\\.Runtime\\.InputArguments";
+    private String remoteJvmJmxName_ = null;
+    
     // timestamp of the iteration
     private int currentTimestamp_ = -1;
+    
+    // has the jvm ever been connected to? relevant for dynamically named jvms that use the 'remote jvm jmx name' mechanism
+    private boolean hasJvmEverBeenConnectedTo_ = false;
     
     // contains cached compiled patters for blacklist & whitelist regexs
     private final Map<String,Pattern> regexPatterns_;
@@ -95,7 +104,9 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             String username, String password, List<String> blacklistObjectNameRegexs, List<String> blacklistRegexs, List<String> whitelistRegexs) {
         
         super(isEnabled, collectionInterval, jmxMetricPrefix, outputFilePathAndFilename, writeOutputFiles);
-
+        super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
+        super.updateOutputFilePathAndFilename(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
+        
         this.host_ = host;
         this.port_ = port;
         this.jmxServiceUrl_ = jmxServiceUrl;
@@ -128,37 +139,73 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         
         if (blacklistObjectNameRegexs_ != null) {
             for (String regex : blacklistObjectNameRegexs_) {
-                Pattern pattern = Pattern.compile(regex);
-                compiledRegexs.put(regex, pattern);
-            }
-        }
-        
-        if (blacklistRegexs_ != null) {
-            for (String regex : blacklistRegexs_) {
-                Pattern pattern = Pattern.compile(regex);
-                compiledRegexs.put(regex, pattern);
+                try {
+                    Pattern pattern = Pattern.compile(regex);
+                    compiledRegexs.put(regex, pattern);
+                }
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
         }
 
-        if (whitelistRegexs_ != null) {
-            for (String regex : whitelistRegexs_) {
-                Pattern pattern = Pattern.compile(regex);
-                compiledRegexs.put(regex, pattern);
+        if (blacklistRegexs_ != null) {
+            for (String regex : blacklistRegexs_) {
+                try {
+                    Pattern pattern = Pattern.compile(regex);
+                    compiledRegexs.put(regex, pattern);
+                }
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
         }
+
         
+        if (whitelistRegexs_ != null) {
+            for (String regex : whitelistRegexs_) {
+                try {
+                    Pattern pattern = Pattern.compile(regex);
+                    compiledRegexs.put(regex, pattern);
+                }
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
+            }
+        }
+
         if (numericDerivedRegexs_ != null) {
             for (String regex : numericDerivedRegexs_) {
-                Pattern pattern = Pattern.compile(regex);
-                compiledRegexs.put(regex, pattern);
+                try {
+                    Pattern pattern = Pattern.compile(regex);
+                    compiledRegexs.put(regex, pattern);
+                }
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
         }
         
         if (stringDerivedRegexs_ != null) {
             for (String regex : stringDerivedRegexs_) {
-                Pattern pattern = Pattern.compile(regex);
-                compiledRegexs.put(regex, pattern);
+                try {
+                    Pattern pattern = Pattern.compile(regex);
+                    compiledRegexs.put(regex, pattern);
+                }
+                catch (Exception e) {
+                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                }
             }
+        }
+        
+        try {
+            if (inputArgsRegex_ != null) {
+                Pattern pattern = Pattern.compile(inputArgsRegex_);
+                compiledRegexs.put(inputArgsRegex_, pattern);
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
         }
         
         return compiledRegexs;
@@ -180,10 +227,21 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             List<GraphiteMetric> allJmxGraphiteMetricsForOutput = new ArrayList<>();
             
             if (!isConnected) {
+                boolean allowAvailabilityOutput = false;
+                
+                if ((super.getInternalCollectorMetricPrefix() != null) && super.getInternalCollectorMetricPrefix().contains(REMOTE_JMX_NAME_FIELD_IDENTIFIER) && hasJvmEverBeenConnectedTo_) {
+                    super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, remoteJvmJmxName_);
+                    super.updateOutputFilePathAndFilename(REMOTE_JMX_NAME_FIELD_IDENTIFIER, remoteJvmJmxName_);
+                    allowAvailabilityOutput = true;
+                }
+                else if ((super.getInternalCollectorMetricPrefix() != null) && !super.getInternalCollectorMetricPrefix().contains(REMOTE_JMX_NAME_FIELD_IDENTIFIER)) {
+                    allowAvailabilityOutput = true;
+                }
+                
                 GraphiteMetric isAvailable = createGraphiteMetric("Availability.Available", BigDecimal.ZERO, currentTimestamp_);
                 allJmxGraphiteMetricsForOutput.add(isAvailable);
                 
-                super.outputGraphiteMetrics(allJmxGraphiteMetricsForOutput);
+                if (allowAvailabilityOutput) super.outputGraphiteMetrics(allJmxGraphiteMetricsForOutput);
                 
                 long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
                 
@@ -192,9 +250,6 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                         ", JmxMetricCollectionTime=" + routineTimeElapsed);
             }
             else {
-                GraphiteMetric isAvailable = createGraphiteMetric("Availability.Available", BigDecimal.ONE, currentTimestamp_);
-                allJmxGraphiteMetricsForOutput.add(isAvailable);
-                
                 logger.debug("JMX - Start Refresh Available Metrics");
                 long queryMBeansStartTime = System.currentTimeMillis();
                 boolean didRefreshObjectInstancesAndMBeanInfos = getObjectInstancesAndMBeanInfos(mBeanServerConnection_);
@@ -207,6 +262,10 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                 long fetchMetricAttributesTimeElapsed = System.currentTimeMillis() - fetchMetricAttributesStartTime;
                 logger.debug("JMX - End Fetch Attributes. TimeElapsed=" + fetchMetricAttributesTimeElapsed);
 
+                GraphiteMetric isAvailable = createGraphiteMetric("Availability.Available", BigDecimal.ONE, currentTimestamp_);
+                allJmxGraphiteMetricsForOutput.add(isAvailable);
+                hasJvmEverBeenConnectedTo_ = true;
+                
                 List<GraphiteMetric> jmxGraphiteMetrics = createGraphiteMetrics_Filtered(jmxMetricsRaw);
                 allJmxGraphiteMetricsForOutput.addAll(jmxGraphiteMetrics);
                  
@@ -366,6 +425,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     }
     
     private void resetVariables() {
+        super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
+
         jmxDerivedMetrics_.reset();
                 
         blacklistObjectNameRegexMatchCache_.clear();
@@ -692,8 +753,47 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             }
         }
         catch (Exception e) {
+            // handling for special case of remote jmx name. only needs to be read once, so it's safe to never download again
+            setMetricPrefixWithJvmRemoteName(objectInstanceName, attributeValue, attributeName);
+            
             addMetricToNeverDownloadTheseMetricAttributes(objectInstanceName, attributeName);  
         }
+    }
+    
+    private void setMetricPrefixWithJvmRemoteName(String objectInstanceName, Object attributeValue, String attributeName) {
+        
+        try {
+            if ((attributeName != null) && attributeName.equals("InputArguments") && 
+                    (attributeValue != null) && (attributeValue instanceof String[]) && 
+                    (objectInstanceName != null) && objectInstanceName.equals("java.lang:type=Runtime")) {
+                String[] attributeValue_StringArray = (String[]) attributeValue;
+                String jmxNamePrefix = "-DJmxName=";
+                boolean foundJmxNamePrefix = false;
+                
+                for (String attributeValue_String : attributeValue_StringArray) {
+                    if (attributeValue_String.startsWith(jmxNamePrefix)) {
+                        if ((attributeValue_String.length() > jmxNamePrefix.length())) remoteJvmJmxName_ = attributeValue_String.substring(jmxNamePrefix.length());
+                        else remoteJvmJmxName_ = attributeValue_String.substring(jmxNamePrefix.length());
+
+                        super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, remoteJvmJmxName_);
+                        super.updateOutputFilePathAndFilename(REMOTE_JMX_NAME_FIELD_IDENTIFIER, remoteJvmJmxName_);
+                        
+                        foundJmxNamePrefix = true;
+                        break;
+                    }
+                }
+                
+                if (!foundJmxNamePrefix) {
+                    remoteJvmJmxName_ = "";
+                    super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
+                    super.updateOutputFilePathAndFilename(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
+                }
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+            
     }
 
     private List<GraphiteMetric> createGraphiteMetrics_Filtered(List<JmxMetricRaw> jmxMetricsRaw) {
