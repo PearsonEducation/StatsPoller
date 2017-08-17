@@ -54,7 +54,7 @@ StatsPoller currently supports installation via rpm or via manual installation.
 * (Linux) Several metric collectors depend on the 'proc' & 'sys' filesystems being mounted somewhere (StatsPoller assumes /proc & /sys by default)
 
 ### rpm install on Linux (for RedHat, CentOS, etc)
-g
+
 * sudo rpm -ivh statspoller_version_xyz.rpm
 
 ### rpm update on Linux (for RedHat, CentOS, etc)
