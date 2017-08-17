@@ -1,3 +1,7 @@
+Release 2.3.1
+ * JMX collector hardening
+ * JMX collector support for remote-JVM naming
+
 Release 2.3
  * Enhancements to Mongo collector (now gets replication status)
  * New Linux collector - gets process status metrics (process count, thread count, process state information, etc)
