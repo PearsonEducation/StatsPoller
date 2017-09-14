@@ -1,7 +1,8 @@
-2.4
+2.5
  * cAdvisor - add http auth support
  * Reduced output flag (default?)
  * Remove legacy statspoller conf compatibility
+ * Optional toggle to disable metadata meterics via 'statspoller_disable_metadata_metrics'
 
 Future
  * Configurable timeouts on output
