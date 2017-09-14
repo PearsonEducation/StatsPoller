@@ -18,6 +18,6 @@ public class GlobalVariables {
     public final static ConcurrentHashMap<Long,OpenTsdbMetric> openTsdbMetrics = new ConcurrentHashMap<>();
     public final static AtomicLong metricHashKeyGenerator = new AtomicLong(Long.MIN_VALUE);
     public final static AtomicLong metricTransmitErrorCount = new AtomicLong(0l);
-    
+      
 }
 

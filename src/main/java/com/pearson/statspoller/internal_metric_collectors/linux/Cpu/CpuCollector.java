@@ -33,7 +33,8 @@ public class CpuCollector extends InternalCollectorFramework implements Runnable
     
     @Override
     public void run() {
-         
+        resetVariables();
+        
         while(super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
             
@@ -54,6 +55,10 @@ public class CpuCollector extends InternalCollectorFramework implements Runnable
             if (sleepTimeInMs >= 0) Threads.sleepMilliseconds(sleepTimeInMs);
         }
 
+    }
+    
+    private void resetVariables() {
+        previousRawProcStats_ = null;
     }
     
     private List<GraphiteMetric> getCpuMetrics() {

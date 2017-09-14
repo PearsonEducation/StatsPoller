@@ -276,19 +276,19 @@ public abstract class InternalCollectorFramework {
         return input;
     }
     
-    protected boolean isEnabled() {
+    public boolean isEnabled() {
         return isEnabled_;
     }
 
-    protected long getCollectionInterval() {
+    public long getCollectionInterval() {
         return collectionInterval_;
     }
     
-    protected String getInternalCollectorMetricPrefix() {
+    public String getInternalCollectorMetricPrefix() {
         return internalCollectorMetricPrefix_;
     }
     
-    protected boolean isWriteOutputFiles() {
+    public boolean isWriteOutputFiles() {
         return writeOutputFiles_;
     }
 

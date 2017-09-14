@@ -81,12 +81,16 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
             return;
         }
         
+        if ((previousStatMetadatas_ByDockerId_ != null) && !previousStatMetadatas_ByDockerId_.isEmpty()) {
+            previousStatMetadatas_ByDockerId_.clear();
+        }
+        
         while(super.isEnabled()) {
 
             long routineStartTime = System.currentTimeMillis();
             long routineTimeElapsed = -1;
             
-            try {
+            try {      
                 List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
                 Map<String,StatMetadata> currentStatMetadatas_ByDockerId = new HashMap<>();
 

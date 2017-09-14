@@ -34,7 +34,8 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
     
     @Override
     public void run() {
-         
+        resetVariables();
+        
         while(super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
             
@@ -55,6 +56,11 @@ public class DiskIoCollector extends InternalCollectorFramework implements Runna
             if (sleepTimeInMs >= 0) Threads.sleepMilliseconds(sleepTimeInMs);
         }
 
+    }
+    
+    private void resetVariables() {
+        previousRawDiskStats_ = null;
+        previousRawDiskStats_ReadTimestamp_ = -1;
     }
     
     private List<GraphiteMetric> getDiskMetrics() {

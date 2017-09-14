@@ -1,3 +1,6 @@
+Release 2.4
+ * Automatic thread recovery (if a metric collector thread crashes)
+
 Release 2.3.1
  * JMX collector hardening
  * JMX collector support for remote-JVM naming

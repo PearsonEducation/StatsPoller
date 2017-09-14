@@ -39,7 +39,8 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
     
     @Override
     public void run() {
-         
+        resetVariables();
+        
         while(super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
             
@@ -60,6 +61,10 @@ public class NetworkBandwidthCollector extends InternalCollectorFramework implem
             if (sleepTimeInMs >= 0) Threads.sleepMilliseconds(sleepTimeInMs);
         }
 
+    }
+    
+    private void resetVariables() {
+        previousNetworkStats_ = null;
     }
     
     private List<GraphiteMetric> getNetworkMetrics() {

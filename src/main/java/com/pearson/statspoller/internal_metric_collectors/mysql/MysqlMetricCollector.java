@@ -61,6 +61,8 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     @Override
     public void run() {
          
+        resetVariables();
+        
         while(super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
             
@@ -98,6 +100,8 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
     
     public void singleRun() {
          
+        resetVariables();
+        
         if (super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
             
@@ -125,6 +129,11 @@ public class MysqlMetricCollector extends InternalCollectorFramework implements 
                     ", MetricCollectionTimeExcludingSleep=" + (routineTimeElapsed - sleepTimeInMs));
         }
 
+    }
+    
+    private void resetVariables() {
+        if (previousGlobalStatus_ != null) previousGlobalStatus_.clear();
+        previousTimestampInMilliseconds_ = null;
     }
     
     private List<OpenTsdbMetric> getMysqlMetrics(Connection connection) {

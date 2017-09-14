@@ -98,6 +98,12 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     // k=unformatted graphite metric path, v=formatted graphite metric path
     private Map<String,String> graphiteFormattedMetricPaths_ = new HashMap<>();
 
+    
+    
+    //private List<String> memoryEater;
+    
+    
+    
     public JmxMetricCollector(boolean isEnabled, long collectionInterval, String jmxMetricPrefix, String outputFilePathAndFilename, boolean writeOutputFiles,
             String host, int port, String jmxServiceUrl, int numConnectionAttemptRetries, long sleepAfterConnectTime, long queryMetricTreeInterval,
             boolean collectStringAttributes, boolean isDerivedMetricsEnabled,
@@ -214,6 +220,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     @Override
     public void run() {
          
+        this.close();
+        
         while(super.isEnabled()) {
             
             long routineStartTime = System.currentTimeMillis();
@@ -311,6 +319,11 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
             if (sleepTimeInMs >= 0) {
                 Threads.sleepMilliseconds(sleepTimeInMs);
+
+//                logger.warn(("ABOUT TO KILL JMX"));
+//                memoryEater = new ArrayList<>();
+//                for (long i = 0; i < 100000000; i++) memoryEater.add("lol");
+//                System.out.println(memoryEater.get(0));
             }
         }
         
@@ -427,6 +440,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private void resetVariables() {
         super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
 
+//        memoryEater = null;
         jmxDerivedMetrics_.reset();
                 
         blacklistObjectNameRegexMatchCache_.clear();

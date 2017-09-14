@@ -39,7 +39,10 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
         
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.version_ = version;
-        
+        this.setOsVariables();
+    }
+    
+    private void setOsVariables() {
         try {
             operatingSystemMXBean_ = (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         }
@@ -56,6 +59,8 @@ public class StatsPollerNativeCollectorsThread extends InternalCollectorFramewor
     
     @Override
     public void run() {
+        
+        setOsVariables();
         
         while (true) {
             long readMetricsTimeStart = System.currentTimeMillis();

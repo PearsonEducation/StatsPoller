@@ -34,6 +34,8 @@ import com.pearson.statspoller.utilities.FileIo;
 import com.pearson.statspoller.utilities.StackTrace;
 import com.pearson.statspoller.utilities.Threads;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,8 @@ public class Driver {
     
     private static final Logger logger = LoggerFactory.getLogger(Driver.class.getName());
     
-    private static final ExecutorService threadExecutor_ = Executors.newCachedThreadPool();
+    //private static final ExecutorService threadExecutor_ = Executors.newCachedThreadPool();
+    private static final Map<String,Thread> metricCollectorThreads_ByThreadId_ = new ConcurrentHashMap<>();
     
     public static void main(String[] args) {
         // 2 second startup delay -- helps to make sure that old metric data isn't output
@@ -63,34 +66,22 @@ public class Driver {
             logger.info(successOutput);
         }
         
-        launchStatsPollerCollector();
-                
-        launchLinuxCollectors();
-                
-        launchFileCountCollectors();
+        // initial launch of metric collector threads
+        launchCollectorThreads();
         
-        launchJmxCollectors();
-
-        launchApacheCollectors();
-        
-        launchCadvisorCollectors();
-        
-        launchMongoCollectors();
-                
-        launchMysqlCollectors();
-        
-        launchPostgresCollectors();
-
-        launchDbQueriers();
-        
-        launchExternalMetricCollectors();
+        // jvm shutdown hook for jmx -- makes sure that jmx connections get closed before this program is terminated
+        if ((ApplicationConfiguration.getJmxMetricCollectors() != null) && !ApplicationConfiguration.getJmxMetricCollectors().isEmpty()) {
+            JmxJvmShutdownHook jmxJvmShutdownHook = new JmxJvmShutdownHook();
+            Runtime.getRuntime().addShutdownHook(jmxJvmShutdownHook);
+        }
         
         // start the 'output metrics' invoker thread
         Thread outputMetricsInvokerThread = new Thread(new OutputMetricsInvokerThread(ApplicationConfiguration.getOutputInterval()));
         outputMetricsInvokerThread.start();
        
         while(true) {
-            Threads.sleepSeconds(1000);
+            Threads.sleepSeconds(15);
+            launchCollectorThreads();
         }
         
     }
@@ -163,156 +154,366 @@ public class Driver {
         }
     }
 
+    private static void launchCollectorThreads() {
+        launchStatsPollerCollector();
+        launchLinuxCollectors();               
+        launchProcessCounterCollector();    
+        launchFileCountCollectors();
+        launchJmxCollectors();
+        launchApacheHttpCollectors();
+        launchCadvisorCollectors();
+        launchMongoCollectors();  
+        launchMysqlCollectors();
+        launchPostgresCollectors();
+        launchDbQueriers();
+        launchExternalMetricCollectors();
+    }
+    
     private static void launchStatsPollerCollector() {
         
-        // start StatsPoller's built-in metric collectors
-        Thread statsPollerCollectorsThread = new Thread(new StatsPollerNativeCollectorsThread(
-                ApplicationConfiguration.isStatsPollerEnableJavaMetricCollector(),
-                ApplicationConfiguration.getStatspollerJavaMetricCollectorCollectionInterval(), 
-                ApplicationConfiguration.getStatspollerMetricCollectorPrefix(), 
-                "./output/statspoller_native.out", ApplicationConfiguration.isOutputInternalMetricsToDisk(),
-                Version.getProjectVersion()));
+        String threadId;
+        Thread currentThread;
         
-        threadExecutor_.execute(statsPollerCollectorsThread);
+        threadId = "StatsPollerNative";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread statsPollerCollectorsThread = new Thread(new StatsPollerNativeCollectorsThread(
+                    ApplicationConfiguration.isStatsPollerEnableJavaMetricCollector(),
+                    ApplicationConfiguration.getStatspollerJavaMetricCollectorCollectionInterval(), 
+                    ApplicationConfiguration.getStatspollerMetricCollectorPrefix(), 
+                    "./output/statspoller_native.out", ApplicationConfiguration.isOutputInternalMetricsToDisk(),
+                    Version.getProjectVersion()));
+            statsPollerCollectorsThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, statsPollerCollectorsThread);
+            Threads.sleepMilliseconds(500);
+        }
+        
     }
     
     private static void launchFileCountCollectors() {
 
+        if (ApplicationConfiguration.getFileCounterMetricCollectors() == null) return;
+        
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
         for (FileCounterMetricCollector fileCounterMetricCollector : ApplicationConfiguration.getFileCounterMetricCollectors()) {
-            threadExecutor_.execute(fileCounterMetricCollector);
+            threadId = "FileCounter" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                Thread fileCounterMetricCollectorThread = new Thread(fileCounterMetricCollector);
+                fileCounterMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, fileCounterMetricCollectorThread);
+                Threads.sleepMilliseconds(250);
+            }
         }
         
     }
     
     private static void launchLinuxCollectors() {
         
-        // start StatsPoller's built-in linux metric collectors
+        if (!ApplicationConfiguration.isLinuxMetricCollectorEnable()) return;
         
-        Thread linuxConnectionsCollectorThread = new Thread(new ConnectionsCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Connections", "./output/linux_connections.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxConnectionsCollectorThread);
+        String threadId;
+        Thread currentThread;
         
-        Thread linuxCpuCollectorThread = new Thread(new CpuCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Cpu", "./output/linux_cpu.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxCpuCollectorThread);
+        threadId = "Linux.Connections";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxConnectionsCollectorThread = new Thread(new ConnectionsCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Connections", "./output/linux_connections.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxConnectionsCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxConnectionsCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread linuxNetworkCollectorThread = new Thread(new NetworkBandwidthCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Network-Bandwidth", "./output/linux_network_bandwidth.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxNetworkCollectorThread);
+        threadId = "Linux.Cpu";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxCpuCollectorThread = new Thread(new CpuCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(),
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Cpu", "./output/linux_cpu.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxCpuCollectorThread.start();;
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxCpuCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread linuxMemoryCollectorThread = new Thread(new MemoryCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Memory", "./output/linux_memory.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxMemoryCollectorThread);
+        threadId = "Linux.Network-Bandwidth";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxNetworkCollectorThread = new Thread(new NetworkBandwidthCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Network-Bandwidth", "./output/linux_network_bandwidth.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxNetworkCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxNetworkCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread linuxUptimeCollectorThread = new Thread(new UptimeCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Uptime", "./output/linux_uptime.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxUptimeCollectorThread);
+        threadId = "Linux.Memory";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxMemoryCollectorThread = new Thread(new MemoryCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Memory", "./output/linux_memory.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxMemoryCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxMemoryCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread linuxFileSystemCollectorThread = new Thread(new FileSystemCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.FileSystem", "./output/linux_filesystem.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxFileSystemCollectorThread);
+        threadId = "Linux.Uptime";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxUptimeCollectorThread = new Thread(new UptimeCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.Uptime", "./output/linux_uptime.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxUptimeCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxUptimeCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread linuxDiskIoCollectorThread = new Thread(new DiskIoCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.DiskIO", "./output/linux_disk_io.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(linuxDiskIoCollectorThread);
+        threadId = "Linux.FileSystem";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxFileSystemCollectorThread = new Thread(new FileSystemCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.FileSystem", "./output/linux_filesystem.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxFileSystemCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxFileSystemCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread processStatusCollectorThread = new Thread(new ProcessStatusCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
-                ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.ProcessStatus", "./output/linux_process_status.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk()));
-        threadExecutor_.execute(processStatusCollectorThread);
+        threadId = "Linux.DiskIO";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread linuxDiskIoCollectorThread = new Thread(new DiskIoCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.DiskIO", "./output/linux_disk_io.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            linuxDiskIoCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, linuxDiskIoCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
         
-        Thread processCounterCollectorThread = new Thread(new ProcessCounterCollector(true,
-                ApplicationConfiguration.getProcessCounterMetricCollectorCollectionInterval(), "ProcessCounter", "./output/linux_process_counter.out", 
-                ApplicationConfiguration.isOutputInternalMetricsToDisk(), ApplicationConfiguration.getProcessCounterPrefixesAndRegexes()));
-        threadExecutor_.execute(processCounterCollectorThread);
+        threadId = "Linux.ProcessStatus";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread processStatusCollectorThread = new Thread(new ProcessStatusCollector(ApplicationConfiguration.isLinuxMetricCollectorEnable(), 
+                    ApplicationConfiguration.getLinuxMetricCollectorCollectionInterval(), "Linux.ProcessStatus", "./output/linux_process_status.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk()));
+            processStatusCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, processStatusCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
+        
     }
     
+    private static void launchProcessCounterCollector() {
+        
+        String threadId;
+        Thread currentThread;
+        
+        threadId = "ProcessCounter";
+        currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+        if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+            if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+            Thread processCounterCollectorThread = new Thread(new ProcessCounterCollector(true,
+                    ApplicationConfiguration.getProcessCounterMetricCollectorCollectionInterval(), "ProcessCounter", "./output/linux_process_counter.out", 
+                    ApplicationConfiguration.isOutputInternalMetricsToDisk(), ApplicationConfiguration.getProcessCounterPrefixesAndRegexes()));
+            processCounterCollectorThread.start();
+            metricCollectorThreads_ByThreadId_.put(threadId, processCounterCollectorThread);
+            Threads.sleepMilliseconds(250);
+        }
+        
+    }
+        
     private static void launchJmxCollectors() {
         
-        // start 'jmx metric collector' threads
-        for (JmxMetricCollector jmxMetricCollector : ApplicationConfiguration.getJmxMetricCollectors()) {
-            threadExecutor_.execute(jmxMetricCollector);
-        }
+        if (ApplicationConfiguration.getJmxMetricCollectors() == null) return;
         
-        // jvm shutdown hook for jmx -- makes sure that jmx connections get closed before this program is terminated
-        if (!ApplicationConfiguration.getJmxMetricCollectors().isEmpty()) {
-            JmxJvmShutdownHook jmxJvmShutdownHook = new JmxJvmShutdownHook();
-            Runtime.getRuntime().addShutdownHook(jmxJvmShutdownHook);
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
+        for (JmxMetricCollector jmxMetricCollector : ApplicationConfiguration.getJmxMetricCollectors()) {
+            threadId = "JMX" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread jmxMetricCollectorThread = new Thread(jmxMetricCollector);
+                jmxMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, jmxMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
-    private static void launchApacheCollectors() {
-              
+    private static void launchApacheHttpCollectors() {
+        
+        if (ApplicationConfiguration.getApacheHttpMetricCollectors() == null) return;
+        
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
         for (ApacheHttpMetricCollector apacheHttpMetricCollector : ApplicationConfiguration.getApacheHttpMetricCollectors()) {
-            threadExecutor_.execute(apacheHttpMetricCollector);
-            Threads.sleepSeconds(1);
+            threadId = "ApacheHTTP" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread apacheHttpMetricCollectorThread = new Thread(apacheHttpMetricCollector);
+                apacheHttpMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, apacheHttpMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
     private static void launchCadvisorCollectors() {
-              
+        
+        if (ApplicationConfiguration.getCadvisorMetricCollectors() == null) return;
+
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
         for (CadvisorMetricCollector cadvisorMetricCollector : ApplicationConfiguration.getCadvisorMetricCollectors()) {
-            threadExecutor_.execute(cadvisorMetricCollector);
-            Threads.sleepSeconds(1);
+            threadId = "cAdvisor" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread cadvisorMetricCollectorThread = new Thread(cadvisorMetricCollector);
+                cadvisorMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, cadvisorMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
     private static void launchMongoCollectors() {
-              
+        
+        if (ApplicationConfiguration.getMongoMetricCollectors() == null) return;
+
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
         for (MongoMetricCollector mongoMetricCollector : ApplicationConfiguration.getMongoMetricCollectors()) {
-            threadExecutor_.execute(mongoMetricCollector);
+            threadId = "Mongo" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread mongoMetricCollectorThread = new Thread(mongoMetricCollector);
+                mongoMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, mongoMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
     private static void launchMysqlCollectors() {
-              
+        
+        if (ApplicationConfiguration.getMysqlMetricCollectors() == null) return;
+        
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
         for (MysqlMetricCollector mysqlMetricCollector : ApplicationConfiguration.getMysqlMetricCollectors()) {
-            threadExecutor_.execute(mysqlMetricCollector);
+            threadId = "MySQL" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread mysqlMetricCollectorThread = new Thread(mysqlMetricCollector);
+                mysqlMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, mysqlMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
     private static void launchPostgresCollectors() {
-              
+        
+        if (ApplicationConfiguration.getPostgresMetricCollectors() == null) return;
+        
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+         
         for (PostgresMetricCollector postgresMetricCollector : ApplicationConfiguration.getPostgresMetricCollectors()) {
-            threadExecutor_.execute(postgresMetricCollector);
+            threadId = "Postgres" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread postgresMetricCollectorThread = new Thread(postgresMetricCollector);
+                postgresMetricCollectorThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, postgresMetricCollectorThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
     
     private static void launchDbQueriers() {
-              
-        for (DbQuerier ddbQuerier : ApplicationConfiguration.getDbQueriers()) {
-            threadExecutor_.execute(ddbQuerier);
+        
+        if (ApplicationConfiguration.getDbQueriers() == null) return;
+        
+        String threadId;
+        Thread currentThread;
+        int counter = 1;
+        
+        for (DbQuerier dbQuerier : ApplicationConfiguration.getDbQueriers()) {
+            threadId = "DB-Querier" + "-" + counter++;
+            currentThread = metricCollectorThreads_ByThreadId_.get(threadId);
+            
+            if ((currentThread == null) || (!currentThread.isAlive() && currentThread.getState().toString().equals("TERMINATED"))) {
+                if ((currentThread != null) && !currentThread.isAlive()) logger.warn("Dead Metric Collector Thread Detected. ThreadID=" + threadId);
+                Thread dbQuerierThread = new Thread(dbQuerier);
+                dbQuerierThread.start();
+                metricCollectorThreads_ByThreadId_.put(threadId, dbQuerierThread);
+                Threads.sleepSeconds(1);
+            }
         }
         
     }
-        
+     
+    // start 'metric collector' threads & the corresponding 'read from output file' threads
     private static void launchExternalMetricCollectors() {
         
-        // start 'metric collector' threads & the corresponding 'read from output file' threads
+        if (ApplicationConfiguration.getExternalMetricCollectors() == null) return;
+
         for (ExternalMetricCollector metricCollector : ApplicationConfiguration.getExternalMetricCollectors()) {
             logger.info("Message=\"Starting metric collector\", Collector=\"" + metricCollector.getMetricPrefix() + "\"");
             Thread metricCollectorExecuterThread = new Thread(new ExternalMetricCollectorExecuterThread(metricCollector));
-            threadExecutor_.execute(metricCollectorExecuterThread);
+            metricCollectorExecuterThread.start();
             
             Threads.sleepMilliseconds(500);
             
             Thread readMetricsFromFileThread = new Thread(new ReadMetricsFromFileThread(metricCollector.getFileFromOutputPathAndFilename(), 
                     ApplicationConfiguration.getCheckOutputFilesInterval(), metricCollector.getMetricPrefix()));
-            threadExecutor_.execute(readMetricsFromFileThread);
-            
+            readMetricsFromFileThread.start();
+                  
             Threads.sleepSeconds(1);
         }
         
