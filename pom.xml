@@ -412,7 +412,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.4.3</version>
+            <version>3.5.0</version>
         </dependency>
 
         <dependency>
@@ -430,7 +430,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>1.6.3</version>
+            <version>1.6.4</version>
         </dependency>
         
         <dependency>
