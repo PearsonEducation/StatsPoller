@@ -75,9 +75,9 @@ public class CAdvisorMetricCollectorTest {
         for (Docker docker : dockers) {
             Stat latestStat = CadvisorMetricCollector.getLatestStatForDocker(docker);
             Date statTimestamp = getDateFromTimestampString(latestStat.getTimestamp());
-            StatMetadata statMetadata = new StatMetadata(docker, latestStat, statTimestamp, machine);
+            CurrentStatMetadata currentStatMetadata = new CurrentStatMetadata(docker, latestStat, statTimestamp, machine);
             List<OpenTsdbTag> openTsdbTags = CadvisorMetricCollector.getOpenTsdbTags(docker);
-            List<OpenTsdbMetric> openTsdbMetrics = CadvisorMetricCollector.getDockerStatsMetrics_Memory(statMetadata, "MyPrefix", openTsdbTags);
+            List<OpenTsdbMetric> openTsdbMetrics = CadvisorMetricCollector.getDockerStatsMetrics_Memory(currentStatMetadata, "MyPrefix", openTsdbTags);
         }
     }
     
