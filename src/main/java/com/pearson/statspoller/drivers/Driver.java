@@ -79,8 +79,17 @@ public class Driver {
         Thread outputMetricsInvokerThread = new Thread(new OutputMetricsInvokerThread(ApplicationConfiguration.getOutputInterval()));
         outputMetricsInvokerThread.start();
        
+        // maintainance loop -- relauches crashed threads, occasionally GCs, etc
+        int i = 0;
         while(true) {
             Threads.sleepSeconds(15);
+            
+            if (i >= 12) { // every 3mins...
+                System.gc(); // cleans up any leaked resources, keeps process memory usage down
+                i = 0;
+            }
+            else i++;
+            
             launchCollectorThreads();
         }
         
