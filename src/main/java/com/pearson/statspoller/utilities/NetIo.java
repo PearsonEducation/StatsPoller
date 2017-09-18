@@ -30,7 +30,7 @@ public class NetIo {
             
             if (i > 0) {
                 Threads.sleepSeconds(nSecondsBetweenRetries);
-                logger.info("Download Request Retry #" + i);
+                logger.info("Download Request Retry #" + i + " for url=\"" + urlString + "\"");
             }
 
             webpageString = NetIo.downloadUrl(urlString, useDebugLevelLogging);

@@ -87,6 +87,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
 
             long routineStartTime = System.currentTimeMillis();
             long routineTimeElapsed = -1;
+            boolean didConnectToCadvisor = false;
             
             try {      
                 List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
@@ -99,6 +100,10 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                 // get raw machine metric & serialize into java objects
                 String machineJson = getCadvisorMachineJson();
                 Machine machine = parseCadvisorMachineJson(machineJson);
+                
+                if ((dockers != null) && !dockers.isEmpty() && (machine != null) && (machine.getSystemUuid() != null) && !machine.getSystemUuid().isEmpty()) {
+                    didConnectToCadvisor = true;
+                }
                 
                 // for each docker container, get metrics
                 for (Docker docker : dockers) {
@@ -163,12 +168,15 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                 routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
 
                 logger.info("Finished cAdvisor metric collection routine. cAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\"" +
-                        ", ConnectionSuccess=" + true +
+                        ", ConnectionSuccess=" + didConnectToCadvisor +
                         ", cAdvisorMetricsCollected=" + openTsdbMetrics.size() +
                         ", cAdvisorMetricCollectionTime=" + routineTimeElapsed);
             }
             catch (Exception e) {
                 logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                logger.info("Finished cAdvisor metric collection routine. cAdvisorLocation=\"" + protocol_ + "://" + host_ + ":" + port_ + "\"" +
+                        ", ConnectionSuccess=" + didConnectToCadvisor +
+                        ", cAdvisorMetricCollectionTime=" + routineTimeElapsed);
             }
             
             if (routineTimeElapsed == -1) routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
