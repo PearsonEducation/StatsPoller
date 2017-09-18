@@ -26,15 +26,15 @@ public class Machine {
     @SerializedName("boot_id")
     @Expose
     private String bootId;
-    @SerializedName("filesystems")
-    @Expose
-    private List<Filesystem> filesystems = new ArrayList<Filesystem>();
-    @SerializedName("network_devices")
-    @Expose
-    private List<NetworkDevice> networkDevices = new ArrayList<NetworkDevice>();
-    @SerializedName("topology")
-    @Expose
-    private List<Topology> topology = new ArrayList<Topology>();
+//    @SerializedName("filesystems")
+//    @Expose
+//    private List<Filesystem> filesystems = new ArrayList<Filesystem>();
+//    @SerializedName("network_devices")
+//    @Expose
+//    private List<NetworkDevice> networkDevices = new ArrayList<NetworkDevice>();
+//    @SerializedName("topology")
+//    @Expose
+//    private List<Topology> topology = new ArrayList<Topology>();
     @SerializedName("cloud_provider")
     @Expose
     private String cloudProvider;
@@ -93,29 +93,29 @@ public class Machine {
         this.bootId = bootId;
     }
 
-    public List<Filesystem> getFilesystems() {
-        return filesystems;
-    }
-
-    public void setFilesystems(List<Filesystem> filesystems) {
-        this.filesystems = filesystems;
-    }
-
-    public List<NetworkDevice> getNetworkDevices() {
-        return networkDevices;
-    }
-
-    public void setNetworkDevices(List<NetworkDevice> networkDevices) {
-        this.networkDevices = networkDevices;
-    }
-
-    public List<Topology> getTopology() {
-        return topology;
-    }
-
-    public void setTopology(List<Topology> topology) {
-        this.topology = topology;
-    }
+//    public List<Filesystem> getFilesystems() {
+//        return filesystems;
+//    }
+//
+//    public void setFilesystems(List<Filesystem> filesystems) {
+//        this.filesystems = filesystems;
+//    }
+//
+//    public List<NetworkDevice> getNetworkDevices() {
+//        return networkDevices;
+//    }
+//
+//    public void setNetworkDevices(List<NetworkDevice> networkDevices) {
+//        this.networkDevices = networkDevices;
+//    }
+//
+//    public List<Topology> getTopology() {
+//        return topology;
+//    }
+//
+//    public void setTopology(List<Topology> topology) {
+//        this.topology = topology;
+//    }
 
     public String getCloudProvider() {
         return cloudProvider;

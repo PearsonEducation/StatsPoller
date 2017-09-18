@@ -10,16 +10,16 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Jeffrey Schmidt
  */
-public class StatMetadata {
+public class CurrentStatMetadata {
     
-    private static final Logger logger = LoggerFactory.getLogger(StatMetadata.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(CurrentStatMetadata.class.getName());
 
     private final Docker docker_;
     private final Stat stat_;
     private final Date timestamp_;
     private final Machine machine_;
     
-    public StatMetadata(Docker docker, Stat stat, Date timestamp, Machine machine) {
+    public CurrentStatMetadata(Docker docker, Stat stat, Date timestamp, Machine machine) {
         this.docker_ = docker;
         this.stat_ = stat;
         this.timestamp_ = timestamp;

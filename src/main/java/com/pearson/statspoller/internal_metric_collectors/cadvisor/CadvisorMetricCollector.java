@@ -5,11 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Docker;
-import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Filesystem;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Memory_;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Network;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Stat;
-import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.TaskStats;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.machine_json.Machine;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
@@ -57,7 +55,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     private final String password_;
     private final String apiVersion_;
     
-    private Map<String,StatMetadata> previousStatMetadatas_ByDockerId_ = new HashMap<>();
+    private Map<String,PreviousStatMetadata> previousStatMetadatas_ByDockerId_ = new HashMap<>();
     
     public CadvisorMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
                 String outputFilePathAndFilename, boolean writeOutputFiles,
@@ -92,8 +90,8 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
             
             try {      
                 List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
-                Map<String,StatMetadata> currentStatMetadatas_ByDockerId = new HashMap<>();
-
+                Map<String,PreviousStatMetadata> previousStatMetadatas_ByDockerId = new HashMap<>();
+                
                 // get raw docker metrics & serialize into java objects
                 String dockerJson = getCadvisorDockerJson();
                 List<Docker> dockers = parseCadvisorDockerJson(dockerJson);
@@ -107,13 +105,16 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                     if ((docker == null) || (docker.getId() == null) || docker.getId().isEmpty() || (docker.getSpec() == null) || (docker.getStats() == null)) continue;
                     if (machine == null) continue;
                     
-                    StatMetadata previousStatMetadata = previousStatMetadatas_ByDockerId_.get(docker.getId());
+                    PreviousStatMetadata previousStatMetadata_CurrentIteration = previousStatMetadatas_ByDockerId_.get(docker.getId());
                                         
                     // get timestamp
                     Stat latestStat = getLatestStatForDocker(docker);
                     Date statTimestamp = getDateFromTimestampString(latestStat.getTimestamp());
-                    StatMetadata statMetadata = new StatMetadata(docker, latestStat, statTimestamp, machine);
-                    currentStatMetadatas_ByDockerId.put(docker.getId(), statMetadata);
+                    
+                    // create StatsMetadata objects. The 'previous' one one is stored for use in the next iteration, of this metric collector 
+                    CurrentStatMetadata currentStatMetadata = new CurrentStatMetadata(docker, latestStat, statTimestamp, machine);
+                    PreviousStatMetadata previousStatMetadata_NextIteration = new PreviousStatMetadata(latestStat, statTimestamp, machine);
+                    previousStatMetadatas_ByDockerId.put(docker.getId(), previousStatMetadata_NextIteration);
                     
                     // get metric prefix
                     String cadvisorScopedMetricPrefix = getCadvisorScopedMetricPrefix(docker);
@@ -124,38 +125,38 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
                     
                     // get memory metrics
                     if ((docker.getSpec().getHasMemory() != null) && docker.getSpec().getHasMemory()) {
-                        List<OpenTsdbMetric> cadvisorDockerMemory_OpenTsdbMetrics = getDockerStatsMetrics_Memory(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
+                        List<OpenTsdbMetric> cadvisorDockerMemory_OpenTsdbMetrics = getDockerStatsMetrics_Memory(currentStatMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
                         if (cadvisorDockerMemory_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerMemory_OpenTsdbMetrics);
                     }
                     
-                    //// get filesystem metrics -- needs better example metrics
+                    //// get filesystem metrics -- disabled because this doesn't seem to work at all
                     ///if ((docker.getSpec().getHasFilesystem() != null) && docker.getSpec().getHasFilesystem()) {
                     //    List<OpenTsdbMetric> cadvisorDockerFilesystem_OpenTsdbMetrics = getDockerStatsMetrics_Filesystem(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
                     //    if (cadvisorDockerFilesystem_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerFilesystem_OpenTsdbMetrics);
                     //}
                     
                     // get network metrics
-                    if ((previousStatMetadata != null) && (docker.getSpec().getHasNetwork() != null) && docker.getSpec().getHasNetwork()) {
-                        List<OpenTsdbMetric> cadvisorDockerNetwork_OpenTsdbMetrics = getDockerStatsMetrics_Network(statMetadata, previousStatMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
+                    if ((previousStatMetadata_CurrentIteration != null) && (docker.getSpec().getHasNetwork() != null) && docker.getSpec().getHasNetwork()) {
+                        List<OpenTsdbMetric> cadvisorDockerNetwork_OpenTsdbMetrics = getDockerStatsMetrics_Network(currentStatMetadata, previousStatMetadata_CurrentIteration, cadvisorScopedMetricPrefix, openTsdbTags);
                         if (cadvisorDockerNetwork_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerNetwork_OpenTsdbMetrics);
                     }
                     
-                    // get task stats metrics
+                    // get task stats metrics -- disabled because these always seem to be 0
                     //List<OpenTsdbMetric> cadvisorDockerTaskStats_OpenTsdbMetrics = getDockerStatsMetrics_TaskStats(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
                     //if (cadvisorDockerTaskStats_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerTaskStats_OpenTsdbMetrics);
                     
                     // get container uptime metrics
-                    List<OpenTsdbMetric> cadvisorDockerUptime_OpenTsdbMetrics = getDockerStatsMetrics_Uptime(statMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
+                    List<OpenTsdbMetric> cadvisorDockerUptime_OpenTsdbMetrics = getDockerStatsMetrics_Uptime(currentStatMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
                     if (cadvisorDockerUptime_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerUptime_OpenTsdbMetrics);
                     
                     // get cpu metrics
-                    if ((previousStatMetadata != null) && (docker.getSpec().getHasCpu() != null) && docker.getSpec().getHasCpu()) {
-                        List<OpenTsdbMetric> cadvisorDockerCpu_OpenTsdbMetrics = getDockerStatsMetrics_Cpu(statMetadata, previousStatMetadata, cadvisorScopedMetricPrefix, openTsdbTags);
+                    if ((previousStatMetadata_CurrentIteration != null) && (docker.getSpec().getHasCpu() != null) && docker.getSpec().getHasCpu()) {
+                        List<OpenTsdbMetric> cadvisorDockerCpu_OpenTsdbMetrics = getDockerStatsMetrics_Cpu(currentStatMetadata, previousStatMetadata_CurrentIteration, cadvisorScopedMetricPrefix, openTsdbTags);
                         if (cadvisorDockerCpu_OpenTsdbMetrics != null) openTsdbMetrics.addAll(cadvisorDockerCpu_OpenTsdbMetrics);
                     }
                 }
                 
-                previousStatMetadatas_ByDockerId_ = currentStatMetadatas_ByDockerId;
+                previousStatMetadatas_ByDockerId_ = previousStatMetadatas_ByDockerId;
 
                 super.outputOpenTsdbMetrics(openTsdbMetrics);
 
@@ -397,7 +398,7 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         return latestStat;
     }
     
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Cpu(StatMetadata currentStatMetadata, StatMetadata previousStatMetadata, 
+    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Cpu(CurrentStatMetadata currentStatMetadata, PreviousStatMetadata previousStatMetadata, 
             String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
         if ((currentStatMetadata == null) || currentStatMetadata.areCoreFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areCoreFieldsNull() ) {
@@ -467,19 +468,19 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         return openTsdbMetrics;
     }   
     
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Memory(StatMetadata statMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
+    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Memory(CurrentStatMetadata currentStatMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
-        if ((statMetadata == null) || (statMetadata.getDocker() == null) || (statMetadata.getStat() == null) || (statMetadata.getTimestamp() == null)) {
+        if ((currentStatMetadata == null) || (currentStatMetadata.getDocker() == null) || (currentStatMetadata.getStat() == null) || (currentStatMetadata.getTimestamp() == null)) {
             return new ArrayList<>();
         }
         
         List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
 
         try {
-            Date timestamp = getDateFromTimestampString(statMetadata.getStat().getTimestamp()) ;
+            Date timestamp = getDateFromTimestampString(currentStatMetadata.getStat().getTimestamp()) ;
             if (timestamp == null) return openTsdbMetrics;
 
-            Memory_ memory = statMetadata.getStat().getMemory();
+            Memory_ memory = currentStatMetadata.getStat().getMemory();
             if (memory == null) return openTsdbMetrics;
 
             if (memory.getWorkingSet() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.WorkingSet-Bytes", timestamp.getTime(), new BigDecimal(memory.getWorkingSet()), openTsdbTags));
@@ -494,15 +495,15 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
             if ((memory.getHierarchicalData() != null) && (memory.getHierarchicalData().getPgfault() != null)) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.PageFault-Hierarchical-Count", timestamp.getTime(), new BigDecimal(memory.getHierarchicalData().getPgfault()), openTsdbTags));
             if ((memory.getHierarchicalData() != null) && (memory.getHierarchicalData().getPgmajfault() != null)) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.PageFaultMajor-Hierarchical-Count", timestamp.getTime(), new BigDecimal(memory.getHierarchicalData().getPgmajfault()), openTsdbTags));
 
-            if ((statMetadata.getDocker().getSpec() == null) || (statMetadata.getDocker().getSpec().getMemory() == null) || (statMetadata.getDocker().getSpec().getMemory().getReservation() == null)) return openTsdbMetrics;
-            Long memorySoftLimit = (statMetadata.getDocker().getSpec().getMemory().getReservation() > statMetadata.getMachine().getMemoryCapacity()) ? statMetadata.getMachine().getMemoryCapacity() : statMetadata.getDocker().getSpec().getMemory().getReservation();
+            if ((currentStatMetadata.getDocker().getSpec() == null) || (currentStatMetadata.getDocker().getSpec().getMemory() == null) || (currentStatMetadata.getDocker().getSpec().getMemory().getReservation() == null)) return openTsdbMetrics;
+            Long memorySoftLimit = (currentStatMetadata.getDocker().getSpec().getMemory().getReservation() > currentStatMetadata.getMachine().getMemoryCapacity()) ? currentStatMetadata.getMachine().getMemoryCapacity() : currentStatMetadata.getDocker().getSpec().getMemory().getReservation();
             if ((memorySoftLimit != null) && (memory.getUsage() != null) && (memorySoftLimit != 0)) {
                 BigDecimal memoryUsageRelativeToSoftLimitPercent = new BigDecimal(memory.getUsage()).divide(new BigDecimal(memorySoftLimit), SCALE, ROUNDING_MODE).multiply(ONE_HUNDRED);
                 openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.UsageRelativeToSoftLimit-Pct", timestamp.getTime(), memoryUsageRelativeToSoftLimitPercent, openTsdbTags));
             }
             
-            if ((statMetadata.getDocker().getSpec() == null) || (statMetadata.getDocker().getSpec().getMemory() == null) || (statMetadata.getDocker().getSpec().getMemory().getLimit() == null)) return openTsdbMetrics;
-            Long memoryHardLimit = (statMetadata.getDocker().getSpec().getMemory().getLimit() > statMetadata.getMachine().getMemoryCapacity()) ? statMetadata.getMachine().getMemoryCapacity() : statMetadata.getDocker().getSpec().getMemory().getLimit();
+            if ((currentStatMetadata.getDocker().getSpec() == null) || (currentStatMetadata.getDocker().getSpec().getMemory() == null) || (currentStatMetadata.getDocker().getSpec().getMemory().getLimit() == null)) return openTsdbMetrics;
+            Long memoryHardLimit = (currentStatMetadata.getDocker().getSpec().getMemory().getLimit() > currentStatMetadata.getMachine().getMemoryCapacity()) ? currentStatMetadata.getMachine().getMemoryCapacity() : currentStatMetadata.getDocker().getSpec().getMemory().getLimit();
             if ((memoryHardLimit != null) && (memory.getUsage() != null) && (memoryHardLimit != 0)) {
                 BigDecimal memoryUsageRelativeToHardLimitPercent = new BigDecimal(memory.getUsage()).divide(new BigDecimal(memoryHardLimit), SCALE, ROUNDING_MODE).multiply(ONE_HUNDRED);
                 openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Memory.UsageRelativeToHardLimit-Pct", timestamp.getTime(), memoryUsageRelativeToHardLimitPercent, openTsdbTags));
@@ -515,44 +516,44 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         return openTsdbMetrics;
     }
     
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_TaskStats(StatMetadata statMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
-        
-        if ((statMetadata == null) || (statMetadata.getDocker() == null) || (statMetadata.getStat() == null) || (statMetadata.getTimestamp() == null)) {
-            return new ArrayList<>();
-        }
-        
-        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
-
-        try {
-            Date timestamp = getDateFromTimestampString(statMetadata.getStat().getTimestamp()) ;
-            if (timestamp == null) return openTsdbMetrics;
-
-            TaskStats taskStats = statMetadata.getStat().getTaskStats();
-            if (taskStats == null) return openTsdbMetrics;
-
-            if (taskStats.getNrIoWait() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.WaitingOnIo-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrIoWait()), openTsdbTags));
-            if (taskStats.getNrRunning() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Running-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrRunning()), openTsdbTags));
-            if (taskStats.getNrSleeping() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Sleeping-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrSleeping()), openTsdbTags));
-            if (taskStats.getNrStopped() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Stopped-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrStopped()), openTsdbTags));
-            if (taskStats.getNrUninterruptible() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Uninterruptible-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrUninterruptible()), openTsdbTags));
-        }
-        catch (Exception e) {
-            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-        }
-        
-        return openTsdbMetrics;
-    }
+//    protected static List<OpenTsdbMetric> getDockerStatsMetrics_TaskStats(StatMetadata currentStatMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
+//        
+//        if ((currentStatMetadata == null) || (currentStatMetadata.getDocker() == null) || (currentStatMetadata.getStat() == null) || (currentStatMetadata.getTimestamp() == null)) {
+//            return new ArrayList<>();
+//        }
+//        
+//        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
+//
+//        try {
+//            Date timestamp = getDateFromTimestampString(currentStatMetadata.getStat().getTimestamp()) ;
+//            if (timestamp == null) return openTsdbMetrics;
+//
+//            TaskStats taskStats = currentStatMetadata.getStat().getTaskStats();
+//            if (taskStats == null) return openTsdbMetrics;
+//
+//            if (taskStats.getNrIoWait() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.WaitingOnIo-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrIoWait()), openTsdbTags));
+//            if (taskStats.getNrRunning() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Running-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrRunning()), openTsdbTags));
+//            if (taskStats.getNrSleeping() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Sleeping-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrSleeping()), openTsdbTags));
+//            if (taskStats.getNrStopped() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Stopped-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrStopped()), openTsdbTags));
+//            if (taskStats.getNrUninterruptible() != null) openTsdbMetrics.add(new OpenTsdbMetric(cadvisorScopedMetricPrefix + ".Tasks.Uninterruptible-Count", timestamp.getTime(), new BigDecimal(taskStats.getNrUninterruptible()), openTsdbTags));
+//        }
+//        catch (Exception e) {
+//            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+//        }
+//        
+//        return openTsdbMetrics;
+//    }
     
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Uptime(StatMetadata statMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
+    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Uptime(CurrentStatMetadata currentStatMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
-        if ((statMetadata == null) || (statMetadata.getDocker() == null)) {
+        if ((currentStatMetadata == null) || (currentStatMetadata.getDocker() == null)) {
             return new ArrayList<>();
         }
         
         List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
 
         try {
-            Date creationTimestamp = getDateFromTimestampString(statMetadata.getDocker().getSpec().getCreationTime());
+            Date creationTimestamp = getDateFromTimestampString(currentStatMetadata.getDocker().getSpec().getCreationTime());
             if (creationTimestamp == null) return openTsdbMetrics;
 
             long currentTime = System.currentTimeMillis();
@@ -566,37 +567,36 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
         return openTsdbMetrics;
     }
     
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Filesystem(StatMetadata statMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
-        
-        if ((statMetadata == null) || statMetadata.areCoreFieldsNull()) {
-            return new ArrayList<>();
-        }
-        
-        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
-
-        try {
-            Date timestamp = getDateFromTimestampString(statMetadata.getStat().getTimestamp()) ;
-            if (timestamp == null) return openTsdbMetrics;
-
-            List<Filesystem> filesystems = statMetadata.getStat().getFilesystem();
-            if (filesystems == null) return openTsdbMetrics;
-
-            for (Filesystem filesystem : filesystems) {
-                if (filesystem == null) continue;
-                if ((filesystem.getCapacity() == null) || (filesystem.getCapacity() <= 0)) continue;
-                
-                // fill in the rest of the metrics...
-            }
-        }
-        catch (Exception e) {
-            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-        }
-        
-        return openTsdbMetrics;
-    }
+//    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Filesystem(StatMetadata currentStatMetadata, String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
+//        
+//        if ((currentStatMetadata == null) || currentStatMetadata.areCoreFieldsNull()) {
+//            return new ArrayList<>();
+//        }
+//        
+//        List<OpenTsdbMetric> openTsdbMetrics = new ArrayList<>();
+//
+//        try {
+//            Date timestamp = getDateFromTimestampString(currentStatMetadata.getStat().getTimestamp()) ;
+//            if (timestamp == null) return openTsdbMetrics;
+//
+//            List<Filesystem> filesystems = currentStatMetadata.getStat().getFilesystem();
+//            if (filesystems == null) return openTsdbMetrics;
+//
+//            for (Filesystem filesystem : filesystems) {
+//                if (filesystem == null) continue;
+//                if ((filesystem.getCapacity() == null) || (filesystem.getCapacity() <= 0)) continue;
+//                
+//                // fill in the rest of the metrics...
+//            }
+//        }
+//        catch (Exception e) {
+//            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+//        }
+//        
+//        return openTsdbMetrics;
+//    }
     
-    
-    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Network(StatMetadata currentStatMetadata, StatMetadata previousStatMetadata, 
+    protected static List<OpenTsdbMetric> getDockerStatsMetrics_Network(CurrentStatMetadata currentStatMetadata, PreviousStatMetadata previousStatMetadata, 
             String cadvisorScopedMetricPrefix, List<OpenTsdbTag> openTsdbTags) {
         
         if ((currentStatMetadata == null) || currentStatMetadata.areCoreFieldsNull() || (previousStatMetadata == null) || previousStatMetadata.areCoreFieldsNull()) {
