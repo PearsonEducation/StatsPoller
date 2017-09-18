@@ -1,5 +1,7 @@
 Release 2.4
  * Automatic thread recovery (if a metric collector thread crashes)
+ * Staggered thread launching to reduce peak memory usage
+ * Improvements to 'cAdvisor' metric collector to reduce memory usage 
 
 Release 2.3.1
  * JMX collector hardening
