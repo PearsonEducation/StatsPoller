@@ -11,6 +11,7 @@ import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.S
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.machine_json.Machine;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
+import com.pearson.statspoller.utilities.HttpRequest;
 import com.pearson.statspoller.utilities.JsonUtils;
 import com.pearson.statspoller.utilities.NetIo;
 import com.pearson.statspoller.utilities.StackTrace;
@@ -188,13 +189,15 @@ public class CadvisorMetricCollector extends InternalCollectorFramework implemen
     
     protected String getCadvisorDockerJson() {
         String url = protocol_ + "://" + host_ + ":" + port_ + "/api/" + apiVersion_ + "/docker/";
-        String docker_RawJson = NetIo.downloadUrl(url, 1, 1, true);
+        HttpRequest httpRequest = new HttpRequest(url, new HashMap<String,String>(), new String("").getBytes(), "GET", 5000, 8000, 1, true);
+        String docker_RawJson = httpRequest.makeRequest();
         return docker_RawJson;
     }   
     
     protected String getCadvisorMachineJson() {
         String url = protocol_ + "://" + host_ + ":" + port_ + "/api/" + apiVersion_ + "/machine/";
-        String machine_RawJson = NetIo.downloadUrl(url, 1, 1, true);
+        HttpRequest httpRequest = new HttpRequest(url, new HashMap<String,String>(), new String("").getBytes(), "GET", 5000, 8000, 1, true);
+        String machine_RawJson = httpRequest.makeRequest();
         return machine_RawJson;
     }   
     
