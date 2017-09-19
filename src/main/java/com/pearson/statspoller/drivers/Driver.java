@@ -5,8 +5,6 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.pearson.statspoller.internal_metric_collectors.statspoller_native.StatsPollerNativeCollectorsThread;
 import java.io.File;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import com.pearson.statspoller.globals.ApplicationConfiguration;
 import com.pearson.statspoller.external_metric_collectors.ExternalMetricCollectorExecuterThread;
 import com.pearson.statspoller.output.OutputMetricsInvokerThread;
