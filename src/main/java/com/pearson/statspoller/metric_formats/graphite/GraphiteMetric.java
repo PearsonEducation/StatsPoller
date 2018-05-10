@@ -1,13 +1,13 @@
 package com.pearson.statspoller.metric_formats.graphite;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import com.pearson.statspoller.metric_formats.GenericMetricFormat;
 import com.pearson.statspoller.metric_formats.influxdb.InfluxdbMetricFormat_v1;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetricFormat;
 import com.pearson.statspoller.utilities.StackTrace;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -35,7 +35,7 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
         this.metricPath_ = metricPath;
         this.metricValue_ = metricValue;
         this.metricTimestamp_ = metricTimestamp;
-        this.metricReceivedTimestampInMilliseconds_ = metricTimestamp * 1000;
+        this.metricReceivedTimestampInMilliseconds_ = ((long) metricTimestamp) * 1000;
         
         this.isMetricTimestampInSeconds_ = true;
     }
