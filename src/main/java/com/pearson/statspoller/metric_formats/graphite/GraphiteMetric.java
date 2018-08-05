@@ -1,5 +1,8 @@
 package com.pearson.statspoller.metric_formats.graphite;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import com.pearson.statspoller.metric_formats.GenericMetricFormat;
 import com.pearson.statspoller.metric_formats.influxdb.InfluxdbMetricFormat_v1;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
