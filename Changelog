@@ -1,3 +1,7 @@
+Release 2.5
+ * Improved Java9/10 compatibility
+ * Bug fixes
+
 Release 2.4
  * Automatic thread recovery (if a metric collector thread crashes)
  * Staggered thread launching to reduce peak memory usage
