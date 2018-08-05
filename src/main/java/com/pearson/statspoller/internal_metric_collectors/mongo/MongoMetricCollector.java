@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.MongoClient;
@@ -15,13 +13,15 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import com.pearson.statspoller.utilities.core_utils.KeyValue;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map.Entry;
 import org.apache.commons.lang.StringUtils;
-import org.boon.Pair;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 
@@ -235,14 +235,14 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         try {
             document = filterDocument(document, origin);
 
-            List<Pair<String, BigDecimal>> metrics = new ArrayList<>();
+            List<KeyValue<String, BigDecimal>> metrics = new ArrayList<>();
             metrics = buildMetrics(origin, document, metrics);
 
             int metricTimestamp = ((int) (System.currentTimeMillis() / 1000));
 
-            for (Pair<String, BigDecimal> pair : metrics) {
-                String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(pair.getFirst(), true, true);
-                graphiteMetrics.add(new GraphiteMetric(graphiteFriendlyMetricPath, pair.getSecond(), metricTimestamp));
+            for (KeyValue<String, BigDecimal> keyValue : metrics) {
+                String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(keyValue.getKey(), true, true);
+                graphiteMetrics.add(new GraphiteMetric(graphiteFriendlyMetricPath, keyValue.getValue(), metricTimestamp));
             }
         }
         catch (Exception e) {
@@ -303,7 +303,7 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         return documentCopy;
     }
 
-    private List<Pair<String, BigDecimal>> buildMetrics(String start, Document document, List<Pair<String, BigDecimal>> metrics) {
+    private List<KeyValue<String, BigDecimal>> buildMetrics(String start, Document document, List<KeyValue<String, BigDecimal>> metrics) {
 
         if ((start == null) || (document == null) || document.isEmpty()) {
             return new ArrayList<>();
@@ -317,10 +317,10 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
                 if ((documentCopy.get(key) instanceof Integer) || (documentCopy.get(key) instanceof Double) || (documentCopy.get(key) instanceof Long)) {
                     if (start.isEmpty()) {
-                        metrics.add(new Pair(key, new BigDecimal(documentCopy.get(key).toString())));
+                        metrics.add(new KeyValue(key, new BigDecimal(documentCopy.get(key).toString())));
                     }
                     else {
-                        metrics.add(new Pair(start + "." + key, new BigDecimal(documentCopy.get(key).toString())));
+                        metrics.add(new KeyValue(start + "." + key, new BigDecimal(documentCopy.get(key).toString())));
                     }
                 }
                 else if (entry.getValue() instanceof Document) {
@@ -412,48 +412,48 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         ArrayList<Document> members = (ArrayList<Document>) replSetStatus.get("members");
 
         Date primary = null;
-        ArrayList<Pair<String, Date>> secondaries = new ArrayList();
-        ArrayList<Pair<String, Date>> startup2 = new ArrayList();
-        ArrayList<Pair<String, Date>> recovering = new ArrayList();
+        ArrayList<KeyValue<String, Date>> secondaries = new ArrayList();
+        ArrayList<KeyValue<String, Date>> startup2 = new ArrayList();
+        ArrayList<KeyValue<String, Date>> recovering = new ArrayList();
         for (Document mem : members) {
             if (mem.get("stateStr").toString().equalsIgnoreCase("PRIMARY")) {
                 primary = new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString());
             }
             else if (mem.get("stateStr").toString().contains("SECONDARY")) {
-                Pair<String, Date> temp = new Pair(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
+                KeyValue<String, Date> temp = new KeyValue(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
                 secondaries.add(temp);
             }
             else if (mem.get("stateStr").toString().equalsIgnoreCase("STARTUP2")) {
-                Pair<String, Date> temp = new Pair(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
+                KeyValue<String, Date> temp = new KeyValue(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
                 startup2.add(temp);
             }
             else if (mem.get("stateStr").toString().equalsIgnoreCase("RECOVERING")) {
-                Pair<String, Date> temp = new Pair(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
+                KeyValue<String, Date> temp = new KeyValue(mem.get("name").toString().replaceAll("\\.", "-").replaceAll(":", "_"), new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(mem.get("optimeDate").toString()));
                 recovering.add(temp);
             }
         }
 
         if (primary != null) {
-            for (Pair<String, Date> pair : secondaries) {
-                Long diff = primary.getTime() - pair.getSecond().getTime();
+            for (KeyValue<String, Date> keyValue : secondaries) {
+                Long diff = primary.getTime() - keyValue.getValue().getTime();
                 long headroom = (timeDiff * 1000) - diff;
 
-                result.append("replicationLag-Sec.secondary." + pair.getFirst(), diff / 1000);
-                result.append("replicationHeadroom-Sec.secondary." + pair.getFirst(), headroom / 1000);
+                result.append("replicationLag-Sec.secondary." + keyValue.getKey(), diff / 1000);
+                result.append("replicationHeadroom-Sec.secondary." + keyValue.getKey(), headroom / 1000);
             }
-            for (Pair<String, Date> pair : startup2) {
-                Long diff = primary.getTime() - pair.getSecond().getTime();
+            for (KeyValue<String, Date> keyValue : startup2) {
+                Long diff = primary.getTime() - keyValue.getValue().getTime();
                 long headroom = (timeDiff * 1000) - diff;
 
-                result.append("replicationLag-Sec.startup2." + pair.getFirst(), diff / 1000);
-                result.append("replicationHeadroom-Sec.startup2." + pair.getFirst(), headroom / 1000);
+                result.append("replicationLag-Sec.startup2." + keyValue.getKey(), diff / 1000);
+                result.append("replicationHeadroom-Sec.startup2." + keyValue.getKey(), headroom / 1000);
             }
-            for (Pair<String, Date> pair : recovering) {
-                long diff = primary.getTime() - pair.getSecond().getTime();
+            for (KeyValue<String, Date> keyValue : recovering) {
+                long diff = primary.getTime() - keyValue.getValue().getTime();
                 long headroom = (timeDiff * 1000) - diff;
 
-                result.append("replicationLag-Sec.recovering." + pair.getFirst(), diff / 1000);
-                result.append("replicationHeadroom-Sec.recovering." + pair.getFirst(), headroom / 1000);
+                result.append("replicationLag-Sec.recovering." + keyValue.getKey(), diff / 1000);
+                result.append("replicationHeadroom-Sec.recovering." + keyValue.getKey(), headroom / 1000);
             }
         }
 
