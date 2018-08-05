@@ -7,10 +7,11 @@ import com.pearson.statspoller.metric_formats.GenericMetricFormat;
 import com.pearson.statspoller.metric_formats.influxdb.InfluxdbMetricFormat_v1;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetricFormat;
-import com.pearson.statspoller.utilities.StackTrace;
-import org.apache.commons.lang3.StringEscapeUtils;
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
         this.metricPath_ = metricPath;
         this.metricValue_ = metricValue;
         this.metricTimestamp_ = metricTimestamp;
-        this.metricReceivedTimestampInMilliseconds_ = metricTimestamp * 1000;
+        this.metricReceivedTimestampInMilliseconds_ = ((long) metricTimestamp) * 1000;
         
         this.isMetricTimestampInSeconds_ = true;
     }
@@ -212,12 +213,10 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
         if (!sanitizeMetric && !substituteCharacters) return unsanitizedInput;
         
         StringBuilder sanitizedInput = new StringBuilder();
- 
-        char[] unsanitizedInputChars = unsanitizedInput.toCharArray();
-        
-        for (int i = 0; i < unsanitizedInputChars.length; i++) {
-            char character = unsanitizedInputChars[i];
-            
+
+        for (int i = 0; i < unsanitizedInput.length(); i++) {
+            char character = unsanitizedInput.charAt(i);
+
             if (substituteCharacters && Character.isLetterOrDigit(character)) {
                 sanitizedInput.append(character);
                 continue;
@@ -226,7 +225,7 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
             if (sanitizeMetric && (character == '.')) {
                 int iPlusOne = i + 1;
                 
-                if (((iPlusOne < unsanitizedInputChars.length) && (unsanitizedInputChars[iPlusOne] != '.')) || (iPlusOne == unsanitizedInputChars.length)) {
+                if (((iPlusOne < unsanitizedInput.length()) && (unsanitizedInput.charAt(iPlusOne) != '.')) || (iPlusOne == unsanitizedInput.length())) {
                     sanitizedInput.append(character);
                     continue;
                 }
@@ -277,8 +276,14 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
             int metricValueIndexRange = unparsedMetric.indexOf(' ', metricPathIndexRange + 1);
             BigDecimal metricValueBigDecimal = null;
             if (metricValueIndexRange > 0) {
-                String metricValue = unparsedMetric.substring(metricPathIndexRange + 1, metricValueIndexRange);
-                metricValueBigDecimal = new BigDecimal(metricValue);
+                String metricValueString = unparsedMetric.substring(metricPathIndexRange + 1, metricValueIndexRange);
+                
+                if (metricValueString.length() > 100) {
+                    logger.debug("Metric parse error. Metric value can't be more than 100 characters long. Metric value was \"" + metricValueString.length() + "\" characters long.");
+                }
+                else {
+                    metricValueBigDecimal = new BigDecimal(metricValueString);
+                }
             }
 
             String metricTimestampString = unparsedMetric.substring(metricValueIndexRange + 1, unparsedMetric.length());
@@ -294,6 +299,10 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
                 GraphiteMetric graphiteMetric = new GraphiteMetric(metricPath, metricValueBigDecimal, metricTimestamp, metricReceivedTimestampInMilliseconds); 
                 return graphiteMetric;
             }
+        }
+        catch (NumberFormatException e) {
+            logger.error("Error on " + unparsedMetric + System.lineSeparator() + e.toString() + System.lineSeparator());  
+            return null;
         }
         catch (Exception e) {
             logger.error("Error on " + unparsedMetric + System.lineSeparator() + e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));  
@@ -385,7 +394,7 @@ public class GraphiteMetric implements GraphiteMetricFormat, OpenTsdbMetricForma
     @Override
     public String getMetricValueString() {
         if (metricValue_ == null) return null;
-        return metricValue_.stripTrailingZeros().toPlainString();
+        return MathUtilities.getFastPlainStringWithNoTrailingZeros(metricValue_);
     }
     
     public long getMetricTimestamp() {

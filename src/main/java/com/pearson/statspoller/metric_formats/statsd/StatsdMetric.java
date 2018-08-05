@@ -1,9 +1,10 @@
 package com.pearson.statspoller.metric_formats.statsd;
 
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import com.pearson.statspoller.utilities.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.math.BigDecimal;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -122,7 +123,13 @@ public final class StatsdMetric {
             if (metricValueIndexRange > 0) {
                 String metricValueString = unparsedMetric.substring(bucketIndexRange + 1, metricValueIndexRange);
                 doesContainOperator = StringUtils.containsAny(metricValueString, "+-");
-                metricValue = new BigDecimal(metricValueString);
+                
+                if (metricValueString.length() > 100) {
+                    logger.debug("Metric parse error. Metric value can't be more than 100 characters long. Metric value was \"" + metricValueString.length() + "\" characters long.");
+                }
+                else {
+                    metricValue = new BigDecimal(metricValueString);
+                }
             }
 
             int metricTypeIndexRange = unparsedMetric.indexOf('|', metricValueIndexRange + 1);
@@ -251,7 +258,7 @@ public final class StatsdMetric {
     
     public String getMetricValueString() {
         if (metricValue_ == null) return null;
-        return metricValue_.stripTrailingZeros().toPlainString();
+        return MathUtilities.getFastPlainStringWithNoTrailingZeros(metricValue_);
     }
     
     public String getMetricType() {
@@ -272,7 +279,7 @@ public final class StatsdMetric {
     
     public String getSampleRateString() {
         if (sampleRate_ == null) return null;
-        return sampleRate_.stripTrailingZeros().toPlainString();
+        return MathUtilities.getFastPlainStringWithNoTrailingZeros(sampleRate_);
     }
     
     public long getMetricReceivedTimestampInMilliseconds() {

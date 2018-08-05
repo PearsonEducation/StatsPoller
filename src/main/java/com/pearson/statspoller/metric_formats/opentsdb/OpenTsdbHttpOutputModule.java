@@ -1,6 +1,6 @@
 package com.pearson.statspoller.metric_formats.opentsdb;
 
-import com.pearson.statspoller.utilities.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.net.URL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

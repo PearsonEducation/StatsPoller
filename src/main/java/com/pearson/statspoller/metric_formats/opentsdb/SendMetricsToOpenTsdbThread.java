@@ -1,7 +1,7 @@
 package com.pearson.statspoller.metric_formats.opentsdb;
 
 import java.util.List;
-import com.pearson.statspoller.utilities.TcpClient;
+import com.pearson.statspoller.utilities.network_utils.TcpClient;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.pearson.statspoller.metric_formats.SendMetricsToOutputModuleThread;
-import com.pearson.statspoller.utilities.HttpRequest;
+import com.pearson.statspoller.utilities.web_utils.HttpRequest;
 
 /**
  * @author Jeffrey Schmidt

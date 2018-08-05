@@ -2,7 +2,7 @@ package com.pearson.statspoller.metric_formats.graphite;
 
 import com.pearson.statspoller.metric_formats.SendMetricsToOutputModuleThread;
 import java.util.List;
-import com.pearson.statspoller.utilities.TcpClient;
+import com.pearson.statspoller.utilities.network_utils.TcpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

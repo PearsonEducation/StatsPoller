@@ -7,7 +7,8 @@ import com.pearson.statspoller.metric_formats.graphite.GraphiteMetricFormat;
 import com.pearson.statspoller.metric_formats.influxdb.InfluxdbMetricFormat_v1;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetricFormat;
-import org.apache.commons.lang3.StringEscapeUtils;
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +176,7 @@ public class StatsdMetricAggregated implements GraphiteMetricFormat, OpenTsdbMet
     @Override
     public String getMetricValueString() {
         if (metricValue_ == null) return null;
-        return metricValue_.stripTrailingZeros().toPlainString();
+        return MathUtilities.getFastPlainStringWithNoTrailingZeros(metricValue_);
     }
     
     public long getTimestampInMilliseconds() {
