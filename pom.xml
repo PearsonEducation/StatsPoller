@@ -4,7 +4,7 @@
 
     <groupId>com.pearson.StatsPoller</groupId>
     <artifactId>StatsPoller</artifactId>
-    <version>2.4</version>
+    <version>2.5-beta</version>
     <packaging>jar</packaging>
     <name>StatsPoller</name>
     
@@ -31,7 +31,7 @@
             
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -48,7 +48,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.1.0</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -127,7 +127,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>rpm-maven-plugin</artifactId>
-                <version>2.1.5</version>
+                <version>2.2.0</version>
                 
                 <executions>
                     <execution>
@@ -340,7 +340,7 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.10</version>
+            <version>1.11</version>
         </dependency>
         
         <dependency>
@@ -364,13 +364,19 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.5</version>
+            <version>2.6</version>
         </dependency>
         
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.6</version>
+            <version>3.7</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.17</version>
         </dependency>
         
         <dependency>
@@ -382,7 +388,7 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>3.10</version>
+            <version>4.2</version>
         </dependency>
             
         <dependency>
@@ -394,45 +400,39 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>20.0</version>
+            <version>26.0-android</version>
         </dependency>
-        
-        <dependency>
-            <groupId>io.fastjson</groupId>
-            <artifactId>boon</artifactId>
-            <version>0.34</version>
-        </dependency>
-        
+
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.1</version>
+            <version>2.8.5</version>
         </dependency>
         
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.5.0</version>
+            <version>3.8.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.4.1212.jre7</version>
+            <version>42.2.4.jre7</version>
         </dependency>
 
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.44</version>
+            <version>5.1.46</version>
         </dependency>
         
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>1.6.4</version>
+            <version>1.7.4</version>
         </dependency>
-        
+
         <!--
         <dependency>
             <groupId>org.vafer</groupId>
