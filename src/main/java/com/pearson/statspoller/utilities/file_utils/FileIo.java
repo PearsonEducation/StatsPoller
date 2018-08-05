@@ -1,5 +1,7 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.file_utils;
 
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;

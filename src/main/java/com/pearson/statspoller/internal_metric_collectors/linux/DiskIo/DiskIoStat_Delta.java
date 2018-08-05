@@ -1,7 +1,7 @@
 package com.pearson.statspoller.internal_metric_collectors.linux.DiskIo;
 
-import com.pearson.statspoller.utilities.MathUtilities;
-import com.pearson.statspoller.utilities.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.slf4j.Logger;

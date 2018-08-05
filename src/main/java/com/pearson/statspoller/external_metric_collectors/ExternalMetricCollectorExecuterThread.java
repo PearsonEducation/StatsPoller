@@ -1,8 +1,8 @@
 package com.pearson.statspoller.external_metric_collectors;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
 import com.pearson.statspoller.globals.ApplicationConfiguration;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,6 +1,8 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.web_utils;
 
 import com.google.common.io.CharStreams;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.string_utils.StringUtilities;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;

@@ -1,7 +1,7 @@
 package com.pearson.statspoller.output;
 
-import com.pearson.statspoller.utilities.InvokerThread;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.core_utils.InvokerThread;
+import com.pearson.statspoller.utilities.core_utils.Threads;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

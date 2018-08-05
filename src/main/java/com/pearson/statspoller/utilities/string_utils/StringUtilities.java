@@ -1,5 +1,6 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.string_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;

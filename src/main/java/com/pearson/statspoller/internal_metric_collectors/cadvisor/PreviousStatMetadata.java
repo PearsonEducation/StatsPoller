@@ -1,6 +1,5 @@
 package com.pearson.statspoller.internal_metric_collectors.cadvisor;
 
-import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Docker;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.Stat;
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.machine_json.Machine;
 import java.util.Date;

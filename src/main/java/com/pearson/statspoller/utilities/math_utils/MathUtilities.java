@@ -1,6 +1,8 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.math_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -18,6 +20,35 @@ public class MathUtilities {
     private static final Logger logger = LoggerFactory.getLogger(MathUtilities.class.getName());
     
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    
+    public static double computeSmallerNumber(double number1, double number2) {
+        if (number1 <= number2) {
+            return number1;
+        }
+        else {
+            return number2;
+        }
+    }
+    
+    public static double computeLargerNumber(double number1, double number2) {
+        if (number1 >= number2) {
+            return number1;
+        }
+        else {
+            return number2;
+        }
+    }
+
+    public static double computePercentChange(double oldValue, double newValue) {
+        
+        if (oldValue == 0) {
+            throw new IllegalArgumentException("oldValue cannot be 0");
+        }
+        
+        double percentChange = ((newValue - oldValue) / oldValue) * 100;
+        
+        return percentChange;
+    }
     
     public static boolean areBigDecimalsNumericallyEqual(BigDecimal bigDecimal1, BigDecimal bigDecimal2) {
         
@@ -225,6 +256,111 @@ public class MathUtilities {
         }
 
         return bigDecimal;
+    }
+
+    public static String getFastPlainStringWithNoTrailingZeros(BigDecimal bigDecimal) {
+        
+        if (bigDecimal == null) return null;
+        
+        String numericString = bigDecimal.toPlainString();
+        if ((numericString == null) || (numericString.length() <= 1)) return numericString;
+            
+        try {
+            for (int i=(numericString.length()-1); i >= 0; i--) {
+                char currentChar = numericString.charAt(i);
+                if (currentChar == '0') continue;
+                if (currentChar == '.') return numericString.substring(0, i);
+                if (currentChar != '0') {
+                    for (int j = 0; j < i; j++) {
+                        if (numericString.charAt(j) == '.') {
+                            return numericString.substring(0, (i+1));
+                        }
+                    }
+                    return numericString;
+                }
+            }
+            
+            return numericString;
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            return numericString;
+        }
+        
+    }
+    
+    public static String convertNumericObjectToString(Object numericObject, boolean treatBooleanAsNumeric) {
+        
+        if (numericObject == null) return null;
+        
+        String valueString = null;
+        
+        if (numericObject instanceof Integer) valueString = Integer.toString((Integer) numericObject);
+        else if (numericObject instanceof Long) valueString = Long.toString((Long) numericObject);
+        else if (numericObject instanceof Short) valueString = Short.toString((Short) numericObject);
+        else if (numericObject instanceof Byte) valueString = Byte.toString((Byte) numericObject);
+        else if (numericObject instanceof Double) valueString = Double.toString((Double) numericObject);
+        else if (numericObject instanceof Float) valueString = Float.toString((Float) numericObject);
+        else if (numericObject instanceof BigDecimal) {
+            BigDecimal numericObjectBigDecimal = (BigDecimal) numericObject;
+            valueString = numericObjectBigDecimal.stripTrailingZeros().toPlainString();
+        }
+        else if (numericObject instanceof BigInteger) {
+            BigInteger numericObjectBigInteger = (BigInteger) numericObject;
+            valueString = numericObjectBigInteger.toString();
+        }
+        else if ((numericObject instanceof Boolean) && treatBooleanAsNumeric) {
+            Boolean numberObjectBoolean = (Boolean) numericObject;
+            if (numberObjectBoolean) valueString = "1";
+            else valueString = "0";
+        }
+        else if ((numericObject instanceof Boolean) && !treatBooleanAsNumeric) {
+            Boolean numberObjectBoolean = (Boolean) numericObject;
+            if (numberObjectBoolean) valueString = "true";
+            else valueString = "false";
+        }
+        
+        return valueString;
+    }
+        
+    public static BigDecimal convertNumericObjectToBigDecimal(Object numericObject, boolean treatBooleanAsNumeric) {
+        
+        if (numericObject == null) return null;
+        
+        BigDecimal valueBigDecimal = null;
+        
+        if (numericObject instanceof BigDecimal) valueBigDecimal = (BigDecimal) numericObject;
+        else if (numericObject instanceof Integer) valueBigDecimal = new BigDecimal(Integer.toString((Integer) numericObject));
+        else if (numericObject instanceof Long) valueBigDecimal = new BigDecimal(Long.toString((Long) numericObject));
+        else if (numericObject instanceof Short) valueBigDecimal = new BigDecimal(Short.toString((Short) numericObject));
+        else if (numericObject instanceof Byte) valueBigDecimal = new BigDecimal(Byte.toString((Byte) numericObject));
+        else if (numericObject instanceof Double) valueBigDecimal = new BigDecimal(Double.toString((Double) numericObject));
+        else if (numericObject instanceof Float) valueBigDecimal = new BigDecimal(Float.toString((Float) numericObject));
+        else if (numericObject instanceof BigInteger) valueBigDecimal = new BigDecimal((BigInteger) numericObject);
+        else if ((numericObject instanceof Boolean) && treatBooleanAsNumeric) {
+            Boolean numberObjectBoolean = (Boolean) numericObject;
+            if (numberObjectBoolean) valueBigDecimal = BigDecimal.ONE;
+            else valueBigDecimal = BigDecimal.ZERO;
+        }
+
+        return valueBigDecimal;
+    }
+    
+    public static boolean isObjectNumericType(Object object, boolean treatBooleanAsNumeric) {
+        
+        if (object == null) return false;
+                
+        if (object instanceof Integer) return true;
+        else if (object instanceof Long) return true;
+        else if (object instanceof Short) return true;
+        else if (object instanceof Byte) return true;
+        else if (object instanceof Double) return true;
+        else if (object instanceof Float) return true;
+        else if (object instanceof BigDecimal) return true;
+        else if (object instanceof BigInteger) return true;
+        else if ((object instanceof Boolean) && treatBooleanAsNumeric) return true;
+        
+        return false;
     }
     
 }

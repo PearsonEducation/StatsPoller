@@ -1,5 +1,7 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.web_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;

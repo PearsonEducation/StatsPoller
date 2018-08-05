@@ -1,6 +1,6 @@
 package com.pearson.statspoller.internal_metric_collectors.linux.FileSystem;
 
-import com.pearson.statspoller.utilities.MathUtilities;
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.apache.commons.lang3.StringUtils;

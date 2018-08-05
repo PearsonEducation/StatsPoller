@@ -1,4 +1,4 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.core_utils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,6 +29,7 @@ public class StackTrace {
     
     public static String getStringFromStackTrace(StackTraceElement[] stackTraceElements) {
         try {
+            
             StringBuilder stackTrace = new StringBuilder();
             
             for (StackTraceElement stackTraceElement : stackTraceElements) {

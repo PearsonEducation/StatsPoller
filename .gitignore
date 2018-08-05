@@ -1,5 +1,7 @@
 /*~*
 /createrepo.sh
+/nb-configuration.xml
+/nbactions.xml
 /target/
 /conf/application_dev.properties
 /conf/*~*

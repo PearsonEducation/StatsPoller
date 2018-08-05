@@ -1,5 +1,6 @@
 package com.pearson.statspoller.internal_metric_collectors.jmx;
 
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -9,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.pearson.statspoller.utilities.MathUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

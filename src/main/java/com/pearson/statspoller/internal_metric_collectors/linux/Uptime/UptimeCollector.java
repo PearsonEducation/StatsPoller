@@ -2,9 +2,9 @@ package com.pearson.statspoller.internal_metric_collectors.linux.Uptime;
 
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.utilities.FileIo;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.file_utils.FileIo;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;

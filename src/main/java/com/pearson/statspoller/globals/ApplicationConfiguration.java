@@ -1,6 +1,8 @@
 package com.pearson.statspoller.globals;
 
 import com.opencsv.CSVReader;
+import com.pearson.statspoller.utilities.config_utils.HierarchicalIniConfigurationWrapper;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import com.pearson.statspoller.external_metric_collectors.ExternalMetricCollector;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -19,9 +21,7 @@ import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbHttpOutputModule;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTelnetOutputModule;
-import com.pearson.statspoller.utilities.HierarchicalIniConfigurationWrapper;
-import com.pearson.statspoller.utilities.NetIo;
-import com.pearson.statspoller.utilities.StackTrace;
+import com.pearson.statspoller.utilities.web_utils.NetIo;
 import java.net.InetAddress;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;

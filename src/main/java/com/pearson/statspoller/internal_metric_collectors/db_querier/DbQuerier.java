@@ -1,10 +1,10 @@
 package com.pearson.statspoller.internal_metric_collectors.db_querier;
 
-import com.pearson.statspoller.utilities.DatabaseUtils;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.db_utils.DatabaseUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;

@@ -1,7 +1,7 @@
 package com.pearson.statspoller.external_metric_collectors;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.io.File;
-import com.pearson.statspoller.utilities.StackTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,5 +1,6 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.network_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.OutputStreamWriter;

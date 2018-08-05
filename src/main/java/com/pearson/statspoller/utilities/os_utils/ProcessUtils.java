@@ -1,5 +1,6 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.os_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import org.slf4j.Logger;

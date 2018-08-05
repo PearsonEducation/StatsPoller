@@ -1,5 +1,7 @@
 package com.pearson.statspoller.internal_metric_collectors.apache_http;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -7,9 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.utilities.NetIo;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.web_utils.NetIo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

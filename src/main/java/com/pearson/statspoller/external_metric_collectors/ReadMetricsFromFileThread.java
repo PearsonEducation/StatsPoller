@@ -1,5 +1,8 @@
 package com.pearson.statspoller.external_metric_collectors;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.file_utils.FileIo;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,9 +13,6 @@ import com.pearson.statspoller.globals.GlobalVariables;
 import com.pearson.statspoller.metric_formats.GenericMetricFormat;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
-import com.pearson.statspoller.utilities.FileIo;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import org.apache.commons.lang3.StringUtils;
@@ -192,7 +192,7 @@ public class ReadMetricsFromFileThread implements Runnable {
                 if (isGraphiteMetric) graphiteMetric = GraphiteMetric.parseGraphiteMetric(unparsedMetric, metricPrefix, currentTimestamp);
                 else {
                     boolean isOpenTsdbMetric = isOpenTsdbMetric(unparsedMetricTrimmed);
-                    if (isOpenTsdbMetric) openTsdbMetric = OpenTsdbMetric.parseOpenTsdbMetric(unparsedMetric, metricPrefix, currentTimestamp);
+                    if (isOpenTsdbMetric) openTsdbMetric = OpenTsdbMetric.parseOpenTsdbTelnetMetric(unparsedMetric, metricPrefix, currentTimestamp);
                     else logger.error("Invalid metric -- unrecognized format. Metric=\"" + unparsedMetric + "\"");
                 }
 

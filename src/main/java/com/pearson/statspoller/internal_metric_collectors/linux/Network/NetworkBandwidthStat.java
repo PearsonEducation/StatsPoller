@@ -1,6 +1,6 @@
 package com.pearson.statspoller.internal_metric_collectors.linux.Network;
 
-import com.pearson.statspoller.utilities.MathUtilities;
+import com.pearson.statspoller.utilities.math_utils.MathUtilities;
 import java.math.BigDecimal;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

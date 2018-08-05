@@ -11,11 +11,10 @@ import com.pearson.statspoller.internal_metric_collectors.cadvisor.docker_json.S
 import com.pearson.statspoller.internal_metric_collectors.cadvisor.machine_json.Machine;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbMetric;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
-import com.pearson.statspoller.utilities.HttpRequest;
-import com.pearson.statspoller.utilities.JsonUtils;
-import com.pearson.statspoller.utilities.NetIo;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.json_utils.JsonUtils;
+import com.pearson.statspoller.utilities.web_utils.HttpRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormat;

@@ -2,9 +2,9 @@ package com.pearson.statspoller.internal_metric_collectors.linux.FileSystem;
 
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
-import com.pearson.statspoller.utilities.ProcessUtils;
-import com.pearson.statspoller.utilities.StackTrace;
-import com.pearson.statspoller.utilities.Threads;
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
+import com.pearson.statspoller.utilities.core_utils.Threads;
+import com.pearson.statspoller.utilities.os_utils.ProcessUtils;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -96,7 +96,7 @@ public class FileSystemCollector extends InternalCollectorFramework implements R
         return allGraphiteMetrics;
     }
     
-    private List<GraphiteMetric> getMetricsFromDfOutput(String dfOutput, int timestampInSeconds) {
+    protected List<GraphiteMetric> getMetricsFromDfOutput(String dfOutput, int timestampInSeconds) {
         
         List<GraphiteMetric> allGraphiteMetrics = new ArrayList<>();
 

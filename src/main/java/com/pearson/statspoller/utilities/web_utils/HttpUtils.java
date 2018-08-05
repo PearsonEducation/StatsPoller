@@ -1,5 +1,6 @@
-package com.pearson.statspoller.utilities;
+package com.pearson.statspoller.utilities.web_utils;
 
+import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import java.net.URLEncoder;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
