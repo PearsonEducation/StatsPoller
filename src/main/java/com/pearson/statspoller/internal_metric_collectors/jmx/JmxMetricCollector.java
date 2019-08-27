@@ -91,18 +91,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private Map<ObjectInstance,MBeanInfo> mBeanInfoByObjectInstance_ = new HashMap<>();
     private Map<String,ObjectInstance> objectInstancesByObjectInstanceNames_ = new HashMap<>();
     
-    // a list of (objectinstance name, attribute name) pairs that are the downloaded as part of the dervied metrics routine
-    private List<JmxObjectInstanceNameAndAttributeName> numericDerivedMetricDownloadList_ = null;
-    private List<JmxObjectInstanceNameAndAttributeName> stringDerivedMetricDownloadList_ = null;
-
     // k=unformatted graphite metric path, v=formatted graphite metric path
     private Map<String,String> graphiteFormattedMetricPaths_ = new HashMap<>();
-
-    
-    
-    //private List<String> memoryEater;
-    
-    
     
     public JmxMetricCollector(boolean isEnabled, long collectionInterval, String jmxMetricPrefix, String outputFilePathAndFilename, boolean writeOutputFiles,
             String host, int port, String jmxServiceUrl, int numConnectionAttemptRetries, long sleepAfterConnectTime, long queryMetricTreeInterval,
@@ -319,11 +309,6 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
             if (sleepTimeInMs >= 0) {
                 Threads.sleepMilliseconds(sleepTimeInMs);
-
-//                logger.warn(("ABOUT TO KILL JMX"));
-//                memoryEater = new ArrayList<>();
-//                for (long i = 0; i < 100000000; i++) memoryEater.add("lol");
-//                System.out.println(memoryEater.get(0));
             }
         }
         
@@ -440,7 +425,6 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private void resetVariables() {
         super.createAndUpdateFullInternalCollectorMetricPrefix(REMOTE_JMX_NAME_FIELD_IDENTIFIER, "");
 
-//        memoryEater = null;
         jmxDerivedMetrics_.reset();
                 
         blacklistObjectNameRegexMatchCache_.clear();
@@ -462,12 +446,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         mBeanInfoByObjectInstance_ = new HashMap<>();
         objectInstancesByObjectInstanceNames_.clear();
         objectInstancesByObjectInstanceNames_ = new HashMap<>();
-        
-        if (numericDerivedMetricDownloadList_ != null) numericDerivedMetricDownloadList_.clear();
-        numericDerivedMetricDownloadList_ = null;
-        if (stringDerivedMetricDownloadList_ != null) stringDerivedMetricDownloadList_.clear();
-        stringDerivedMetricDownloadList_ = null;
-        
+
         graphiteFormattedMetricPaths_.clear();
         graphiteFormattedMetricPaths_ = new HashMap<>();
     }
@@ -503,7 +482,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
                 for (ObjectInstance objectInstance : allObjectInstances) {
                     boolean isObjectNameAllowed = isObjectNameAllowed(objectInstance);
-                    
+                                    
                     if (isObjectNameAllowed) {
                         objectInstances_.add(objectInstance);
                         objectInstancesByObjectInstanceNames_.put(objectInstance.getObjectName().toString(), objectInstance);

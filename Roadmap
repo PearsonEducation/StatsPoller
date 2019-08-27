@@ -1,12 +1,10 @@
-2.5
- * Export variables for global_metric_prefix
- * cAdvisor file system driver status
-
 2.6
  * cAdvisor - add http auth support
  * Reduced output flag (default?)
  * Remove legacy statspoller conf compatibility
  * Optional toggle to disable metadata meterics via 'statspoller_disable_metadata_metrics'
+ * Export variables for global_metric_prefix
+ * cAdvisor file system driver status
 
 Future
  * Configurable timeouts on output

@@ -20,6 +20,7 @@ public class JmxMetricRaw {
     private final BigDecimal metricValue_;
     private final long metricRetrievalTimestampInMs_;
     
+    private String objectInstanceName_Reordered_ = null;
     private String unformattedGraphiteMetricPath_ = null;
     private String formattedGraphiteMetricPath_ = null;
     
@@ -32,16 +33,11 @@ public class JmxMetricRaw {
     
     public String createAndGetUnformattedGraphiteMetricPath() {
         
-        if (unformattedGraphiteMetricPath_ != null) {
-            return unformattedGraphiteMetricPath_;
-        }
-        
-        if ((objectInstanceName_ == null) || (attributePath_ == null)) {
-            return null;
-        }
+        if (unformattedGraphiteMetricPath_ != null) return unformattedGraphiteMetricPath_;       
+        if ((objectInstanceName_ == null) || (attributePath_ == null)) return null;
 
-        String objectInstanceName_Reordered = moveTypeToBeginningOfObjectInstanceName(objectInstanceName_);
-        unformattedGraphiteMetricPath_ = objectInstanceName_Reordered + "." + attributePath_;
+        objectInstanceName_Reordered_ = moveTypeToBeginningOfObjectInstanceName(objectInstanceName_);
+        unformattedGraphiteMetricPath_ = objectInstanceName_Reordered_ + "." + attributePath_;
 
         return unformattedGraphiteMetricPath_;
     }
@@ -57,6 +53,7 @@ public class JmxMetricRaw {
             if (indexOfFirstColon == -1) return objectInstanceName;
             if ((indexOfFirstColon + 1) >= objectInstanceName.length()) return objectInstanceName;
             
+            String leftOfFirstColon = objectInstanceName.substring(0, indexOfFirstColon);
             String rightOfFirstColon = objectInstanceName.substring(indexOfFirstColon + 1);
             String[] csvOfObjectInstanceNameValues = rightOfFirstColon.split(",");
             if (csvOfObjectInstanceNameValues.length <= 1) return objectInstanceName;
@@ -84,7 +81,7 @@ public class JmxMetricRaw {
                     if ((j + 1) < objectInstanceNameFields.size()) objectInstanceName_Reordered_StringBuilder.append(",");
                 }
                 
-                String objectInstanceName_Reordered_ReturnString = objectInstanceName_Reordered_StringBuilder.toString();
+                String objectInstanceName_Reordered_ReturnString = leftOfFirstColon + ":" + objectInstanceName_Reordered_StringBuilder.toString();
                 if (!objectInstanceName_Reordered_ReturnString.isEmpty()) return objectInstanceName_Reordered_ReturnString;
             }
             
@@ -102,13 +99,13 @@ public class JmxMetricRaw {
             return formattedGraphiteMetricPath_;   
         }
 
-        String unformattedGraphiteMetricPath = createAndGetUnformattedGraphiteMetricPath();
-        if (unformattedGraphiteMetricPath == null) return null;
-        //unformattedGraphiteMetricPath = moveTypeToBeginningOfPath(unformattedGraphiteMetricPath);
- 
-        String formattedGraphiteMetricPath = unformattedGraphiteMetricPath;
- 
-        formattedGraphiteMetricPath = StringUtils.replace(formattedGraphiteMetricPath, objectInstanceName_, objectInstanceName_.replace('.', '-'), 1);
+        createAndGetUnformattedGraphiteMetricPath();
+        if (unformattedGraphiteMetricPath_ == null) return null;
+        if (objectInstanceName_Reordered_ == null) return null;
+        
+        String formattedGraphiteMetricPath = unformattedGraphiteMetricPath_;
+        
+        formattedGraphiteMetricPath = StringUtils.replace(formattedGraphiteMetricPath, objectInstanceName_Reordered_, objectInstanceName_Reordered_.replace('.', '-'), 1);
         formattedGraphiteMetricPath = StringUtils.replace(formattedGraphiteMetricPath, "%", "Pct");
         formattedGraphiteMetricPath = StringUtils.replace(formattedGraphiteMetricPath, " ", "_");
         formattedGraphiteMetricPath = StringUtils.replace(formattedGraphiteMetricPath, ",", ".");
@@ -132,7 +129,7 @@ public class JmxMetricRaw {
         }
         
         formattedGraphiteMetricPath_ = formattedGraphiteMetricPath;
-        
+
         return formattedGraphiteMetricPath_;
     }
 
