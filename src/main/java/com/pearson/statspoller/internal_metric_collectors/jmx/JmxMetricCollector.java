@@ -43,6 +43,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private final int numConnectionAttemptRetries_;
     private final long sleepAfterConnectTime_;
     private final long queryMetricTreeInterval_;
+    private final long flushCacheInterval_;
     private final boolean collectStringAttributes_;
     private final boolean isDerivedMetricsEnabled_;
     private final String username_;
@@ -68,6 +69,10 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     // timestamp of the iteration
     private int currentTimestamp_ = -1;
     
+    // timestamp of the last time the caches were flushed
+    private long previousFlushCacheTime_ = 0;
+    private boolean isCacheEnabled_ = true;
+    
     // has the jvm ever been connected to? relevant for dynamically named jvms that use the 'remote jvm jmx name' mechanism
     private boolean hasJvmEverBeenConnectedTo_ = false;
     
@@ -76,7 +81,8 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     
     // k=ObjectInstanceName, v=Allow getting object attributes? (true = ObjectInstanceName is not blacklisted)
     private Map<String,Boolean> blacklistObjectNameRegexMatchCache_ = new HashMap<>();
-    
+    private Map<String,Boolean> blacklistObjectNameRegexMatchCache_CurrentIteration_ = new HashMap<>();
+
     //k=MetricPath, v="do the whitelist & blacklist rules allow this metric to be output"
     private Map<String,Integer> isMeticPathAllowedCache_ = new HashMap<>();
     
@@ -95,7 +101,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     private Map<String,String> graphiteFormattedMetricPaths_ = new HashMap<>();
     
     public JmxMetricCollector(boolean isEnabled, long collectionInterval, String jmxMetricPrefix, String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String jmxServiceUrl, int numConnectionAttemptRetries, long sleepAfterConnectTime, long queryMetricTreeInterval,
+            String host, int port, String jmxServiceUrl, int numConnectionAttemptRetries, long sleepAfterConnectTime, long queryMetricTreeInterval, long flushCacheInterval, 
             boolean collectStringAttributes, boolean isDerivedMetricsEnabled,
             String username, String password, List<String> blacklistObjectNameRegexs, List<String> blacklistRegexs, List<String> whitelistRegexs) {
         
@@ -109,6 +115,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         this.numConnectionAttemptRetries_ = numConnectionAttemptRetries;
         this.sleepAfterConnectTime_ = sleepAfterConnectTime;
         this.queryMetricTreeInterval_ = queryMetricTreeInterval;
+        this.flushCacheInterval_ = flushCacheInterval;
         this.collectStringAttributes_ = collectStringAttributes;
         this.isDerivedMetricsEnabled_ = isDerivedMetricsEnabled;
         this.username_ = username;
@@ -126,7 +133,9 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             this.stringDerivedRegexs_ = new ArrayList<>();
         }
         
+        if (this.flushCacheInterval_ <= 0) this.isCacheEnabled_ = false;
         this.regexPatterns_ = compileRegexs();
+        this.previousFlushCacheTime_ = System.currentTimeMillis();
     }
     
     private HashMap<String,Pattern> compileRegexs() {
@@ -216,6 +225,11 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             
             long routineStartTime = System.currentTimeMillis();
             
+            // flush caches at routine start
+            if ((flushCacheInterval_ <= 0) || ((System.currentTimeMillis() - previousFlushCacheTime_) > flushCacheInterval_)) {
+                flushCaches();
+            }
+        
             long makeConnectionStartTime = System.currentTimeMillis();
             didConnectOnThisInterval_ = false;
             boolean isConnected = connect();
@@ -302,6 +316,11 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                             ", OutputJmxMetrics=" + allJmxGraphiteMetricsForOutput.size() +
                             ", JmxMetricCollectionTime=" + routineTimeElapsed);                    
                 }
+            }
+            
+            // flush caches at routine end
+            if ((flushCacheInterval_ <= 0) || ((System.currentTimeMillis() - previousFlushCacheTime_) > flushCacheInterval_)) {
+                flushCaches();
             }
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
@@ -427,12 +446,12 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
 
         jmxDerivedMetrics_.reset();
                 
-        blacklistObjectNameRegexMatchCache_.clear();
-        blacklistObjectNameRegexMatchCache_ = new HashMap<>();
-        
         isMeticPathAllowedCache_.clear();
         isMeticPathAllowedCache_ = new HashMap<>();
-         
+        
+        graphiteFormattedMetricPaths_.clear();
+        graphiteFormattedMetricPaths_ = new HashMap<>();
+        
         neverDownloadTheseMetricAttributes_.clear();
         neverDownloadTheseMetricAttributes_ = new HashMap<>();
         alwaysDownloadTheseMetricAttributes_.clear();
@@ -446,11 +465,41 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
         mBeanInfoByObjectInstance_ = new HashMap<>();
         objectInstancesByObjectInstanceNames_.clear();
         objectInstancesByObjectInstanceNames_ = new HashMap<>();
-
-        graphiteFormattedMetricPaths_.clear();
-        graphiteFormattedMetricPaths_ = new HashMap<>();
+        
+        previousFlushCacheTime_ = 0;
     }
     
+    private void flushCaches() {        
+        blacklistObjectNameRegexMatchCache_.clear();
+        blacklistObjectNameRegexMatchCache_ = new HashMap<>();
+        blacklistObjectNameRegexMatchCache_CurrentIteration_.clear();
+        blacklistObjectNameRegexMatchCache_CurrentIteration_ = new HashMap<>();
+        
+        isMeticPathAllowedCache_.clear();
+        isMeticPathAllowedCache_ = new HashMap<>();
+        
+        graphiteFormattedMetricPaths_.clear();
+        graphiteFormattedMetricPaths_ = new HashMap<>();
+        
+        neverDownloadTheseMetricAttributes_.clear();
+        neverDownloadTheseMetricAttributes_ = new HashMap<>();
+        alwaysDownloadTheseMetricAttributes_.clear();
+        alwaysDownloadTheseMetricAttributes_ = new HashMap<>();
+       
+        if (queryMetricTreeInterval_ <= -1) {
+            previousGetObjectInstancesTime_ = 0;
+            didQueryMetricTree_ = false;
+            objectInstances_.clear();
+            objectInstances_ = new HashSet<>();
+            mBeanInfoByObjectInstance_.clear();
+            mBeanInfoByObjectInstance_ = new HashMap<>();
+            objectInstancesByObjectInstanceNames_.clear();
+            objectInstancesByObjectInstanceNames_ = new HashMap<>();
+        }
+        
+        previousFlushCacheTime_ = System.currentTimeMillis();
+    }
+
     private boolean getObjectInstancesAndMBeanInfos(MBeanServerConnection mBeanServerConnection) {
         
         if (mBeanServerConnection == null) {
@@ -491,6 +540,13 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
                     }
                 }
                 
+                // feeble attempt to keep memory usage to a minimum
+                blacklistObjectNameRegexMatchCache_.clear();
+                blacklistObjectNameRegexMatchCache_ = new HashMap<>();
+                blacklistObjectNameRegexMatchCache_.putAll(blacklistObjectNameRegexMatchCache_CurrentIteration_);
+                blacklistObjectNameRegexMatchCache_CurrentIteration_.clear();
+                blacklistObjectNameRegexMatchCache_CurrentIteration_ = new HashMap<>();
+                
                 didQueryMetricTree_ = true;
             }
             
@@ -509,13 +565,17 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
     */
     private boolean isObjectNameAllowed(ObjectInstance objectInstance) {
         
-        if ((objectInstance == null) || (objectInstance.getObjectName() == null) || (blacklistObjectNameRegexMatchCache_ == null)) {
+        if ((objectInstance == null) || (objectInstance.getObjectName() == null)) {
             return false;
         }
         
         String objectName = objectInstance.getObjectName().toString();
         Boolean isObjectNameAllowed = blacklistObjectNameRegexMatchCache_.get(objectName);
-        if (isObjectNameAllowed != null) return isObjectNameAllowed;
+        
+        if (isObjectNameAllowed != null) {
+            if (isCacheEnabled_) blacklistObjectNameRegexMatchCache_CurrentIteration_.put(objectName, isObjectNameAllowed);
+            return isObjectNameAllowed;
+        }
         
         Boolean isMetricAllowed = true;
         
@@ -531,7 +591,10 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             }
         }
         
-        blacklistObjectNameRegexMatchCache_.put(objectName, isMetricAllowed);
+        if (isCacheEnabled_) {
+            blacklistObjectNameRegexMatchCache_.put(objectName, isMetricAllowed);
+            blacklistObjectNameRegexMatchCache_CurrentIteration_.put(objectName, isMetricAllowed);
+        }
         
         return isMetricAllowed;
     }
@@ -611,6 +674,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             
             if (neverDownloadTheseMetricAttributes_.containsKey(objectInstanceName)) {
                 List<String> alwaysDownladTheseAttributesForThisObjectInstance = null;
+                
                 if (alwaysDownloadTheseMetricAttributes_.containsKey(objectInstanceName)) {
                     alwaysDownladTheseAttributesForThisObjectInstance = alwaysDownloadTheseMetricAttributes_.get(objectInstanceName);
                 }
@@ -651,6 +715,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             
             if (neverDownloadTheseMetricAttributes_.containsKey(objectInstanceName)) {
                 List<String> alwaysDownladTheseAttributesForThisObjectInstance = null;
+                
                 if (alwaysDownloadTheseMetricAttributes_.containsKey(objectInstanceName)) {
                     alwaysDownladTheseAttributesForThisObjectInstance = alwaysDownloadTheseMetricAttributes_.get(objectInstanceName);
                 }
@@ -803,7 +868,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             
             if (!graphiteFormattedMetricPaths_.containsKey(unformattedGraphiteMetricPath)) {
                 graphiteMetricPath = jmxMetricRaw.createAndGetGraphiteFormattedMetricPath();
-                graphiteFormattedMetricPaths_.put(unformattedGraphiteMetricPath, graphiteMetricPath);
+                if (isCacheEnabled_) graphiteFormattedMetricPaths_.put(unformattedGraphiteMetricPath, graphiteMetricPath);
             }
             else {
                 graphiteMetricPath = graphiteFormattedMetricPaths_.get(unformattedGraphiteMetricPath);
@@ -842,7 +907,7 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             
             if (!graphiteFormattedMetricPaths_.containsKey(unformattedGraphiteMetricPath)) {
                 graphiteMetricPath = jmxMetricRaw.createAndGetGraphiteFormattedMetricPath();
-                graphiteFormattedMetricPaths_.put(unformattedGraphiteMetricPath, graphiteMetricPath);
+                if (isCacheEnabled_) graphiteFormattedMetricPaths_.put(unformattedGraphiteMetricPath, graphiteMetricPath);
             }
             else {
                 graphiteMetricPath = graphiteFormattedMetricPaths_.get(unformattedGraphiteMetricPath);
@@ -928,15 +993,15 @@ public class JmxMetricCollector extends InternalCollectorFramework implements Ru
             boolean isDerivedString = isMetricOnAccessControlList(metricPath, stringDerivedRegexs_);
             
             if (isWhitelisted && !isBlacklisted) {
-                isMeticPathAllowedCache_.put(metricPath, 2);
+                if (isCacheEnabled_) isMeticPathAllowedCache_.put(metricPath, 2);
                 return 2;
             }
             if (isDerivedNumeric || isDerivedString) {
-                isMeticPathAllowedCache_.put(metricPath, 1);
+                if (isCacheEnabled_) isMeticPathAllowedCache_.put(metricPath, 1);
                 return 1;
             }
             else {
-                isMeticPathAllowedCache_.put(metricPath, -1);
+                if (isCacheEnabled_) isMeticPathAllowedCache_.put(metricPath, -1);
                 return -1;  
             }
         }

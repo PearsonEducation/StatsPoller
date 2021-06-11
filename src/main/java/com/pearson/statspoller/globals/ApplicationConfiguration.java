@@ -711,7 +711,11 @@ public class ApplicationConfiguration {
 
             String jmxQueryMetricTreeKey = "jmx_query_metric_tree" + collectorSuffix;
             double jmxQueryMetricTreeValue = applicationConfiguration_.safeGetDouble(jmxQueryMetricTreeKey, 300);
-            long jmxQueryMetricTreeValue_Long = legacyMode ? (long) jmxQueryMetricTreeValue : (long) (jmxQueryMetricTreeValue * 1000);    
+            long jmxQueryMetricTreeValue_Long = legacyMode ? (long) jmxQueryMetricTreeValue : (long) (jmxQueryMetricTreeValue * 1000);  
+            
+            String jmxFlushCacheIntervalKey = "jmx_flush_cache_interval" + collectorSuffix;
+            double jmxFlushCacheIntervalValue = applicationConfiguration_.safeGetDouble(jmxFlushCacheIntervalKey, 3600);
+            long jmxFlushCacheIntervalValue_Long = legacyMode ? (long) jmxFlushCacheIntervalValue : (long) (jmxFlushCacheIntervalValue * 1000);    
                     
             String jmxCollectStringAttributesKey = "jmx_collect_string_attributes" + collectorSuffix;
             Boolean jmxCollectStringAttributesValue = applicationConfiguration_.safeGetBoolean(jmxCollectStringAttributesKey, false);
@@ -755,7 +759,7 @@ public class ApplicationConfiguration {
             JmxMetricCollector jmxMetricCollector = new JmxMetricCollector(jmxEnabledValue, 
                     jmxCollectionIntervalValue_Long, graphiteSanitizedJmxMetricPrefix, jmxOutputFileValue, outputInternalMetricsToDisk_,
                     jmxHostValue, jmxPortValue, jmxServiceUrlValue, jmxNumConnectionAttemptRetriesValue, 
-                    jmxSleepAfterConnectTimeValue_Long, jmxQueryMetricTreeValue_Long, 
+                    jmxSleepAfterConnectTimeValue_Long, jmxQueryMetricTreeValue_Long, jmxFlushCacheIntervalValue_Long, 
                     jmxCollectStringAttributesValue, jmxDerivedMetricsEnabledValue,
                     jmxUsernameValue, jmxPasswordValue, jmxBlacklistObjectNameRegexsValueStrings, 
                     jmxBlacklistRegexsValueStrings, jmxWhitelistRegexsValueStrings);
