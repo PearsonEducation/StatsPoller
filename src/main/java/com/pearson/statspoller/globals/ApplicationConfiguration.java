@@ -911,12 +911,18 @@ public class ApplicationConfiguration {
             String mongoMetricPrefixValue = applicationConfiguration_.safeGetString(mongoMetricPrefixKey, "Mongo");
             String graphiteSanitizedMongoMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(mongoMetricPrefixValue, true, true);
             
+            String mongoUsesSrvRecordKey = "mongo_srv_record" + collectorSuffix;
+            boolean mongoUsesSrvRecordValue = applicationConfiguration_.safeGetBoolean(mongoUsesSrvRecordKey, false);
+            System.out.println(mongoUsesSrvRecordValue);
             String mongoOutputFileValue = "./output/" + "mongo_" + graphiteSanitizedMongoMetricPrefix + ".out";
+            
+            String mongoArgumentsKey = "mongo_arguments" + collectorSuffix;
+            String mongoArgumentsValue = applicationConfiguration_.safeGetString(mongoPasswordKey, "");
             
             if (mongoEnabledValue && (mongoHostValue != null) && (mongoPortValue != -1)) {
                 MongoMetricCollector mongoMetricCollector = new MongoMetricCollector(mongoEnabledValue, 
                         mongoCollectionIntervalValue_Long, graphiteSanitizedMongoMetricPrefix, mongoOutputFileValue, outputInternalMetricsToDisk_,
-                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue, mongoVerboseOutputValue);
+                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue, mongoVerboseOutputValue, mongoUsesSrvRecordValue, mongoArgumentsValue);
                
                 return mongoMetricCollector;
             }
@@ -1000,7 +1006,7 @@ public class ApplicationConfiguration {
             String postgresEnabledKey = "postgres_enabled" + collectorSuffix;
             boolean postgresEnabledValue = applicationConfiguration_.safeGetBoolean(postgresEnabledKey, false);
             if (!postgresEnabledValue) return null;
-            
+
             String postgresHostKey = "postgres_host" + collectorSuffix;
             String postgresHostValue = applicationConfiguration_.safeGetString(postgresHostKey, "127.0.0.1");
             String openTsdbFriendlyHost = OpenTsdbMetric.getOpenTsdbSanitizedString(postgresHostValue);
