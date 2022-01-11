@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map.Entry;
+import org.apache.commons.codec.net.URLCodec;
 import org.apache.commons.lang.StringUtils;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -36,29 +37,51 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
     private static final Logger logger = LoggerFactory.getLogger(MongoMetricCollector.class.getName());
 
     private final String host_;
-    private final int port_;
+    private final Integer port_;
     private final String username_;
     private final String password_;
     private final boolean mongoVerboseOutputValue_;
-    private final boolean mongoUsesSrvRecordValue_;
+    private final boolean mongoSrvRecord_;
     private final String mongoArguments_;
+    
+    private String usernamePercentEncoded_ = null;
+    private String passwordPercentEncoded_ = null;
 
     public MongoMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix,
             String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String username, String password, boolean mongoVerboseOutputValue, boolean mongoUsesSrvRecordValue, String mongoArguments) {
+            String host, Integer port, String username, String password, boolean mongoVerboseOutputValue, boolean mongoSrvRecord, String mongoArguments) {
+        
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.host_ = host;
         this.port_ = port;
         this.username_ = username;
         this.password_ = password;
         this.mongoVerboseOutputValue_ = mongoVerboseOutputValue;
-        this.mongoUsesSrvRecordValue_ = mongoUsesSrvRecordValue;
-        if(mongoArguments != null && !mongoArguments.isEmpty()){
-            this.mongoArguments_ = mongoArguments;
+        this.mongoSrvRecord_ = mongoSrvRecord;
+        this.mongoArguments_ = mongoArguments;
+
+        URLCodec urlCodec = new URLCodec();
+
+        try {
+            if ((username != null) && !username.isEmpty()) {
+                usernamePercentEncoded_ = new String(urlCodec.encode(username_.getBytes()));
+            }
         }
-        else{
-            this.mongoArguments_ = "/?authSource=admin";
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            usernamePercentEncoded_ = null;
         }
+
+        try {
+            if ((password_ != null) && !password_.isEmpty()) {
+                passwordPercentEncoded_ = new String(urlCodec.encode(password_.getBytes()));
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            passwordPercentEncoded_ = null;
+        }
+        
     }
 
     @Override
@@ -93,31 +116,23 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         MongoClient mongoClient = null;
 
         try {
-            //NOTE: REMOVED THE PORT BECAUSE mongo+serv may just use the default?
-
-           
-            String uri = mongoUsesSrvRecordValue_ ? "mongodb+srv://" : "mongodb://";
-
-            //try blocks do not work with mongoclient as connection process is done by a background thread.
-          
-            //Changed how the uri is defined since can no longer make a mongo client with (host, port) trying without authsource = admin
-            if ((username_ != null) && !username_.isEmpty()) {
-                
-                uri += (username_ + ":" + password_ + "@" + host_ + ":" + port_ + mongoArguments_ );
-
-                mongoClient = MongoClients.create(uri);
-            }
-            else {
-                uri += (host_ + ":" + port_ + mongoArguments_ );
-
-                try {
+            String uri = mongoSrvRecord_ ? "mongodb+srv://" : "mongodb://";
+            String endpoint = mongoSrvRecord_ ? host_ : host_ + ":" + port_;
+            
+            try {
+                if ((usernamePercentEncoded_ != null) && !usernamePercentEncoded_.isEmpty()) {
+                    uri += (usernamePercentEncoded_ + ":" + passwordPercentEncoded_ + "@" + endpoint + "/?" + mongoArguments_);
                     mongoClient = MongoClients.create(uri);
                 }
-                catch (Exception e) {
-                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                else {
+                    uri += (endpoint + "/?" + mongoArguments_ );
+                    mongoClient = MongoClients.create(uri);
                 }
             }
-            System.out.println(uri);
+            catch (Exception e) {
+                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+            }
+            
             if (mongoClient == null) {
                 graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ZERO, ((int) (System.currentTimeMillis() / 1000))));
                 return graphiteMetrics;
@@ -156,7 +171,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                         logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
                     }
                 }
-
             }
 
             Document serverStatus = null;

@@ -23,6 +23,7 @@ import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTag;
 import com.pearson.statspoller.metric_formats.opentsdb.OpenTsdbTelnetOutputModule;
 import com.pearson.statspoller.utilities.web_utils.NetIo;
 import java.net.InetAddress;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -892,7 +893,9 @@ public class ApplicationConfiguration {
             String mongoHostValue = applicationConfiguration_.safeGetString(mongoHostKey, "127.0.0.1");
 
             String mongoPortKey = "mongo_port" + collectorSuffix;
-            int mongoPortValue = applicationConfiguration_.safeGetInteger(mongoPortKey, 27017);
+            String mongoPortValue_String = applicationConfiguration_.safeGetString(mongoPortKey, "27017").trim();
+            boolean isPortNumeric = StringUtils.isNumeric(mongoPortValue_String) && !mongoPortValue_String.isBlank();
+            Integer mongoPortValue = isPortNumeric ? Integer.valueOf(mongoPortValue_String) : null;
             
             String mongoUsernameKey = "mongo_username" + collectorSuffix;
             String mongoUsernameValue = applicationConfiguration_.safeGetString(mongoUsernameKey, "");
@@ -911,18 +914,18 @@ public class ApplicationConfiguration {
             String mongoMetricPrefixValue = applicationConfiguration_.safeGetString(mongoMetricPrefixKey, "Mongo");
             String graphiteSanitizedMongoMetricPrefix = GraphiteMetric.getGraphiteSanitizedString(mongoMetricPrefixValue, true, true);
             
-            String mongoUsesSrvRecordKey = "mongo_srv_record" + collectorSuffix;
-            boolean mongoUsesSrvRecordValue = applicationConfiguration_.safeGetBoolean(mongoUsesSrvRecordKey, false);
-            System.out.println(mongoUsesSrvRecordValue);
-            String mongoOutputFileValue = "./output/" + "mongo_" + graphiteSanitizedMongoMetricPrefix + ".out";
+            String mongoSrvRecordKey = "mongo_srv_record" + collectorSuffix;
+            boolean mongoSrvRecordValue = applicationConfiguration_.safeGetBoolean(mongoSrvRecordKey, false);
             
             String mongoArgumentsKey = "mongo_arguments" + collectorSuffix;
-            String mongoArgumentsValue = applicationConfiguration_.safeGetString(mongoPasswordKey, "");
+            String mongoArgumentsValue = applicationConfiguration_.safeGetString(mongoArgumentsKey, "authSource=admin");
             
-            if (mongoEnabledValue && (mongoHostValue != null) && (mongoPortValue != -1)) {
+            String mongoOutputFileValue = "./output/" + "mongo_" + graphiteSanitizedMongoMetricPrefix + ".out";
+
+            if (mongoEnabledValue && (mongoHostValue != null)) {
                 MongoMetricCollector mongoMetricCollector = new MongoMetricCollector(mongoEnabledValue, 
                         mongoCollectionIntervalValue_Long, graphiteSanitizedMongoMetricPrefix, mongoOutputFileValue, outputInternalMetricsToDisk_,
-                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue, mongoVerboseOutputValue, mongoUsesSrvRecordValue, mongoArgumentsValue);
+                        mongoHostValue, mongoPortValue, mongoUsernameValue, mongoPasswordValue, mongoVerboseOutputValue, mongoSrvRecordValue, mongoArgumentsValue);
                
                 return mongoMetricCollector;
             }
