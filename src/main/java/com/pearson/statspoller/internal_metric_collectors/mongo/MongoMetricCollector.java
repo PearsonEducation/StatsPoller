@@ -7,8 +7,10 @@ import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFrame
 import com.pearson.statspoller.metric_formats.graphite.GraphiteMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -38,16 +40,25 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
     private final String username_;
     private final String password_;
     private final boolean mongoVerboseOutputValue_;
+    private final boolean mongoUsesSrvRecordValue_;
+    private final String mongoArguments_;
 
     public MongoMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix,
             String outputFilePathAndFilename, boolean writeOutputFiles,
-            String host, int port, String username, String password, boolean mongoVerboseOutputValue) {
+            String host, int port, String username, String password, boolean mongoVerboseOutputValue, boolean mongoUsesSrvRecordValue, String mongoArguments) {
         super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
         this.host_ = host;
         this.port_ = port;
         this.username_ = username;
         this.password_ = password;
         this.mongoVerboseOutputValue_ = mongoVerboseOutputValue;
+        this.mongoUsesSrvRecordValue_ = mongoUsesSrvRecordValue;
+        if(mongoArguments != null && !mongoArguments.isEmpty()){
+            this.mongoArguments_ = mongoArguments;
+        }
+        else{
+            this.mongoArguments_ = "/?authSource=admin";
+        }
     }
 
     @Override
@@ -82,22 +93,31 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         MongoClient mongoClient = null;
 
         try {
-            MongoClientURI uri = new MongoClientURI("mongodb://" + username_ + ":" + password_
-                    + "@" + host_ + ":" + port_ + "/?authSource=admin");
+            //NOTE: REMOVED THE PORT BECAUSE mongo+serv may just use the default?
+
+           
+            String uri = mongoUsesSrvRecordValue_ ? "mongodb+srv://" : "mongodb://";
 
             //try blocks do not work with mongoclient as connection process is done by a background thread.
+          
+            //Changed how the uri is defined since can no longer make a mongo client with (host, port) trying without authsource = admin
             if ((username_ != null) && !username_.isEmpty()) {
-                mongoClient = new MongoClient(uri);
+                
+                uri += (username_ + ":" + password_ + "@" + host_ + ":" + port_ + mongoArguments_ );
+
+                mongoClient = MongoClients.create(uri);
             }
             else {
+                uri += (host_ + ":" + port_ + mongoArguments_ );
+
                 try {
-                    mongoClient = new MongoClient(host_, port_);
+                    mongoClient = MongoClients.create(uri);
                 }
                 catch (Exception e) {
                     logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
                 }
             }
-
+            System.out.println(uri);
             if (mongoClient == null) {
                 graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ZERO, ((int) (System.currentTimeMillis() / 1000))));
                 return graphiteMetrics;
@@ -107,7 +127,7 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
             Document replSetStatus = new Document();
             Document isMaster = new Document();
-            
+
             try {
                 isMaster = db.runCommand(new Document().append("isMaster", 1));
                 graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ONE, ((int) (System.currentTimeMillis() / 1000))));
@@ -127,7 +147,7 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
                 if ((replSetStatus != null) && replSetStatus.containsKey("ok") && replSetStatus.get("ok").equals(1.0)) {
                     graphiteMetrics.addAll(processDocumentAndAddToMetrics(replSetStatus, "replSetStatus"));
-                    
+
                     try {
                         Document getReplicationInfo = getReplicationInfo(mongoClient, replSetStatus);
                         if (getReplicationInfo != null) graphiteMetrics.addAll(processDocumentAndAddToMetrics(getReplicationInfo, "replSetStatus"));
@@ -138,9 +158,9 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 }
 
             }
-            
+
             Document serverStatus = null;
-            
+
             try {
                 serverStatus = db.runCommand(new Document().append("serverStatus", 1));
             }
@@ -150,30 +170,30 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
             }
 
             if ((serverStatus != null) && serverStatus.containsKey("ok") && serverStatus.get("ok").equals(1.0)) {
-                
+
                 // if not verbose & is an arbiter, then limit the metric output
                 if ((replSetStatus != null) && (replSetStatus.isEmpty() || (replSetStatus.containsKey("myState") && (new BigDecimal(replSetStatus.get("myState").toString()).intValue() != 7)))) {
-                   graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus")); 
+                    graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus"));
                 }
                 else if (!mongoVerboseOutputValue_) {
-                   List<GraphiteMetric> serverStatusGraphiteMetrics = processDocumentAndAddToMetrics(serverStatus, "serverStatus");
-                   for (GraphiteMetric graphiteMetric : serverStatusGraphiteMetrics) {
+                    List<GraphiteMetric> serverStatusGraphiteMetrics = processDocumentAndAddToMetrics(serverStatus, "serverStatus");
+                    for (GraphiteMetric graphiteMetric : serverStatusGraphiteMetrics) {
                        if ((graphiteMetric.getMetricPath() != null) && 
                                (graphiteMetric.getMetricPath().startsWith("serverStatus.network") || 
                                graphiteMetric.getMetricPath().startsWith("serverStatus.connections") ||
                                graphiteMetric.getMetricPath().startsWith("serverStatus.uptime") ||
                                graphiteMetric.getMetricPath().startsWith("serverStatus.pid"))) {
-                           graphiteMetrics.add(graphiteMetric);
-                       }
-                   }
+                            graphiteMetrics.add(graphiteMetric);
+                        }
+                    }
                 }
                 else {
-                    graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus")); 
+                    graphiteMetrics.addAll(processDocumentAndAddToMetrics(serverStatus, "serverStatus"));
                 }
             }
 
             Document databasesList = new Document();
-            
+
             // if arbiter, do not run. if not arbiter, collect collection & database metrics
             if ((replSetStatus != null) && (replSetStatus.isEmpty() || (replSetStatus.containsKey("myState") && (new BigDecimal(replSetStatus.get("myState").toString()).intValue() != 7)))) {
                 try {
@@ -342,17 +362,17 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
     }
 
     private Document getReplicationInfo(MongoClient mongoClient, Document replSetStatus) throws ParseException {
-        
+
         if ((mongoClient == null) || (replSetStatus == null)) {
             return null;
         }
-        
+
         MongoDatabase localdb = mongoClient.getDatabase("local");
         Document result = new Document();
         MongoIterable localCollections = localdb.listCollectionNames();
         MongoCursor iterator = localCollections.iterator();
         String oplog = null;
-        
+
         while (iterator.hasNext()) {
             String collection = iterator.next().toString();
             if (collection.equals("oplog.rs")) {
@@ -362,12 +382,12 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                 oplog = collection;
             }
         }
-        
+
         if (oplog == null) {
             //This is not a replicaset
             return null;
         }
-        
+
         MongoCollection ol = localdb.getCollection(oplog);
         Document ol_stats = localdb.runCommand(new Document().append("collStats", oplog).append("scale", 1).append("verbose", true));
 

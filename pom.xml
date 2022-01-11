@@ -76,6 +76,7 @@
                 </executions>
             </plugin>
 
+
             <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -99,7 +100,7 @@
                 </executions>
             </plugin>
             -->
-            
+
             <!--
             <plugin>
                 
@@ -123,12 +124,12 @@
                 
             </plugin>
             -->
-            
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>rpm-maven-plugin</artifactId>
                 <version>2.2.0</version>
-                
+
                 <executions>
                     <execution>
                         <id>generate-rpm</id>
@@ -137,7 +138,7 @@
                         </goals>
                     </execution>
                 </executions>
-            
+
                 <configuration>
                     <license>Apache 2.0</license>
                     <name>statspoller</name>
@@ -145,18 +146,18 @@
                     <group>Applications/System</group>
                     <targetVendor>redhat</targetVendor>
                     <prefix>/opt/StatsPoller</prefix>
-                    
+
                     <defineStatements>
                         <defineStatement>_unpackaged_files_terminate_build 0</defineStatement>
                     </defineStatements>
-                    
+
                     <mappings>
 
                         <mapping>
                             <directory>/opt/StatsPoller</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller</directory>
                             <filemode>744</filemode>
@@ -166,22 +167,22 @@
                                 </source>
                             </sources>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/bin</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/bin/config</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/bin/Windows</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/bin</directory>
                             <directoryIncluded>false</directoryIncluded>
@@ -198,13 +199,13 @@
                             <directory>/opt/StatsPoller/conf</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/conf/optional</directory>
                             <configuration>true</configuration>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/conf</directory>
                             <configuration>true</configuration>
@@ -216,7 +217,7 @@
                                 <source><location>conf/statspoller.profile</location></source>
                             </sources>
                         </mapping>
-            
+
                         <mapping>
                             <directory>/opt/StatsPoller/conf</directory>
                             <configuration>true</configuration>
@@ -227,7 +228,7 @@
                                 <source><location>conf/application.properties</location></source>
                             </sources>
                         </mapping>
-            
+
                         <mapping>
                             <directory>/opt/StatsPoller/conf</directory>
                             <directoryIncluded>false</directoryIncluded>
@@ -238,12 +239,12 @@
                                 <source><location>conf/example_demo_application.properties</location></source>
                             </sources>
                         </mapping>          
-                          
+
                         <mapping>
                             <directory>/opt/StatsPoller/lib</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/opt/StatsPoller/lib</directory>
                             <directoryIncluded>false</directoryIncluded>
@@ -254,27 +255,27 @@
                                 </source>
                             </sources>
                         </mapping>
-                    
+
                         <mapping>
                             <directory>/opt/StatsPoller/logs</directory>
                             <filemode>755</filemode>
                         </mapping>
-                    
+
                         <mapping>
                             <directory>/opt/StatsPoller/pid</directory>
                             <filemode>755</filemode>
                         </mapping>
-                    
+
                         <mapping>
                             <directory>/opt/StatsPoller/output</directory>
                             <filemode>755</filemode>
                         </mapping>
-                    
+
                         <mapping>
                             <directory>/opt/StatsPoller/tmp</directory>
                             <filemode>755</filemode>
                         </mapping>
-                        
+
                         <mapping>
                             <directory>/etc/init.d</directory>
                             <directoryIncluded>false</directoryIncluded>
@@ -285,15 +286,15 @@
                                 </source>
                             </sources>
                         </mapping>
-                        
+
                     </mappings>
-                    
+
                     <!--
                     <preinstallScriptlet>
                         <script>useradd statspoller</script>
                     </preinstallScriptlet>
                     --> 
-                    
+
                     <postinstallScriptlet>
                         <script>
                             /sbin/chkconfig --add statspoller
@@ -313,11 +314,11 @@
                             printf "StatsPoller has been uninstalled\n"
                         </script>
                     </postremoveScriptlet>    
-                    
+
                 </configuration>
-                
+
             </plugin>
-            
+
         </plugins>
         
     </build>
@@ -411,10 +412,10 @@
         
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>3.11.0</version>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.3.3</version>
         </dependency>
-
+        
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
