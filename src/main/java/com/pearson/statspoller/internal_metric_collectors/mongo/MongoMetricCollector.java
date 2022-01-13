@@ -90,8 +90,12 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         while (super.isEnabled()) {
             long routineStartTime = System.currentTimeMillis();
 
-            List<GraphiteMetric> graphiteMetrics = getMongoMetrics();
-
+            MongoClient mongoClient = getMongoClientConnection();
+            
+            List<GraphiteMetric> graphiteMetrics = getMongoMetrics(mongoClient);
+            
+            closeMongoClientConnection(mongoClient);
+            
             super.outputGraphiteMetrics(graphiteMetrics);
 
             long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
@@ -109,30 +113,45 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
 
     }
 
-    private List<GraphiteMetric> getMongoMetrics() {
+    private MongoClient getMongoClientConnection() {
+        MongoClient mongoClient = null;
+        
+        String uri = mongoSrvRecord_ ? "mongodb+srv://" : "mongodb://";
+        String endpoint = mongoSrvRecord_ ? host_ : host_ + ":" + port_;
+
+        try {
+            if ((usernamePercentEncoded_ != null) && !usernamePercentEncoded_.isEmpty()) {
+                uri += (usernamePercentEncoded_ + ":" + passwordPercentEncoded_ + "@" + endpoint + "/?" + mongoArguments_);
+                mongoClient = MongoClients.create(uri);
+            }
+            else {
+                uri += (endpoint + "/?" + mongoArguments_ );
+                mongoClient = MongoClients.create(uri);
+            }
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+        
+        return mongoClient;
+    }
+    
+    private void closeMongoClientConnection(MongoClient mongoClient) {
+        try {
+            if (mongoClient != null) mongoClient.close();
+        }
+        catch (Exception e) {
+            logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+        }
+
+        mongoClient = null;
+    }
+    
+    private List<GraphiteMetric> getMongoMetrics(MongoClient mongoClient) {
 
         List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
 
-        MongoClient mongoClient = null;
-
         try {
-            String uri = mongoSrvRecord_ ? "mongodb+srv://" : "mongodb://";
-            String endpoint = mongoSrvRecord_ ? host_ : host_ + ":" + port_;
-            
-            try {
-                if ((usernamePercentEncoded_ != null) && !usernamePercentEncoded_.isEmpty()) {
-                    uri += (usernamePercentEncoded_ + ":" + passwordPercentEncoded_ + "@" + endpoint + "/?" + mongoArguments_);
-                    mongoClient = MongoClients.create(uri);
-                }
-                else {
-                    uri += (endpoint + "/?" + mongoArguments_ );
-                    mongoClient = MongoClients.create(uri);
-                }
-            }
-            catch (Exception e) {
-                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-            }
-            
             if (mongoClient == null) {
                 graphiteMetrics.add(new GraphiteMetric("Available", BigDecimal.ZERO, ((int) (System.currentTimeMillis() / 1000))));
                 return graphiteMetrics;
@@ -243,16 +262,6 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
         }
         catch (Exception e) {
             logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-        }
-        finally {
-            try {
-                if (mongoClient != null) mongoClient.close();
-            }
-            catch (Exception e) {
-                logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
-            }
-
-            mongoClient = null;
         }
 
         return graphiteMetrics;
