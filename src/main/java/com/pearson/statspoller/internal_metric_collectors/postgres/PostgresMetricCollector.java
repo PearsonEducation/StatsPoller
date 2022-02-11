@@ -230,6 +230,14 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Seconds", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
+                String queryCount = "SELECT count(*)" + "FROM pg_stat_activity\n" + "WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%'";
+                    Statement statementQueryCount= connection.createStatement();
+                    ResultSet resultSetQueryCount = statementQueryCount.executeQuery(queryCount);
+                    resultSetQueryCount.next();
+                    String count = resultSetQueryCount.getString("count").split(" ")[0];
+                    openTsdbMetric = new OpenTsdbMetric("Query Count", currentTimestampMilliseconds_Status, new BigDecimal(count), openTsdbTags_);
+                    openTsdbMetrics.add(openTsdbMetric);
+                
                 try {
                     for (String databaseName : databases_) {
                         if (databaseName == null) continue;
