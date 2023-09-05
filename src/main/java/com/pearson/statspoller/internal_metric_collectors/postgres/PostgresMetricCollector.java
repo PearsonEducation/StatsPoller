@@ -230,13 +230,35 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Seconds", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                String queryCount = "SELECT count(*)" + "FROM pg_stat_activity\n" + "WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%'";
-                    Statement statementQueryCount= connection.createStatement();
-                    ResultSet resultSetQueryCount = statementQueryCount.executeQuery(queryCount);
-                    resultSetQueryCount.next();
-                    String count = resultSetQueryCount.getString("count").split(" ")[0];
-                    openTsdbMetric = new OpenTsdbMetric("Query Count", currentTimestampMilliseconds_Status, new BigDecimal(count), openTsdbTags_);
-                    openTsdbMetrics.add(openTsdbMetric);
+                String currQueries = "SELECT pid, age(clock_timestamp(), query_start), usename, application_name, client_addr, state, wait_event_type, wait_event, query\n" + 
+                        "FROM pg_stat_activity\n" + 
+                        "WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%'\n" +
+                        "ORDER BY state, query_start asc";
+                Statement statementCurrQueries= connection.createStatement();
+                ResultSet resultSetCurrQueries = statementCurrQueries.executeQuery(currQueries);
+                int count = 0;
+                long longestQuery = 0;
+                if (DatabaseUtils.isResultSetValid(resultSetCurrQueries)) {
+                    while (resultSetCurrQueries.next()) {
+                        if (!resultSetCurrQueries.wasNull()){
+                            count += 1;
+                            String age = resultSetCurrQueries.getString("age");
+                            if(age != null){
+                                String [] firstSplit = age.split("[.]");
+                                String [] timePieces = firstSplit[0].split(":");
+                                long currQueryTime = (Long.parseLong(timePieces[0]) * 3600) + (Long.parseLong(timePieces[1]) * 60) + Long.parseLong(timePieces[2]);
+                                if( currQueryTime > longestQuery){longestQuery = currQueryTime;}
+    
+                            }
+                        }
+                    }
+                }   
+                
+                openTsdbMetric = new OpenTsdbMetric("QueryCount", currentTimestampMilliseconds_Status, new BigDecimal(count), openTsdbTags_);
+                openTsdbMetrics.add(openTsdbMetric);
+                
+                openTsdbMetric = new OpenTsdbMetric("LongestRunningQuery", currentTimestampMilliseconds_Status, new BigDecimal(longestQuery), openTsdbTags_);
+                openTsdbMetrics.add(openTsdbMetric);
                 
                 try {
                     for (String databaseName : databases_) {
