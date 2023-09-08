@@ -686,18 +686,17 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 }
                 
                 //uptime
-                /*
                 if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT EXTRACT(epoch FROM now() - pg_postmaster_start_time())";
                 statement = connection.createStatement();
                 resultSet = statement.executeQuery(query);                
                 if (DatabaseUtils.isResultSetValid(resultSet)) {
                     while (resultSet.next()) {
-                        String variableValue = resultSet.getString("date_part");
+                        String variableValue = resultSet.getString("extract");
                         if (resultSet.wasNull()) variableValue = null;
                         if (variableValue != null) statistics.put("uptime", variableValue);
                     }
-                }*/
+                }
             }
 
             return statistics;
