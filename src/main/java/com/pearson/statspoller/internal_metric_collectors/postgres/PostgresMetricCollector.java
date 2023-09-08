@@ -19,6 +19,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.postgresql.util.PGInterval;
 
 /**
  * @author Judah Walker
@@ -229,37 +230,13 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
 
                 openTsdbMetric = getSimpleStatisticsMetric(currentStatistics, "uptime", "Uptime-Seconds", currentTimestampMilliseconds_Status, openTsdbTags_);
                 if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                
+                openTsdbMetric = getSimpleStatisticsMetric(currentStatistics,"QueryCount", "QueryCount", currentTimestampMilliseconds_Status, openTsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
+                
+                openTsdbMetric = getSimpleStatisticsMetric(currentStatistics,"LongestRunningQuery", "LongestRunningQuery", currentTimestampMilliseconds_Status, openTsdbTags_);
+                if (openTsdbMetric != null) openTsdbMetrics.add(openTsdbMetric);
 
-                String currQueries = "SELECT pid, age(clock_timestamp(), query_start), usename, application_name, client_addr, state, wait_event_type, wait_event, query\n" + 
-                        "FROM pg_stat_activity\n" + 
-                        "WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%'\n" +
-                        "ORDER BY state, query_start asc";
-                Statement statementCurrQueries= connection.createStatement();
-                ResultSet resultSetCurrQueries = statementCurrQueries.executeQuery(currQueries);
-                int count = 0;
-                long longestQuery = 0;
-                if (DatabaseUtils.isResultSetValid(resultSetCurrQueries)) {
-                    while (resultSetCurrQueries.next()) {
-                        if (!resultSetCurrQueries.wasNull()){
-                            count += 1;
-                            String age = resultSetCurrQueries.getString("age");
-                            if(age != null){
-                                String [] firstSplit = age.split("[.]");
-                                String [] timePieces = firstSplit[0].split(":");
-                                long currQueryTime = (Long.parseLong(timePieces[0]) * 3600) + (Long.parseLong(timePieces[1]) * 60) + Long.parseLong(timePieces[2]);
-                                if( currQueryTime > longestQuery){longestQuery = currQueryTime;}
-    
-                            }
-                        }
-                    }
-                }   
-                
-                openTsdbMetric = new OpenTsdbMetric("QueryCount", currentTimestampMilliseconds_Status, new BigDecimal(count), openTsdbTags_);
-                openTsdbMetrics.add(openTsdbMetric);
-                
-                openTsdbMetric = new OpenTsdbMetric("LongestRunningQuery", currentTimestampMilliseconds_Status, new BigDecimal(longestQuery), openTsdbTags_);
-                openTsdbMetrics.add(openTsdbMetric);
-                
                 try {
                     for (String databaseName : databases_) {
                         if (databaseName == null) continue;
@@ -574,7 +551,31 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                         if (variableValue != null) statistics.put(database + "." + "idx_scan_ratio", variableValue);
                     }
                 }
-
+                
+                if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
+                query = "SELECT pid, age(clock_timestamp(), query_start), usename, application_name, client_addr, state, wait_event_type, wait_event, query\n" + 
+                    "FROM pg_stat_activity\n" + 
+                    "WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%'\n" +
+                    "ORDER BY state, query_start asc";
+                statement = connection.createStatement();
+                resultSet = statement.executeQuery(query);
+                int count = 0;
+                long longestQuery = 0;
+                if (DatabaseUtils.isResultSetValid(resultSet)) {
+                    while (resultSet.next()) {
+                        if (!resultSet.wasNull()){
+                            count += 1;
+                            PGInterval age = (PGInterval) resultSet.getObject("age");
+                            if (age != null){
+                                long ageInSeconds = age.getWholeSeconds() + age.getMinutes() * 60 + age.getHours() * 3600 + age.getDays() * 86400 + age.getMonths() * 2592000 + age.getYears() * 31536000;
+                                if (ageInSeconds > longestQuery) { longestQuery = ageInSeconds; }
+                            }
+                        }
+                    }
+                }   
+                statistics.put("QueryCount", Integer.toString(count));
+                statistics.put("LongestRunningQuery", Long.toString(longestQuery));
+                
             } 
             else {
                 //open connections
@@ -651,7 +652,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                         if (variableValue != null) statistics.put("buffers_backend_fsync", variableValue);
                     }
                 }
-
+                
                 try {
                     // slave running
                     if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
@@ -677,7 +678,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                             if (resultSet.wasNull()) variableValue = null;
                             if (variableValue != null) statistics.put("replication_lag", variableValue);
                         }
-                    }
+                    }     
                 }
                 catch (Exception e) {
                     if (e.toString().contains("Aurora")) logger.debug(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
@@ -685,6 +686,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                 }
                 
                 //uptime
+                /*
                 if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
                 query = "SELECT EXTRACT(epoch FROM now() - pg_postmaster_start_time())";
                 statement = connection.createStatement();
@@ -695,7 +697,7 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                         if (resultSet.wasNull()) variableValue = null;
                         if (variableValue != null) statistics.put("uptime", variableValue);
                     }
-                }
+                }*/
             }
 
             return statistics;
