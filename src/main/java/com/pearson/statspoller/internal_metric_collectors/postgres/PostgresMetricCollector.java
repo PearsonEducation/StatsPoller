@@ -653,9 +653,10 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                     }
                 }
                 
-                try {
+                try {                    
                     // slave running
                     if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
+					String replicationString = "0";
                     query = "select count(*) from pg_stat_replication";
                     statement = connection.createStatement();
                     resultSet = statement.executeQuery(query);
@@ -663,22 +664,34 @@ public class PostgresMetricCollector extends InternalCollectorFramework implemen
                         while (resultSet.next()) {
                             String variableValue = resultSet.getString("count");
                             if (resultSet.wasNull()) variableValue = null;
-                            if (variableValue != null) statistics.put("slave_running", variableValue);
+                            if (variableValue != null) {
+								statistics.put("slave_running", variableValue);
+								replicationString = variableValue;
+							}
                         }
                     }
-
+					
+					boolean doesPgHaveReplica = false;
+					try {
+						BigDecimal replicationCount = new BigDecimal(replicationString);
+						if (replicationCount.intValue() > 0) doesPgHaveReplica = true;
+					}
+					catch (Exception e) {}
+					
                     //replication lag
-                    if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
-                    query = "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT";
-                    statement = connection.createStatement();
-                    resultSet = statement.executeQuery(query);
-                    if (DatabaseUtils.isResultSetValid(resultSet)) {
-                        while (resultSet.next()) {
-                            String variableValue = resultSet.getString("date_part");
-                            if (resultSet.wasNull()) variableValue = null;
-                            if (variableValue != null) statistics.put("replication_lag", variableValue);
-                        }
-                    }     
+					if (doesPgHaveReplica) {
+						if (!DatabaseUtils.isConnectionValid(connection)) return statistics;
+						query = "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT";
+						statement = connection.createStatement();
+						resultSet = statement.executeQuery(query);
+						if (DatabaseUtils.isResultSetValid(resultSet)) {
+							while (resultSet.next()) {
+								String variableValue = resultSet.getString("date_part");
+								if (resultSet.wasNull()) variableValue = null;
+								if (variableValue != null) statistics.put("replication_lag", variableValue);
+							}
+						}   
+					}
                 }
                 catch (Exception e) {
                     if (e.toString().contains("Aurora")) logger.debug(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
