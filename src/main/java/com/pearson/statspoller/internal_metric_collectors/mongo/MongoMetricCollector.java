@@ -251,10 +251,18 @@ public class MongoMetricCollector extends InternalCollectorFramework implements 
                         MongoCursor iterator = collections.iterator();
 
                         while (iterator.hasNext()) {
-                            String graphiteFriendlyDbName = GraphiteMetric.getGraphiteSanitizedString(dbName, true, true);
-                            String collection = iterator.next().toString();
-                            Document collStats = currentDatabase.runCommand(new Document().append("collStats", collection).append("scale", 1).append("verbose", true));
-                            graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + graphiteFriendlyDbName + "." + collection));
+                            try {
+                                String graphiteFriendlyDbName = GraphiteMetric.getGraphiteSanitizedString(dbName, true, true);
+                                String collection = iterator.next().toString();
+                                Document collStats = currentDatabase.runCommand(new Document().append("collStats", collection).append("scale", 1).append("verbose", true));
+                                graphiteMetrics.addAll(processDocumentAndAddToMetrics(collStats, "collectionStats." + graphiteFriendlyDbName + "." + collection));
+                            }
+                            catch (Exception e){
+                                if (!(e instanceof MongoCommandException)) {
+                                    logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+                                }
+                                //Sometimes "listCollectionNames" will list a view.  If it does that, this will ignore it and move on.
+                            }
                         }
                     }
                 }
