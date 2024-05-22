@@ -1,6 +1,7 @@
 package com.pearson.statspoller.internal_metric_collectors.mongo;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.MongoCommandException;
 import java.util.ArrayList;
 import java.util.List;
 import com.pearson.statspoller.internal_metric_collectors.InternalCollectorFramework;
