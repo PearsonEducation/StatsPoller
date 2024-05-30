@@ -894,7 +894,7 @@ public class ApplicationConfiguration {
 
             String mongoPortKey = "mongo_port" + collectorSuffix;
             String mongoPortValue_String = applicationConfiguration_.safeGetString(mongoPortKey, "27017").trim();
-            boolean isPortNumeric = StringUtils.isNumeric(mongoPortValue_String) && !mongoPortValue_String.isBlank();
+            boolean isPortNumeric = !mongoPortValue_String.isEmpty() && StringUtils.isNumeric(mongoPortValue_String);
             Integer mongoPortValue = isPortNumeric ? Integer.valueOf(mongoPortValue_String) : null;
             
             String mongoUsernameKey = "mongo_username" + collectorSuffix;
