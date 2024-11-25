@@ -6,6 +6,9 @@ import com.pearson.statspoller.utilities.core_utils.StackTrace;
 import com.pearson.statspoller.utilities.core_utils.Threads;
 import java.io.File;
 import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -83,8 +86,17 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
             
             for (File directory : directories) {
                 int currentTimestampInSeconds = (int) (System.currentTimeMillis() / 1000);
-                Collection<File> files = FileUtils.listFiles(directory, null, false);
-                if (files == null) continue;
+				
+				//Collection<File> files = FileUtils.listFiles(directory, null, false);
+				// long fileCountOld = files.size();
+				
+				long fileCount = 0;
+				DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory.toPath(), entry -> Files.isRegularFile(entry));
+				for (Path pathEntry : directoryStream) {
+					fileCount++;
+				}
+				
+                //if (files == null) continue;
                 
                 String metricPath = StringUtils.removeStart(directory.getCanonicalPath(), rootDirectory_);
                 if (metricPath == null) metricPath = "";
@@ -95,7 +107,7 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
                 String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(metricPath, true, true);
                 String finalMetricPath = (graphiteFriendlyMetricPath.isEmpty()) ? "filecount" : (graphiteFriendlyMetricPath + ".filecount");
                 
-                GraphiteMetric graphiteMetric = new GraphiteMetric(finalMetricPath, new BigDecimal(files.size()), currentTimestampInSeconds);
+                GraphiteMetric graphiteMetric = new GraphiteMetric(finalMetricPath, new BigDecimal(fileCount), currentTimestampInSeconds);
                 graphiteMetrics.add(graphiteMetric);
             }
         }
