@@ -53,7 +53,7 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
 
 			long routineTimeElapsed = System.currentTimeMillis() - routineStartTime;
 			
-			logger.info("Finished Linux-Uptime metric collection routine. " +
+			logger.info("Finished File-Counter metric collection routine. " +
 					"MetricsCollected=" + graphiteMetrics.size() +
 					", MetricCollectionTime=" + routineTimeElapsed);
 			
@@ -91,9 +91,23 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
 				// long fileCountOld = files.size();
 				
 				long fileCount = 0;
-				DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory.toPath(), entry -> Files.isRegularFile(entry));
-				for (Path pathEntry : directoryStream) {
-					fileCount++;
+				DirectoryStream<Path> directoryStream = null;
+
+				try {
+					directoryStream = Files.newDirectoryStream(directory.toPath(), entry -> Files.isRegularFile(entry));
+					for (Path pathEntry : directoryStream) {
+						fileCount++;
+					}
+				} 
+				catch (Exception e) {
+					logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+				}
+				finally {
+					if (directoryStream != null) {
+						directoryStream.close();
+					}
+					
+					directoryStream = null;
 				}
 				
 				//if (files == null) continue;
