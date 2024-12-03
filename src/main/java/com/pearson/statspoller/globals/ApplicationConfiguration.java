@@ -584,14 +584,32 @@ public class ApplicationConfiguration {
                     String path = csvValues[0];
                     String countSubdirectories = csvValues[1];
                     boolean countSubdirectories_Boolean = Boolean.parseBoolean(countSubdirectories);
-                    double collectionIntervalInSeconds = Long.valueOf(csvValues[2].trim());
+					boolean countFilesInEmptyDirectories_Boolean = true; //Boolean.parseBoolean(countSubdirectories);
+                    double collectionIntervalInSeconds = Long.parseLong(csvValues[2].trim());
                     long collectionIntervalInMilliseconds = legacyMode ? (long) collectionIntervalInSeconds  : (long) (collectionIntervalInSeconds * 1000); 
                     String metricPrefix = csvValues[3];
                     String outputFile = "./output/" + "filecounter_" + metricPrefix + ".out";
                     
                     FileCounterMetricCollector fileCounterMetricCollector = new FileCounterMetricCollector(true,
                             collectionIntervalInMilliseconds, "FileCounter." + metricPrefix, outputFile, outputInternalMetricsToDisk_,
-                            path, countSubdirectories_Boolean);
+                            path, countSubdirectories_Boolean, countFilesInEmptyDirectories_Boolean);
+                    
+                    return fileCounterMetricCollector;
+                }
+				else if (csvValues.length == 5) {  
+                    String path = csvValues[0];
+                    String countSubdirectories = csvValues[1];
+					String countEmptyDirectories = csvValues[2];
+                    boolean countSubdirectories_Boolean = Boolean.parseBoolean(countSubdirectories);
+					boolean countFilesInEmptyDirectories_Boolean = Boolean.parseBoolean(countEmptyDirectories);
+                    double collectionIntervalInSeconds = Long.parseLong(csvValues[3].trim());
+                    long collectionIntervalInMilliseconds = legacyMode ? (long) collectionIntervalInSeconds  : (long) (collectionIntervalInSeconds * 1000); 
+                    String metricPrefix = csvValues[4];
+                    String outputFile = "./output/" + "filecounter_" + metricPrefix + ".out";
+                    
+                    FileCounterMetricCollector fileCounterMetricCollector = new FileCounterMetricCollector(true,
+                            collectionIntervalInMilliseconds, "FileCounter." + metricPrefix, outputFile, outputInternalMetricsToDisk_,
+                            path, countSubdirectories_Boolean, countFilesInEmptyDirectories_Boolean);
                     
                     return fileCounterMetricCollector;
                 }

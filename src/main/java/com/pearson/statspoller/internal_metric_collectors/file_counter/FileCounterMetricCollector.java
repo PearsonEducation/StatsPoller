@@ -7,16 +7,19 @@ import com.pearson.statspoller.utilities.core_utils.Threads;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +32,16 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
 	
 	private final String rootDirectory_;
 	private final boolean countFilesInSubdirectories_;
+	private final boolean countFilesInEmptyDirectories_;
 	
 	public FileCounterMetricCollector(boolean isEnabled, long collectionInterval, String metricPrefix, 
 			String outputFilePathAndFilename, boolean writeOutputFiles,
-			String rootDirectory, boolean countFilesInSubdirectories) {
+			String rootDirectory, boolean countFilesInSubdirectories, boolean countFilesInEmptySubdirectories) {
 		super(isEnabled, collectionInterval, metricPrefix, outputFilePathAndFilename, writeOutputFiles);
 		
 		rootDirectory_ = removeTrailingSlashes(rootDirectory);
 		countFilesInSubdirectories_ = countFilesInSubdirectories;
+		countFilesInEmptyDirectories_ = countFilesInEmptySubdirectories;
 	}
 	
 	@Override
@@ -72,64 +77,147 @@ public class FileCounterMetricCollector extends InternalCollectorFramework imple
 		
 		List<GraphiteMetric> graphiteMetrics = new ArrayList<>();
 		
-		try {
-			Collection<File> directories = new ArrayList<>();
-			File rootDirectory_File = new File(rootDirectory_);
+		try {			
+			TreeMap<String,AtomicInteger> fileCountsByDirectory;
 			
 			if (countFilesInSubdirectories_) {
-				Collection<File> subdirectories = FileUtils.listFilesAndDirs(rootDirectory_File, DirectoryFileFilter.DIRECTORY, TrueFileFilter.TRUE);
-				if (subdirectories != null) directories.addAll(subdirectories);
+				fileCountsByDirectory = getFileAndDirectoryCountsInTree();
 			}
-			else if (rootDirectory_File.isDirectory()) {
-				directories.add(rootDirectory_File);
+			else {
+				fileCountsByDirectory = getFileCountInSingleDirectory();
 			}
 			
-			for (File directory : directories) {
-				int currentTimestampInSeconds = (int) (System.currentTimeMillis() / 1000);
-				
-				//Collection<File> files = FileUtils.listFiles(directory, null, false);
-				// long fileCountOld = files.size();
-				
-				long fileCount = 0;
-				DirectoryStream<Path> directoryStream = null;
-
+			for (String directory : fileCountsByDirectory.keySet()) {
 				try {
-					directoryStream = Files.newDirectoryStream(directory.toPath(), entry -> Files.isRegularFile(entry));
-					for (Path pathEntry : directoryStream) {
-						fileCount++;
-					}
-				} 
+					int fileCount = fileCountsByDirectory.get(directory).get();
+
+					int currentTimestampInSeconds = (int) (System.currentTimeMillis() / 1000);
+
+					File directoryFile = new File(directory);
+					String metricPath = StringUtils.removeStart(directoryFile.getCanonicalPath(), rootDirectory_);
+					if (metricPath == null) metricPath = "";
+					metricPath = removeLeadingSlashes(metricPath);
+					if (SystemUtils.IS_OS_WINDOWS) metricPath = metricPath.replace('\\', '.');
+					else metricPath = metricPath.replace('/', '.');
+
+					String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(metricPath, true, true);
+					String finalMetricPath = (graphiteFriendlyMetricPath.isEmpty()) ? "filecount" : (graphiteFriendlyMetricPath + ".filecount");
+
+					GraphiteMetric graphiteMetric = new GraphiteMetric(finalMetricPath, new BigDecimal(fileCount), currentTimestampInSeconds);
+					graphiteMetrics.add(graphiteMetric);
+				}
 				catch (Exception e) {
 					logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
 				}
-				finally {
-					if (directoryStream != null) {
-						directoryStream.close();
-					}
-					
-					directoryStream = null;
-				}
-				
-				//if (files == null) continue;
-				
-				String metricPath = StringUtils.removeStart(directory.getCanonicalPath(), rootDirectory_);
-				if (metricPath == null) metricPath = "";
-				metricPath = removeLeadingSlashes(metricPath);
-				if (SystemUtils.IS_OS_WINDOWS) metricPath = metricPath.replace('\\', '.');
-				else metricPath = metricPath.replace('/', '.');
-				
-				String graphiteFriendlyMetricPath = GraphiteMetric.getGraphiteSanitizedString(metricPath, true, true);
-				String finalMetricPath = (graphiteFriendlyMetricPath.isEmpty()) ? "filecount" : (graphiteFriendlyMetricPath + ".filecount");
-				
-				GraphiteMetric graphiteMetric = new GraphiteMetric(finalMetricPath, new BigDecimal(fileCount), currentTimestampInSeconds);
-				graphiteMetrics.add(graphiteMetric);
 			}
+
 		}
 		catch (Exception e) {
 			logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
 		}
 		
 		return graphiteMetrics;
+	}
+	
+	private TreeMap<String,AtomicInteger> getFileAndDirectoryCountsInTree() {
+		
+		if (rootDirectory_ == null) {
+			return new TreeMap<>();
+		}
+		
+		TreeMap<String,AtomicInteger> fileCountsByDirectory = new TreeMap<>();
+		
+		try {
+			Path startPath = Paths.get(rootDirectory_);
+			
+			Files.walkFileTree(startPath, new SimpleFileVisitor<Path>() {
+				@Override
+				public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
+					try {
+						if (attrs.isRegularFile()) {
+							String directory = path.toFile().getParent();
+
+							if (!fileCountsByDirectory.containsKey(directory)) {
+								fileCountsByDirectory.put(directory, new AtomicInteger(1));
+							}
+							else {
+								fileCountsByDirectory.get(directory).getAndIncrement();
+							}
+						}
+					}
+					catch (Exception e) {
+						logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) {
+					if (!countFilesInEmptyDirectories_) return FileVisitResult.CONTINUE;
+
+					try {
+						if (attrs.isDirectory()) {
+							String directory = path.toString();
+							if (!fileCountsByDirectory.containsKey(directory)) {
+								fileCountsByDirectory.put(directory, new AtomicInteger(0));
+							} 
+						}
+					}
+					catch (Exception e) {
+						logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		} 
+		catch (Exception e) {
+			logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+		}
+		
+		return fileCountsByDirectory;	
+	}
+	
+	private TreeMap<String,AtomicInteger> getFileCountInSingleDirectory() {
+		
+		if (rootDirectory_ == null) {
+			return new TreeMap<>();
+		}
+		
+		TreeMap<String,AtomicInteger> fileCountsByDirectory = new TreeMap<>();
+		
+		try {
+			Path rootPath = Paths.get(rootDirectory_);
+			DirectoryStream<Path> directoryStream = null;
+			int fileCount = 0;
+			
+			try {
+				directoryStream = Files.newDirectoryStream(rootPath, entry -> Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS));
+				for (Path pathEntry : directoryStream) {
+					fileCount++;
+				}
+			} 
+			catch (Exception e) {
+				logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+			}
+			finally {
+				if (directoryStream != null) {
+					directoryStream.close();
+				}
+
+				directoryStream = null;
+			}
+			
+			if (countFilesInEmptyDirectories_ || (fileCount > 0)) {
+				fileCountsByDirectory.put(rootDirectory_, new AtomicInteger(fileCount));
+			}
+		} 
+		catch (Exception e) {
+			logger.error(e.toString() + System.lineSeparator() + StackTrace.getStringFromStackTrace(e));
+		}
+		
+		return fileCountsByDirectory;	
 	}
 	
 	private static String removeLeadingSlashes(String input) {
